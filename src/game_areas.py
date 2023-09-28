@@ -206,6 +206,24 @@ class BreakThroughArea(GameArea):
         self.entity_list.append(entities.Obstacle(pos=(0, self.length)))
 
 
+class GiftArea(GameArea):
+    """
+    gives player a new item and area to practice it with.
+    """
+
+    def __init__(self, determiner, count):
+        super().__init__(seed=determiner)
+        self.difficulty = count
+        self.length = 1000
+        spawn = entities.Spawner.make(determiner, self)
+        spawn.y += 200
+        self.length += 200
+        self.entity_list.append(spawn)
+        self.entity_list.append(entities.Obstacle(pos=(0, 200), health=1))
+        self.entity_list.append(entities.Obstacle(pos=(0, 1200), health=10))
+        self.entity_list.append(entities.ItemEntity(items.make_random_reusable(self.random, (0, 100))))
+
+
 @make_async(with_lock=True)
 def add_game_area():
     # print(game_states.LAST_AREA)
@@ -265,7 +283,7 @@ def add_game_area():
                 # enslaught room
                 pass
             elif typ <= 18:  # 6/64
-                # gift room
+                area = GiftArea(determinator, game_states.LAST_AREA)
                 pass
             elif typ <= 32:  # 14/64
                 area = BreakThroughArea(determinator, game_states.LAST_AREA)

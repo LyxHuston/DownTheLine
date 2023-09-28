@@ -565,7 +565,7 @@ def simple_shield(cooldown: int, duration: int, img: pygame.Surface, pos: tuple[
     )
 
 
-simple_shield_imgs: [images.SIMPLE_SHIELD, images.SPIKY_SHIELD]
+simple_shield_imgs = [images.SIMPLE_SHIELD, images.SPIKY_SHIELD]
 
 
 def random_simple_shield(strength: int, random, pos=None):
@@ -591,12 +591,12 @@ def random_simple_shield(strength: int, random, pos=None):
         simple_shield_imgs[damage].img,
         pos,
         simple_shield_draw,
-        [False, cooldown, cooldown, duration, damage, images.SIMPLE_SHIELD_ICON, []],
+        [False, cooldown, cooldown, duration, damage, images.SIMPLE_SHIELD_ICON.img, []],
         ItemTypes.SimpleShield
     )
 
 
-def make_random_reusable(random):
+def make_random_reusable(random, pos):
     """
     makes a random reusable item (melee weapon, shield, throwable, or )
     :param random:
@@ -604,6 +604,6 @@ def make_random_reusable(random):
     """
     match random.randint(0, 1):
         case 0:
-            return random_simple_stab(game_states.LAST_AREA, random)
+            return random_simple_stab(game_states.LAST_AREA, random, pos)
         case 1:
-            return random_simple_shield(game_states.LAST_AREA, random)
+            return random_simple_shield(game_states.LAST_AREA, random, pos)
