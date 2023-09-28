@@ -925,12 +925,11 @@ class Spawner(Entity):
     @classmethod
     def make(cls, determiner: int, area):
         index = 0
-        while index < len(cls.allowable) - 1:
-            if area.difficulty < cls.allowable[index][1]:
+        while index < len(cls.allowable) - 1 and area.random.randint(0, 1):
+            if area.difficulty < cls.allowable[index][1] or not cls.allowable[index][0].seen:
                 index -= 1
                 break
-            if area.random.randint(0, 1):
-                break
+            index += 1
         entity = cls.allowable[index][0]
         if area.random.randint(0, area.difficulty) > 20 + area.difficulty // 2 + entity.cost ** 2:
             limit = None
