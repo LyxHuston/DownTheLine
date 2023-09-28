@@ -525,6 +525,8 @@ class Archer(Glides):
     first long ranger
     """
 
+    cost = 6
+
     imgs = [images.ARCHER_DRAWN, images.ARCHER_DRAWING, images.ARCHER_RELAXED]
 
     def __init__(self, pos: tuple[int, int], difficulty: int, area):
@@ -577,6 +579,8 @@ class Spawner(Entity):
     imgs = [images.SPAWNER_1, images.SPAWNER_2, images.SPAWNER_3, images.SPAWNER_4]
 
     allowable = ((Slime, 0), (Crawler, 6), (Fencer, 13), (Archer, 16))
+
+    cost = 5
 
     def __init__(self, pos: tuple[int, int], limit: int | None, area, delay: int, entity: Entity, deposit: tuple[int | None, int | None], speed: int):
         super().__init__(self.imgs[0].img if isinstance(self.imgs[0], images.Image) else self.imgs[0], 0, pos)
