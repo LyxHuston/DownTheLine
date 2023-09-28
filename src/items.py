@@ -71,6 +71,8 @@ def action_available(item) -> bool:
     match item.type:
         case ItemTypes.SimpleStab:
             return not item.data_pack[0] and item.data_pack[1] >= item.data_pack[2]
+        case ItemTypes.SimpleShield:
+            return not item.data_pack[0] and item.data_pack[1] >= item.data_pack[2]
 
 
 def in_use(item) -> bool:
@@ -88,6 +90,23 @@ def from_player(item) -> bool:
         case ItemTypes.SimpleShield:
             return isinstance(item.pos, int)
 
+
+def deepcopy_datapack_factory(item) -> tuple[Callable, Callable, pygame.Surface, Any, Callable, Callable, ItemTypes]:
+    """
+    makes a factory function that returns duplicates of the item datapack for separate use
+    :param item: any item
+    :return:
+    """
+    match item.type:
+        case ItemTypes.SimpleStab:
+            contents = (*item.data_pack[:-1], [])
+        case ItemTypes.SimpleShield:
+            contents = (*item.data_pack[:-1], [])
+
+    def factory():
+        return list(*contents)
+
+    return item.action, item.tick, item.img, item.pos, item.draw, factory, item.type
 
 def offset_point_rotated(origin: tuple[int, int], offset: tuple[int, int], rotation: int) -> tuple[int, int]:
     """

@@ -244,6 +244,35 @@ class ItemEntity(Entity):
 import items
 
 
+def make_item_duplicator(item: items.Item):
+    """
+    creates a class that just duplicates the given items
+    :param item:
+    :return:
+    """
+
+    action, tick, img, pos, draw, data_pack_factory, typ = items.deepcopy_datapack_factory(item)
+
+    class ItemDuplicator(ItemEntity):
+
+        @classmethod
+        def make(cls, determiner: int, area):
+            return cls(items.Item(
+                action,
+                tick,
+                img,
+                pos,
+                draw,
+                data_pack_factory(),
+                typ
+            ))
+
+    return ItemDuplicator
+
+
+
+
+
 class Glides(Entity):
     """
     an entity that has the glide action.  typically for knockback
