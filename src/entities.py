@@ -153,7 +153,7 @@ class Entity(game_structures.Body):
         pass
 
 
-def make_invulnerable_version(entity_class):
+def make_invulnerable_version(entity_class: type(Entity)) -> type(Entity):
     """
     make invulnerable subclass of an entity class
     :param entity_class: an entity subclass

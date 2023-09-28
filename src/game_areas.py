@@ -225,6 +225,61 @@ class GiftArea(GameArea):
         self.entity_list.append(entities.ItemEntity(items.make_random_reusable(self.random, (0, experiment_area // 2))))
 
 
+class EnslaughtArea(GameArea):
+    """
+    game area that is just surviving a bunch of enemies
+    """
+
+    def __init__(self, determiner, count):
+        super().__init__(seed=determiner)
+        self.difficulty = count
+        self.length = game_states.HEIGHT * 4
+        self.entity_list.append(entities.InvulnerableObstacle(pos=(0, self.length)))
+        self.state = 0  # 0: not started 1: in progress 2: finished, killing off entities
+        self.timer = 30 * 60 + 120 * math.floor(math.log2(count))
+        self.max = self.timer
+        self.cooldown_ticks = 0
+
+    def draw(self):
+        super(EnslaughtArea, self).draw()
+        if self.state == 1:
+            width = 3 * game_states.WIDTH // 4 * self.timer / self.max
+            pygame.draw.line(
+                game_structures.SCREEN,
+                (255, 255, 255),
+                (game_states.WIDTH // 2 - width // 2),
+                (game_states.WIDTH // 2 + width // 2),
+                20
+            )
+
+    def tick(self):
+        super(EnslaughtArea, self).tick()
+        match self.state:
+            case 0:
+                if game_states.DISTANCE > self.start_coordinate + self.length // 2:
+                    self.state = 1
+                    self.entity_list.append(entities.InvulnerableObstacle(pos=(0, self.start_coordinate)))
+                    self.cooldown_ticks = 600
+            case 1:
+                self.timer -= 1
+                if self.cooldown_ticks <= 0:
+                    self.cooldown_ticks = 600
+                    self.event()
+                self.cooldown_ticks -= 1
+                if self.timer <= 0:
+                    self.state = 2
+                    self.cooldown_ticks = 0
+                    del self.entity_list[0]
+            case 2:
+                if self.cooldown_ticks <= 0:
+                    self.cooldown_ticks = 30
+                    for entity in self.entity_list:
+                        entity.health -= 1
+                self.cooldown_ticks -= 1
+
+    def event(self):
+        pass
+
 @make_async(with_lock=True)
 def add_game_area():
     # print(game_states.LAST_AREA)
