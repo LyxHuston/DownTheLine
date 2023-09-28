@@ -20,6 +20,7 @@ entities
 """
 import pygame
 
+import game_areas
 import game_states
 import game_structures
 import images
@@ -316,7 +317,7 @@ class Crawler(Glides):
     crawls towards the player.  Slow, sometimes, but always a threat.
     """
 
-    frame_change_frequency = 16
+    frame_change_frequency = 2
 
     cost = 3
 
@@ -365,15 +366,36 @@ class Crawler(Glides):
             images.CRAWLER_3.img,
             pygame.transform.flip(images.CRAWLER_2.img, False, True),
             pygame.transform.flip(images.CRAWLER_1.img, False, True),
-            pygame.transform.flip(images.CRAWLER_2.img, True, True),
+            pygame.transform.flip(images.CRAWLER_2.img, True, False),
             images.CRAWLER_3.img,
-            pygame.transform.flip(images.CRAWLER_2.img, True, False)
+            pygame.transform.flip(images.CRAWLER_2.img, True, True)
         ]
 
     @classmethod
     def make(cls, determiner: int, area):
-        return cls((0, area.random.randint(area.length // 3, area.length)), area.random.randint(1, area.difficulty), area)
+        return cls((0, area.random.randint(area.length // 3, area.length)), area.random.randint(1, min(area.difficulty // 4, 5)), area)
 
 
 if __name__ == "__main__":
-    slime = Slime((0, 20))
+    import game_areas
+
+    Crawler.first_seen(Crawler((0, 0), 1, game_areas.GameArea()))
+    frame = 0
+    direction = -1
+    screen = pygame.display.set_mode((100, 100))
+    clock = pygame.time.Clock()
+    pygame.display.init()
+    running = True
+    while running:
+        for event in pygame.event.get():
+            if event.type is pygame.QUIT:
+                running = False
+                break
+        clock.tick(1)
+        screen.fill((0, 0, 0))
+        screen.blit(
+            Crawler.imgs[frame],
+            (0, 0)
+        )
+        pygame.display.flip()
+        frame = (frame + direction) % 8

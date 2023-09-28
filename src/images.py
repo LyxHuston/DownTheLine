@@ -57,8 +57,8 @@ SLIME_4 = Image("resources/entities/slime/slime_4.png")
 
 
 CRAWLER_1 = Image("resources/entities/crawler/crawler_extended.png")
-CRAWLER_2 = Image("resources/entities/crawler/crawler_mid_step.png")
-CRAWLER_3 = Image("resources/entities/crawler/crawler_retracting.png")
+CRAWLER_2 = Image("resources/entities/crawler/crawler_retracting.png")
+CRAWLER_3 = Image("resources/entities/crawler/crawler_mid_step.png")
 
 
 # items
