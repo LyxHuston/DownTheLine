@@ -283,7 +283,10 @@ class Slime(Glides):
 
     def hit(self, damage: int, item):
         self.health -= damage
-        self.start_glide(damage, 90, 1, ((self.y - game_states.DISTANCE) > 0) * 2 - 1)
+        if isinstance(item.pos, int):
+            self.start_glide(damage, 90, 1, ((self.y - game_states.DISTANCE) > 0) * 2 - 1)
+        else:
+            self.start_glide(damage, 90, 1, ((self.y - item.pos[1]) > 0) * 2 - 1)
 
     def tick(self):
         self.frame = (self.frame + 1) % (4 * self.frame_change_frequency)
@@ -341,7 +344,10 @@ class Crawler(Glides):
 
     def hit(self, damage: int, item):
         self.health -= damage
-        self.start_glide(damage, 90, 1, ((self.y - game_states.DISTANCE) > 0) * 2 - 1)
+        if isinstance(item.pos, int):
+            self.start_glide(damage, 90, 1, ((self.y - game_states.DISTANCE) > 0) * 2 - 1)
+        else:
+            self.start_glide(damage, 90, 1, ((self.y - item.pos[0]) > 0) * 2 - 1)
 
     def tick(self) -> bool:
         # print(self.y, self.health)
@@ -396,6 +402,8 @@ class Spawner(Entity):
 
     def __init__(self, pos: tuple[int, int], limit: int | None, area, delay: int, entity: Entity, deposit: tuple[int | None, int | None], speed: int):
         super().__init__(self.imgs[0].img if isinstance(self.imgs[0], images.Image) else self.imgs[0], 0, pos)
+        self.health = 3
+        self.max_health = 3
         self.area = area
         self.limit = limit
         self.__check: int = 0
@@ -469,7 +477,7 @@ class Spawner(Entity):
         self.management_tick()
         self.frame = (self.frame + 1) % (4 * self.frame_change_frequency * self.switch_ticks)
         self.img = self.imgs[self.frame // (self.frame_change_frequency * self.switch_ticks)]
-        return True
+        return self.health > 0
 
     def transfer(self, area):
         if self.__list is None:
