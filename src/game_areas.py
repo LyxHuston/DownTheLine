@@ -39,12 +39,15 @@ class GameArea:
     def end_coordinate(self):
         return self.start_coordinate + self.length
 
-    def __init__(self, length: int = 0):
+    def __init__(self, length: int = 0, seed: int = None):
         self.start_coordinate = max(game_states.RECORD_DISTANCE + game_states.HEIGHT, game_states.LAST_AREA_END)
         self.length = length
         self.initialized = False
         self.entity_list = []
-        self.random = random.Random()
+        if seed is None:
+            self.random = random.Random()
+        else:
+            self.random = random.Random(seed)
 
     seen = False
 
@@ -95,11 +98,13 @@ class BasicArea(GameArea):
     a basic fight area.  Fight a few monsters and continue.
     """
 
-    allowable_thresh_holds = [(entities.Slime, 0)]
+    # allowable_thresh_holds = [(entities.Slime, 0), (entities.Crawler, 5)]
+    allowable_thresh_holds = [(entities.Crawler, 0)]
 
     def __init__(self, determiner, count):
-        super().__init__()
+        super().__init__(determiner)
         self.length = 200 + math.floor(math.log2(count)) * 100
+        self.difficulty = count
         allowance = count
         allowable_entities = []
         for entry in self.allowable_thresh_holds:
@@ -109,6 +114,7 @@ class BasicArea(GameArea):
         num = 3
         while allowance > 0:
             index = (determiner % num) % len(allowable_entities)
+            num += 1
             entity = allowable_entities[index][0]
             if entity.seen:
                 allowance -= entity.cost + allowable_entities[index][1]
@@ -118,9 +124,9 @@ class BasicArea(GameArea):
                 self.entity_list.clear()
                 self.length = 200
                 add = entity.make(determiner, self)
-                add.y = self.start_coordinate + self.length // 2
+                add.y = self.length // 2
                 self.entity_list.append(add)
-                self.entity_list.append(entities.Obstacle(pos=(0, self.end_coordinate)))
+                self.entity_list.append(entities.Obstacle(pos=(0, self.length)))
                 break
 
 
