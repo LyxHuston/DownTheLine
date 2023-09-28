@@ -20,7 +20,36 @@ import threading
 from typing import Callable, Any, Union
 import traceback
 import logging
-from sys import argv
+from sys import argv, stderr
+
+
+class ThreadWithResult(threading.Thread):
+
+    @property
+    def result(self):
+        if not self.__finished:
+            threading.Thread.join(self)
+        return self.__result
+
+    def __init__(self, group=None, target=None, name=None,
+                 args=(), kwargs=None):
+        if kwargs is None:
+            kwargs = dict()
+        threading.Thread.__init__(self, group, target, name, args, kwargs)
+        self.__result = None
+        self.__finished = False
+
+    def run(self):
+        if self._target is None:
+            return
+        try:
+            self.__result = self._target(*self._args, **self._kwargs)
+        except Exception as exc:
+            print(f'{type(exc).__name__}: {exc}', file=stderr)
+
+    def join(self, *args):
+        super(ThreadWithResult, self).join(*args)
+        return self.__result
 
 
 def make_async(with_lock: Union[threading.Lock, bool] = None) -> Callable:
@@ -45,7 +74,7 @@ def make_async(with_lock: Union[threading.Lock, bool] = None) -> Callable:
                 with_lock.release()
 
         def async_func(*args, **kwargs) -> threading.Thread:
-            thread = threading.Thread(target=res_func, args=args, kwargs=kwargs)
+            thread = ThreadWithResult(target=res_func, args=args, kwargs=kwargs)
             thread.start()
             return thread
 
