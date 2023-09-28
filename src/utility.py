@@ -145,6 +145,7 @@ def tick() -> None:
         if event.type == pygame.QUIT:
             game_states.RUNNING = False
             event_handled = True
+            pygame.quit()
         elif event.type == pygame.KEYDOWN:
             if game_structures.TYPING.typing:
                 event_handled = True
