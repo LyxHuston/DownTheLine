@@ -1411,8 +1411,9 @@ class Body:
 
     @rotation.setter
     def rotation(self, val: int):
-        self.__rotation = val
-        self._rotated_img = None
+        if val != self.__rotation:
+            self.__rotation = val
+            self._rotated_img = None
 
     @property
     def img(self):
@@ -1466,6 +1467,8 @@ class Body:
 
     def __init__(self, img: pygame.Surface, rotation: int, pos: tuple[int, int]):
         self.__original_img = img
+        self._rotated_img = None
+        self.__rotation = 0
         self.rotation = rotation
         self.__x_frozen = False
         self.__y_frozen = False
