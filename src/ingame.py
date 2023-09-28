@@ -28,7 +28,10 @@ def tick():
         last_dash_time -= loop_counter
         last_press_for_dash -= loop_counter
     pressed = pygame.key.get_pressed()
-    move = 10 * (pressed[Inputs.up_input] - pressed[Inputs.down_input])
+    direction = pressed[Inputs.up_input] - pressed[Inputs.down_input]
+    if abs(direction) == 1:
+        game_states.LAST_DIRECTION = direction
+    move = 10 * direction
     game_states.DISTANCE += move
     if game_states.DISTANCE < game_states.BOTTOM:
         game_states.DISTANCE = game_states.BOTTOM

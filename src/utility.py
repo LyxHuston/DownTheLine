@@ -21,34 +21,26 @@ def make_async(with_lock: Union[threading.Lock, bool] = None) -> Callable:
     :return:
     """
 
-    if with_lock is None:
-        def inner_make_async(func: Callable):
-            def async_func(*args, **kwargs):
-                thread = threading.Thread(target=func, args=args, kwargs=kwargs)
-                thread.start()
+    def inner_make_async(func: Callable):
+        nonlocal with_lock
 
-            return async_func
-    elif with_lock is True:
-        lock = threading.Lock()
+        if with_lock is None:
+            res_func = func
+        else:
+            if with_lock is True:
+                with_lock = threading.Lock()
 
-        def inner_make_async(func: Callable):
-            def async_func(*args, **kwargs):
-                lock.acquire()
-                thread = threading.Thread(target=func, args=args, kwargs=kwargs)
-                thread.start()
-                lock.release()
-
-            return async_func
-
-    else:
-        def inner_make_async(func: Callable):
-            def async_func(*args, **kwargs):
+            def res_func(*args, **kwargs):
                 with_lock.acquire()
-                thread = threading.Thread(target=func, args=args, kwargs=kwargs)
-                thread.start()
+                func(*args, **kwargs)
                 with_lock.release()
 
-            return async_func
+        def async_func(*args, **kwargs) -> threading.Thread:
+            thread = threading.Thread(target=res_func, args=args, kwargs=kwargs)
+            thread.start()
+            return thread
+
+        return async_func
 
     return inner_make_async
 
@@ -175,7 +167,7 @@ def tick() -> None:
                         game_structures.BUTTONS.set_keyed()
                         button_hover_keyed = True
                     if button_hover_keyed:
-                        game_structures.ALERTS.speak(game_structures.BUTTONS.get_hover_keyed_text())
+                        game_structures.ALERTS.speak.add(game_structures.BUTTONS.get_hover_keyed_text())
                 if event.key == pygame.K_RETURN:
                     event_handled = True
                     game_structures.BUTTONS.do_key()
