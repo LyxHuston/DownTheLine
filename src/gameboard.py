@@ -50,6 +50,7 @@ def tick(do_tick: bool = True):
                     entity.transfer(game_structures.AREA_QUEUE[1])
                     game_structures.AREA_QUEUE[1].entity_list.append(entity)
             del game_structures.AREA_QUEUE[0]
+            game_states.AREAS_PASSED += 1
             add_game_area()
         if game_states.SHAKE_DURATION > 0:
             game_states.SHAKE_DURATION -= 1
