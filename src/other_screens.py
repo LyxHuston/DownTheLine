@@ -65,7 +65,7 @@ def lost():
             outline_color=(255, 255, 255)
         ))
         game_structures.BUTTONS.add_button(game_structures.Button.make_text_button(
-            f"You traveled {game_states.DISTANCE} units",
+            f"You traveled {game_states.RECORD_DISTANCE} units",
             40,
             None,
             (game_states.WIDTH // 2 - 300, 300),
