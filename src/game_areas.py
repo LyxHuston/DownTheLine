@@ -19,6 +19,8 @@ handles making and managing game areas
 """
 import random
 
+import pygame
+
 import game_structures
 import game_states
 from utility import make_async
@@ -26,6 +28,8 @@ import entities
 import items
 import images
 import math
+from collections import deque
+
 
 
 class GameArea:
@@ -44,10 +48,15 @@ class GameArea:
         self.length = length
         self.initialized = False
         self.entity_list = []
+        self.particle_args: tuple[list[images.Image] | list[pygame.Surface], int, int] = (
+            images.VOID_PARTICLES, 30, 120
+        )
+        self.particle_list = set()
         if seed is None:
             self.random = random.Random()
         else:
             self.random = random.Random(seed)
+        self.spawn_end = 0  # track which end to spawn a particle on
 
     seen = False
 
@@ -63,18 +72,50 @@ class GameArea:
         pass
 
     def draw(self):
+        remove_list = deque()
+        for particle in self.particle_list:
+            if particle.tick():
+                particle.draw()
+            else:
+                remove_list.append(particle)
+        for particle in remove_list:
+            self.particle_list.remove(particle)
         for entity in self.entity_list:
             entity.draw()
 
+    region_length = 32000
+    taper_length = 100
+
     def tick(self):
+        region = 0
+        while region * self.region_length + self.taper_length < self.length:  # spawn particles for middle regions
+            height = self.start_coordinate + self.random.randint(0, self.region_length - 1) + region * self.region_length
+            if height > self.end_coordinate - self.taper_length // 2:
+                break
+            self.particle_list.add(entities.Particle(
+                *self.particle_args,
+                (
+                    self.random.randint(-game_states.WIDTH // 2, game_states.WIDTH // 2),
+                    height
+                )
+            ))
+            region += 1
+        self.spawn_end = not self.spawn_end
+        if self.random.randint(0, self.region_length // self.taper_length) == 0:
+            self.particle_list.add(entities.Particle(
+                *self.particle_args,
+                (
+                    self.random.randint(-game_states.WIDTH // 2, game_states.WIDTH // 2),
+                    self.start_coordinate + self.length // 2 + (self.spawn_end * 2 - 1) * (
+                            self.length +
+                            self.taper_length - (math.sqrt(1 + 8 * self.random.randint(0, (self.taper_length + 1) * self.taper_length // 2) - 1) - 1)
+                    ) // 2
+                )
+            ))
+        # print(len(self.particle_list))
         i = 0
         while i < len(self.entity_list):
-            entity = self.entity_list[i]
-            if isinstance(entity, items.Item):
-                res = entity.tick(entity)
-            else:
-                res = entity.tick()
-            if res:
+            if self.entity_list[i].tick():
                 i += 1
             else:
                 del self.entity_list[i]

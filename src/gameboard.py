@@ -73,6 +73,13 @@ def tick(do_tick: bool = True):
         (game_states.WIDTH / 2 + game_states.X_DISPLACEMENT, 0),
         3
     )
+    for i in range(len(game_structures.AREA_QUEUE)):
+        area = game_structures.AREA_QUEUE[i]
+        if not area.initialized:
+            break
+        if do_tick:
+            area.tick()
+        area.draw()
     game_structures.SCREEN.blit(
         game_structures.FONTS[64].render(
             str(game_states.RECORD_DISTANCE),
@@ -106,10 +113,3 @@ def tick(do_tick: bool = True):
         ),
         (game_structures.to_screen_x(-32), game_structures.to_screen_y(game_states.DISTANCE + 32))
     )
-    for i in range(len(game_structures.AREA_QUEUE)):
-        area = game_structures.AREA_QUEUE[i]
-        if not area.initialized:
-            break
-        if do_tick:
-            area.tick()
-        area.draw()

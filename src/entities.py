@@ -876,6 +876,43 @@ class Spawner(Entity):
                 self.__class__.imgs[i] = self.__class__.imgs[i].img
 
 
+class Particle(Entity):
+    """
+    a basic particle.  Inherits Entity for draw assistance.
+    """
+
+    __id = 0
+
+    def __init__(self, imgs: list[images.Image] | list[pygame.Surface], tick_rate: int, lifespan: int, pos: tuple[int, int], momentum: tuple[int, int] = (0, 0)):
+        self.imgs: list[pygame.Surface] = imgs
+        if isinstance(self.imgs[0], images.Image):
+            for i in range(len(self.imgs)):
+                self.imgs[i] = self.imgs[i].img
+        super().__init__(self.imgs[0], 0, pos)
+        self.ticks_per_frame_change = tick_rate
+        self.frame_loop = len(self.imgs) * tick_rate
+        self.frame = 0
+        self.momentum = momentum
+        self.lifespan = lifespan
+        self.__id = Particle.__id
+        Particle.__id += 1
+
+    def tick(self):
+        self.lifespan -= 1
+        self.frame = (self.frame + 1) % self.frame_loop
+        self.img = self.imgs[self.frame // self.ticks_per_frame_change]
+        self.x += self.momentum[0]
+        self.y += self.momentum[1]
+        return self.lifespan > 0
+
+    def __eq__(self, other):
+        if self is other:
+            return True
+
+    def __hash__(self):
+        return self.__id
+
+
 if __name__ == "__main__":
     import items
 

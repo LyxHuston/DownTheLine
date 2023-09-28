@@ -40,6 +40,7 @@ class Image:
         self.path = path
         self.__img = None
 
+
 # there is no case where a player image is not required on startup of the game, so it is not registered here
 # same with dash icon
 
@@ -48,7 +49,6 @@ class Image:
 WALL_FULL = Image("resources/entities/obstacle/wall_full.png")
 WALL_HALF = Image("resources/entities/obstacle/wall_half.png")
 WALL_FRAGILE = Image("resources/entities/obstacle/wall_fragile.png")
-
 
 SLIME_1 = Image("resources/entities/slime/slime_1.png")
 SLIME_2 = Image("resources/entities/slime/slime_2.png")
@@ -88,6 +88,11 @@ SIMPLE_SPEAR = Image("resources/items/simple_spear.png")
 
 SIMPLE_STAB_ICON = Image("resources/items/icons/simple_stab.png")
 
+# particles
+VOID_PARTICLES = [Image("resources/particles/basic_void/basic_void_1.png"),
+                  Image("resources/particles/basic_void/basic_void_2.png"),
+                  Image("resources/particles/basic_void/basic_void_3.png"),
+                  Image("resources/particles/basic_void/basic_void_4.png")]
 
 if __name__ == "__main__":
     img = name = val = None
@@ -98,3 +103,11 @@ if __name__ == "__main__":
                 print(f"Image {name} loaded.  {img.get_pitch() * img.get_height()} bytes.")
             except Exception:
                 print(f"Loading image {name} failed.")
+        elif isinstance(val, list):
+            for nest_val in val:
+                if isinstance(val, Image):
+                    try:
+                        img = val.img
+                        print(f"Image {name} loaded.  {img.get_pitch() * img.get_height()} bytes.")
+                    except Exception:
+                        print(f"Loading image {name} failed.")
