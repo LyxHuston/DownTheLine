@@ -78,6 +78,15 @@ def start():
     # print(sys.int_info)
     # print(game_states.SEED)
 
+    import entities
+    for attr_name, attr_value in entities.__dict__:
+        if issubclass(attr_value, entities.Entity):
+            attr_value.seen = False
+    import game_areas
+    for attr_name, attr_value in game_areas.__dict__:
+        if issubclass(attr_value, game_areas.GameArea):
+            attr_value.seen = False
+
     game_structures.AREA_QUEUE.clear()
     add_game_area().join()
     for i in range(game_states.AREA_QUEUE_MAX_LENGTH - 1):
