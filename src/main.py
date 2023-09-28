@@ -28,6 +28,25 @@ import ingame
 import random
 import sys
 
+
+def check_flags(flags: list[str], error_on_duplicates: bool = False):
+    """
+    checks for if flags exist, and if so where.  If appears twice (or different versions) errors
+    :return: index of flag
+    """
+    index = 0
+    for flag in flags:
+        if flag in sys.argv:
+            if index:
+                raise SyntaxError("Duplicate flags")
+            if sys.argv.count(flag) > 0:
+                raise SyntaxError("Duplicate flags")
+            index = sys.argv.index(flag)
+            if not error_on_duplicates:
+                return index
+    return index
+
+
 if len(sys.argv) > 1:
     match sys.argv[1]:
         case "testing":
@@ -36,10 +55,26 @@ if len(sys.argv) > 1:
         case _:
             backdrop = (0, 0, 0)
             game_structures.SCREEN = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
-    if "--autosave" in sys.argv:
+    flag = check_flags(["--autosave", "-a"])
+    if flag:
         game_states.AUTOSAVE = True
-    if "--invulnerable" in sys.argv:
+    flag = check_flags(["--invulnerable", "-i"])
+    if flag:
         game_states.INVULNERABLE = True
+    flag = check_flags(["--seed", "-s"], error_on_duplicates=True)
+    if flag:
+        game_states.CUSTOM_SEED = True
+        try:
+            game_states.SEED = int(sys.argv[flag + 1])
+        except IndexError:
+            print("Provide a seed.")
+            exit(2)
+        except ValueError:
+            print("The seed must be an integer.")
+            exit(2)
+    flag = check_flags(["--print_seed", "-p"])
+    if flag:
+        game_states.PRINT_SEED = True
 pygame.display.set_caption("Down the Line")
 game_states.WIDTH, game_states.HEIGHT = game_structures.SCREEN.get_size()
 game_states.CAMERA_THRESHOLDS = (min(100, round(game_states.HEIGHT / 4)), min(500, round(game_states.HEIGHT / 2)))
@@ -47,7 +82,10 @@ game_states.CAMERA_THRESHOLDS = (min(100, round(game_states.HEIGHT / 4)), min(50
 
 def start():
     game_structures.BUTTONS.clear()
-    game_states.SEED = random.randrange(2 ** sys.int_info.bits_per_digit)
+    if not game_states.CUSTOM_SEED:
+        game_states.SEED = random.randrange(2 ** sys.int_info.bits_per_digit)
+    if game_states.PRINT_SEED:
+        print("The seed is:", game_states.SEED)
 
     # game_structures.CUSTOM_EVENT_CATCHERS.append(game_structures.ALERTS.catch_event)  # (commented out because this one should never be removed)
     game_structures.CUSTOM_EVENT_CATCHERS.append(ingame.event_catcher)
