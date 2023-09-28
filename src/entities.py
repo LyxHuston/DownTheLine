@@ -15,12 +15,6 @@ def glide_player(speed: int, duration: int, taper: int, direction: int):
     game_states.TAPER_AMOUNT = taper
     game_states.GLIDE_DIRECTION = direction
 
-def all_entities():
-    res = []
-    for area in game_structures.initialized_areas():
-        res.extend(area.entity_list)
-    return res
-
 
 class Entity(game_structures.Body):
     """
@@ -159,7 +153,7 @@ class Obstacle(Entity):
         if abs(self.x) < 128 + 32 and abs(game_states.DISTANCE - self.y) < 56:
             game_states.DISTANCE = self.y + ((game_states.DISTANCE - self.y > 0) * 2 - 1) * 56
         rect = self.img.get_rect(center=self.pos)
-        for entity in all_entities():
+        for entity in game_structures.all_entities():
             if entity is self:
                 continue
             if not isinstance(entity, Entity):

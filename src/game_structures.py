@@ -1466,3 +1466,10 @@ def get_last_initialized():
         if not area.initialized:
             return res
         res = area
+
+
+def all_entities():
+    res = []
+    for area in initialized_areas():
+        res.extend(area.entity_list)
+    return res

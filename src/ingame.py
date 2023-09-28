@@ -83,9 +83,7 @@ def event_catcher(event: pygame.event.Event) -> bool:
 
 
 def item_input_catch(num: int) -> None:
-    for area in game_structures.AREA_QUEUE:
-        if not area.initialized:
-            break
+    for area in game_structures.initialized_areas():
         for i in range(len(area.entity_list)):
             entity = area.entity_list[i]
             if not isinstance(entity, items.Item):

@@ -241,17 +241,14 @@ def simple_stab_tick(item: Item):
             16 * (item.pos * 2 - 1) * game_states.LAST_DIRECTION,
             game_states.DISTANCE + (20 + item.img.get_height() // 2) * game_states.LAST_DIRECTION
         ))
-        for area in game_structures.AREA_QUEUE:
-            if not area.initialized:
-                break
-            for entity in area.entity_list:
-                if not isinstance(entity, entities.Entity):
-                    continue
-                if entity in item.data_pack[-1]:
-                    continue
-                if rect.colliderect(entity.rect):
-                    entity.hit(item.data_pack[4], item)
-                    item.data_pack[-1].append(entity)
+        for entity in game_structures.all_entities():
+            if not isinstance(entity, entities.Entity):
+                continue
+            if entity in item.data_pack[-1]:
+                continue
+            if rect.colliderect(entity.rect):
+                entity.hit(item.data_pack[4], item)
+                item.data_pack[-1].append(entity)
     return True
 
 
