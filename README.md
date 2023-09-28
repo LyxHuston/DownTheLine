@@ -13,6 +13,6 @@ Development is currently ongoing, and I hope to release on Steam in under a mont
 I am using multiple libraries with separate licensing.
 Links to their source code are below, along with what licenses they use.
 ______________________________________________________________________
-[![Pygame](<https://img.shields.io/badge/LGPLv2.0-brightgreen.svg>)](https://github.com/pygame/pygame)
-[![Certifi](<https://img.shields.io/badge/MPL--2.0-brightgreen.svg>)](https://github.com/certifi/python-certifi)
+[![Pygame](<https://img.shields.io/badge/Pygame-LGPLv2.0-brightgreen.svg>)](https://github.com/pygame/pygame)
+[![Certifi](<https://img.shields.io/badge/Certifi-MPL--2.0-brightgreen.svg>)](https://github.com/certifi/python-certifi)
 ______________________________________________________________________
