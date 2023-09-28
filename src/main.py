@@ -79,7 +79,6 @@ def start():
     # print(game_states.SEED)
 
     game_structures.AREA_QUEUE.clear()
-    print(game_states.LAST_AREA)
     add_game_area().join()
     for i in range(game_states.AREA_QUEUE_MAX_LENGTH - 1):
         add_game_area()

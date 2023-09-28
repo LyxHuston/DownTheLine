@@ -50,7 +50,6 @@ class GameArea:
 
     def enter(self):
         if not self.__class__.seen:
-            print("first seen")
             self.__class__.seen = True
             self.start_tutorial()
         for entity in self.entity_list:

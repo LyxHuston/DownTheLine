@@ -56,7 +56,6 @@ def lost():
             next_tick_max += 0.5
     elif fade_counter == 255:
         import main
-        print("adding end screen buttons")
         game_structures.BUTTONS.add_button(game_structures.Button.make_text_button(
             "You Died",
             200,

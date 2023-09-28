@@ -46,7 +46,8 @@ def tick(do_tick: bool = True):
                 break
         if game_structures.AREA_QUEUE[0].end_coordinate < game_states.CAMERA_BOTTOM:
             for entity in game_structures.AREA_QUEUE[0].entity_list:
-                if entity.pos[0] > game_states.BOTTOM:
+                if entity.pos[0] > game_structures.AREA_QUEUE[0].end_coordinate:
+                    # print("Entity transferred")
                     game_structures.AREA_QUEUE[1].entity_list.append(entity)
             del game_structures.AREA_QUEUE[0]
             add_game_area()
