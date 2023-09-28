@@ -111,9 +111,11 @@ def deepcopy_datapack_factory(item) -> tuple[Callable, Callable, pygame.Surface,
             contents = (*item.data_pack[:-1], [])
         case ItemTypes.SimpleShield:
             contents = (*item.data_pack[:-1], [])
+        case ItemTypes.SimpleThrowable:
+            contents = (*item.data_pack[:-1], images.SIMPLE_THROWABLE_ICON.img)
 
     def factory():
-        return list(*contents)
+        return list(contents)
 
     return item.action, item.tick, item.img, item.pos, item.draw, factory, item.type
 
