@@ -706,11 +706,11 @@ def random_simple_bomb(random, pos):
             speed = 5 * random.randint(1, 3)
             taper = 0
             glide_duration = 0
-            delay = 15 * random.randint(3, 5)
+            delay = 15 * random.randint(3, 4)
         case _:  # archetype.1 3: sitter
             speed = 5 * random.randint(2, 4)
-            taper = 10
-            glide_duration = 5 * random.randint(3, 5)
+            taper = 1
+            glide_duration = 5 * random.randint(1, 2)
             delay = glide_duration + 60
     match random.randint(0, 2):
         case 0:  # archetype.2 1: pinpoint nuke
