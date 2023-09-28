@@ -1597,5 +1597,4 @@ def make_save():
             copy.copy(HANDS[0]),
             copy.copy(HANDS[1])
         ]
-        print(game_states.HANDS_SAVE)
         game_states.SAVE_DATA = game_states.__dict__
