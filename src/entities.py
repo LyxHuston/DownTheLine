@@ -888,6 +888,7 @@ class Lazer(Entity):
                     end2 = self.ends[i]
                     intercept = end2.y - end2.x * (end1.y - end2.y) / (end1.x - end2.x)  # hit left side
                     if abs(intercept - game_states.DISTANCE) < 32:
+                        game_structures.begin_shake(12, (8, 8), (-2, 3))
                         self.hit = True
                         break
                 if self.hit:
