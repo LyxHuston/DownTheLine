@@ -85,8 +85,13 @@ ARROW = Image("resources/entities/projectiles/arrow.png")
 # items
 SIMPLE_SWORD = Image("resources/items/simple_sword.png")
 SIMPLE_SPEAR = Image("resources/items/simple_spear.png")
+SIMPLE_SHIELD = Image("resources/items/simple_shield.png")
+SPIKY_SHIELD = Image("resources/items/spiky_shield.png")
 
+
+# icons
 SIMPLE_STAB_ICON = Image("resources/items/icons/simple_stab.png")
+SIMPLE_SHIELD_ICON = Image("resources/items/icons/simple_shield.png")
 
 # particles
 VOID_PARTICLES = [Image("resources/particles/basic_void/basic_void_1.png"),

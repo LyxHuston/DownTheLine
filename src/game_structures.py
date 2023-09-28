@@ -29,6 +29,7 @@ import pygame.mixer
 from pygame.event import custom_type
 import enum
 from collections import deque
+
 import game_states
 import utility
 from gtts import gTTS
@@ -57,8 +58,23 @@ def begin_shake(duration: int, maximum: tuple[int, int], change_per_tick: tuple[
     game_states.X_CHANGE, game_states.Y_CHANGE = change_per_tick
 
 
-def deal_damage(damage: int):
+def deal_damage(damage: int, source):
     if game_states.INVULNERABILITY_LEFT == 0:
+        for hand in HANDS:
+            if hand is None:
+                continue
+            if hand.type is items.ItemTypes.SimpleShield:
+                if hand.data_pack[0]:
+                    if isinstance(source, entities.Entity):
+                        if (source.y > game_states.DISTANCE) != (game_states.LAST_DIRECTION == -1):
+                            return
+                        continue
+                    if isinstance(source.pos, int):
+                        continue
+                    elif isinstance(source.pos[0], entities.Entity):
+                        if (source.pos[0].y > game_states.DISTANCE) != (game_states.LAST_DIRECTION == -1):
+                            return
+                        continue
         game_states.HEALTH -= damage
         game_states.INVULNERABILITY_LEFT = damage * 2 + 1
 
@@ -1430,7 +1446,7 @@ class Body:
     @rotation.setter
     def rotation(self, val: int):
         if val != self.__rotation:
-            self.__rotation = val
+            self.__rotation = val % 360
             self._rotated_img = None
 
     @property
@@ -1557,3 +1573,6 @@ def all_entities():
     for area in initialized_areas():
         res.extend(area.entity_list)
     return res
+
+import entities
+import items

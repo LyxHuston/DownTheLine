@@ -63,6 +63,8 @@ def find_range(item) -> int:
     match item.type:
         case ItemTypes.SimpleStab:
             return item.img.get_height()
+        case ItemTypes.SimpleShield:
+            return item.img.get_width()
 
 
 def action_available(item) -> bool:
@@ -75,6 +77,16 @@ def in_use(item) -> bool:
     match item.type:
         case ItemTypes.SimpleStab:
             return item.data_pack[0]
+        case ItemTypes.SimpleShield:
+            return item.data_pack[0]
+
+
+def from_player(item) -> bool:
+    match item.type:
+        case ItemTypes.SimpleStab:
+            return isinstance(item.pos, int)
+        case ItemTypes.SimpleShield:
+            return isinstance(item.pos, int)
 
 
 def offset_point_rotated(origin: tuple[int, int], offset: tuple[int, int], rotation: int) -> tuple[int, int]:
@@ -303,6 +315,46 @@ def simple_stab_draw(item: Item):
         )
 
 
+@draw_on_ground_if_not_held
+@add_simple_duration_icon
+@draw_by_side_if_not_used
+def simple_shield_draw(item: Item):
+    """
+    simple draw function for a stabbing item.  In front of player if stabbing,
+    beside player if not
+    :param item:
+    :return:
+    """
+    if isinstance(item.pos, int):
+        game_structures.SCREEN.blit(
+            pygame.transform.rotate(item.img, game_states.LAST_DIRECTION * 90),
+            (
+                game_structures.to_screen_x(
+                    16 * (item.pos * 2 - 1) * game_states.LAST_DIRECTION) - item.img.get_height() // 2,
+                game_structures.to_screen_y(game_states.DISTANCE + (
+                        20 + item.img.get_width() // 2) * game_states.LAST_DIRECTION) - item.img.get_width() // 2
+            )
+        )
+    else:
+        ent = item.pos[0]
+        hand = item.pos[1] * 2 - 1
+        rotated = pygame.transform.rotate(
+            pygame.transform.flip(item.img, item.pos[1] == 0, False),
+            ent.rotation + 270
+        )
+        game_structures.SCREEN.blit(
+            rotated,
+            game_structures.to_screen_pos(offset_point_rotated(
+                (
+                    ent.x - rotated.get_width() // 2,
+                    ent.y + rotated.get_height() // 2
+                ),
+                (hand * ent.width // 8, ent.height // 2 + rotated.get_height() // 2),
+                ent.rotation
+            ))
+        )
+
+
 def simple_cooldown_action(item: Item):
     """
     a simple action with a cooldown
@@ -361,16 +413,6 @@ def simple_stab_tick(item: Item):
                 ),
                 item.pos[0].rotation
             ))
-            # pygame.draw.rect(
-            #     game_structures.SCREEN,
-            #     (128, 128, 128),
-            #     rect
-            # )
-            # pygame.draw.rect(
-            #     game_structures.SCREEN,
-            #     (128, 128, 128),
-            #     pygame.Rect(-32 + 600, game_states.DISTANCE - 32 + 600, 64, 64)
-            # )
         if isinstance(item.pos, int):
             for entity in game_structures.all_entities():
                 if entity in item.data_pack[-1]:
@@ -389,10 +431,78 @@ def simple_stab_tick(item: Item):
     return True
 
 
+@simple_duration_tick
+def simple_shield_tick(item: Item):
+    """
+    tick for shielding.
+    'simple'
+    :param item:
+    :return:
+    """
+    if item.data_pack[0]:
+        if isinstance(item.pos, int):
+            rect = pygame.Rect(
+                8 * (item.pos * 2 - 1) * game_states.LAST_DIRECTION - item.img.get_height() // 2,
+                game_states.DISTANCE + (20 + item.img.get_width() // 2) * game_states.LAST_DIRECTION - item.img.get_width() // 2,
+                item.img.get_height(),
+                item.img.get_width()
+            )
+        else:
+            if isinstance(item.pos[0], int):
+                return True
+            new_center = offset_point_rotated(
+                item.pos[0].pos,
+                (
+                    item.pos[0].width // 4 * (item.pos[1] * 2 - 1),
+                    20 + item.img.get_width() // 2
+                ),
+                item.pos[0].rotation
+            )
+            # rect = item.img.get_rect(center=new_center)
+            rect = pygame.Rect(
+                new_center[0] - item.img.get_height() // 2,
+                new_center[1] - item.img.get_width() // 2,
+                item.img.get_height(),
+                item.img.get_width()
+            )
+        if isinstance(item.pos, int):
+            for entity in game_structures.all_entities():
+                if rect.colliderect(entity.rect):
+                    entity.y = rect.centery + (rect.height // 2 + entity.height // 2) * game_states.LAST_DIRECTION
+                    if isinstance(entity, entities.Projectile):
+                        entity.hit(entity.health, item)
+                    else:
+                        if entity not in item.data_pack[-1]:
+                            entity.hit(item.data_pack[4], item)
+                            item.data_pack[-1].append(entity)
+        else:
+            damage = item.data_pack[4]
+            correct_distance = item.pos[0].y + item.pos[0].height // 2 * math.cos(math.radians(item.pos[0].rotation))
+            for entity in game_structures.all_entities():
+                if not entity.allied_with_player:
+                    continue
+                if rect.colliderect(entity.rect):
+                    entity.y = correct_distance + entity.height // 2 * math.cos(math.radians(item.pos[0].rotation))
+                    if isinstance(entity, entities.Projectile):
+                        entity.hit(entity.health, item)
+                    else:
+                        if entity not in item.data_pack[-1]:
+                            entity.hit(item.data_pack[4], item)
+                            item.data_pack[-1].append(entity)
+            if rect.colliderect(pygame.Rect(-32, game_states.DISTANCE - 32, 64, 64)):
+                if "p" not in item.data_pack[-1]:
+                    item.data_pack.append("p")
+                    game_structures.deal_damage(damage, item)
+                    entities.glide_player(item.data_pack[4] * 3, 20, 3, (
+                            (item.pos[1] if isinstance(item.pos[0], int) else item.pos[0].y) < game_states.DISTANCE) * 2 - 1)
+                    game_structures.begin_shake(10 * (1 + damage // 2), (20, 20), (2 * (1 + damage), -5 * (1 + damage)))
+                game_states.DISTANCE = item.pos[0].y + (item.pos[0].height // 2 + item.img.get_width()) * math.cos(math.radians(item.pos[0].rotation))
+    return True
+
+
 def simple_stab(cooldown: int, duration: int, img: pygame.Surface, pos: tuple[int, int], damage: int = 3) -> Item:
     """
     generate an item that uses a simple stab item
-    :return: 
     """
     return Item(
         simple_cooldown_action,
@@ -438,3 +548,62 @@ def random_simple_stab(strength: int, random, pos=None):
          ],  # state, tracker, cooldown ticks, duration ticks, hit tracker
         ItemTypes.SimpleStab
     )
+
+
+def simple_shield(cooldown: int, duration: int, img: pygame.Surface, pos: tuple[int, int], damage: int = 0) -> Item:
+    """
+    generate a simple stab item
+    """
+    return Item(
+        simple_cooldown_action,
+        simple_shield_tick,
+        img,
+        pos,
+        simple_shield_draw,
+        [False, cooldown, cooldown, duration, damage, images.SIMPLE_SHIELD_ICON.img, []],
+        ItemTypes.SimpleShield
+    )
+
+
+simple_shield_imgs: [images.SIMPLE_SHIELD, images.SPIKY_SHIELD]
+
+
+def random_simple_shield(strength: int, random, pos=None):
+    damage = random.randint(0, 1)
+
+    match random.randint(1, 3):
+        case 1:  # long out, long cd
+            allotment = 180 + strength * 5
+            cooldown = 80
+        case 2:  # medium out, medium cd
+            allotment = 100 + strength * 2
+            cooldown = 40
+        case _:  # out for not long, extremely low cd
+            allotment = 40 + strength
+            cooldown = 10
+
+    cooldown += 10 * random.randint(1, 3)
+    duration = allotment - cooldown
+
+    return Item(
+        simple_cooldown_action,
+        simple_shield_tick,
+        simple_shield_imgs[damage].img,
+        pos,
+        simple_shield_draw,
+        [False, cooldown, cooldown, duration, damage, images.SIMPLE_SHIELD_ICON, []],
+        ItemTypes.SimpleShield
+    )
+
+
+def make_random_reusable(random):
+    """
+    makes a random reusable item (melee weapon, shield, throwable, or )
+    :param random:
+    :return:
+    """
+    match random.randint(0, 1):
+        case 0:
+            return random_simple_stab(game_states.LAST_AREA, random)
+        case 1:
+            return random_simple_shield(game_states.LAST_AREA, random)
