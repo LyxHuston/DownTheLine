@@ -122,7 +122,7 @@ class BasicArea(GameArea):
                 self.entity_list.append(entity.make(determiner, self))
             else:
                 self.entity_list.clear()
-                self.length = 200
+                self.length = 1000
                 add = entity.make(determiner, self)
                 add.y = self.length // 2
                 self.entity_list.append(add)

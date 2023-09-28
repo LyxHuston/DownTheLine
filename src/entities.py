@@ -318,7 +318,7 @@ class Crawler(Glides):
 
     frame_change_frequency = 16
 
-    cost = 1
+    cost = 3
 
     imgs = []
 
