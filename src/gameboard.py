@@ -43,6 +43,14 @@ def tick():
         ),
         (0, 0)
     )
+    game_structures.SCREEN.blit(
+        game_structures.FONTS[20].render(
+            str(game_states.HEALTH) + "/5",
+            False,
+            (255, 255, 255)
+        ),
+        (0, 30)
+    )
     # pygame.draw.circle(
     #     game_structures.SCREEN,
     #     (255, 255, 255),

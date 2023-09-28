@@ -5,6 +5,7 @@ PLACE = None
 DISTANCE = 100
 BOTTOM = 0
 RECORD_DISTANCE = 0
+LAST_AREA_END = 0
 # player state management
 HEALTH = 5
 LAST_DIRECTION = 1

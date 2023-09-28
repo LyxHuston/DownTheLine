@@ -149,12 +149,12 @@ def simple_stab_tick(item: Item):
                 if entity in item.data_pack[-1]:
                     continue
                 if rect.colliderect(entity.rect):
-                    entity.hit(3)
+                    entity.hit(item.data_pack[4], item)
                     item.data_pack[-1].append(entity)
     return True
 
 
-def simple_stab(cooldown: int, duration: int, img: pygame.Surface, pos: tuple[int, int]) -> Item:
+def simple_stab(cooldown: int, duration: int, img: pygame.Surface, pos: tuple[int, int], damage: int = 3) -> Item:
     """
     generate an item that uses a simple stab item
     :return: 
@@ -165,5 +165,5 @@ def simple_stab(cooldown: int, duration: int, img: pygame.Surface, pos: tuple[in
         img,
         pos,
         simple_stab_draw,
-        [False, cooldown, cooldown, duration, []]  # state, tracker, cooldown ticks, duration ticks, hit tracker
+        [False, cooldown, cooldown, duration, damage, []]  # state, tracker, cooldown ticks, duration ticks, hit tracker
     )

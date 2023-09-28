@@ -6,6 +6,20 @@ import pygame
 import game_states
 import game_structures
 import images
+import random
+
+
+def glide_player(speed: int, duration: int, taper: int, direction: int):
+    game_states.GLIDE_SPEED = speed
+    game_states.GLIDE_DURATION = duration
+    game_states.TAPER_AMOUNT = taper
+    game_states.GLIDE_DIRECTION = direction
+
+def all_entities():
+    res = []
+    for area in game_structures.initialized_areas():
+        res.extend(area.entity_list)
+    return res
 
 
 class Entity(game_structures.Body):
@@ -43,7 +57,7 @@ class Entity(game_structures.Body):
             )
         )
 
-    def hit(self, damage: int):
+    def hit(self, damage: int, item):
         """
         run when the entity takes damage
         :return:
@@ -69,6 +83,41 @@ class Entity(game_structures.Body):
             self.first_seen()
 
 
+class Glides(Entity):
+    """
+    an entity that has the glide action.  typically for knockback
+    """
+
+    def __init__(self, img: pygame.Surface, rotation: int, pos: tuple[int, int]):
+        super().__init__(img, rotation, pos)
+        self.glide_speed = 0
+        self.glide_direction = 0
+        self.taper = 0
+        self.glide_duration = 0
+
+    def glide_tick(self) -> bool:
+        """
+        a single tick of gliding motion
+        :return:
+        """
+        if self.glide_speed <= 0:
+            return False
+        if self.glide_duration == 0:
+            self.glide_speed -= self.taper
+            if self.glide_speed < 0:
+                self.glide_speed = 0
+        else:
+            self.glide_duration -= 1
+        self.y += self.glide_speed * self.glide_direction
+        return True
+
+    def start_glide(self, speed: int, duration: int, taper: int, direction: int):
+        self.glide_speed = speed
+        self.glide_duration = duration
+        self.taper = taper
+        self.glide_direction = direction
+
+
 class Obstacle(Entity):
     """
     harmless obstacles on path.
@@ -83,7 +132,7 @@ class Obstacle(Entity):
         self.health = 10
         self.max_health = 10
 
-    def hit(self, damage: int):
+    def hit(self, damage: int, item):
         self.health -= damage
         if self.health > self.max_health // 2:
             self.img = self.full.img
@@ -93,13 +142,72 @@ class Obstacle(Entity):
             self.img = self.fragile.img
 
     def tick(self):
-        if abs(self.pos[0]) < 128 + 32 and abs(game_states.DISTANCE - self.pos[1]) < 56:
-            game_states.DISTANCE = self.pos[1] + ((game_states.DISTANCE - self.pos[1] > 0) * 2 - 1) * 56
-
+        if abs(self.x) < 128 + 32 and abs(game_states.DISTANCE - self.y) < 56:
+            game_states.DISTANCE = self.y + ((game_states.DISTANCE - self.y > 0) * 2 - 1) * 56
+        rect = self.img.get_rect(center=self.pos)
+        for entity in all_entities():
+            if entity is self:
+                continue
+            if not isinstance(entity, Entity):
+                continue
+            entity_rect = entity.rect
+            if rect.colliderect(entity_rect):
+                if abs(entity.y - self.y) < abs(entity.x - self.x) - 12:
+                    entity.x = self.x + (32 + entity_rect.width // 2) * ((entity.x - self.x > 0) * 2 - 1)
+                else:
+                    entity.y = self.y + (24 + entity_rect.height // 2) * ((entity.y - self.y > 0) * 2 - 1)
+                    pass
         return self.health > 0
 
     def first_seen(self):
         self.full.img
         self.half.img
         self.fragile.img
-        self.hit(0)
+        self.hit(0, None)
+
+
+class Slime(Glides):
+    """
+    slime.  Moves up or down the path.
+    """
+
+    frame_change_frequency = 16
+    imgs = [images.SLIME_1, images.SLIME_2, images.SLIME_3, images.SLIME_4]
+
+    def __init__(self, pos: tuple[int, int] = (0, 0)):
+        if isinstance(self.imgs[0], images.Image):
+            self.imgs[0] = self.imgs[0].img
+        super().__init__(self.imgs[0], 0, pos)
+        self.frame = 0
+        self.health = 7
+        self.max_health = 7
+        self.random = random.Random()
+
+    def hit(self, damage: int, item):
+        self.health -= damage
+        self.start_glide(damage, 90, 1, ((self.y - game_states.DISTANCE) > 0) * 2 - 1)
+
+    def tick(self):
+        self.frame = (self.frame + 1) % (4 * self.frame_change_frequency)
+        self.img = self.imgs[self.frame // self.frame_change_frequency]
+        self.glide_tick()
+        if self.glide_duration == 0:
+            self.start_glide(
+                self.random.randint(1, 3) * 4,
+                self.random.randint(4, 6) * 60,
+                15,
+                self.random.randint(-1, 1)
+            )
+        else:
+            self.glide_duration -= 1
+        # print(self.health, self.frame, self.pos, game_states.DISTANCE)
+        if abs(self.x) < 32 and abs(self.y - game_states.DISTANCE) < 64:
+            game_states.HEALTH -= 1
+            game_states.DISTANCE = self.y + 64 * (((self.y - game_states.DISTANCE) < 0) * 2 - 1)
+            glide_player(5, 1, 1, ((self.y - game_states.DISTANCE) < 0) * 2 - 1)
+            self.start_glide(0, 30, 0, 0)
+        return self.health > 0
+
+    def first_seen(self):
+        for i in range(1, 4):
+            self.imgs[i] = self.imgs[i].img

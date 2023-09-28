@@ -28,8 +28,13 @@ WALL_FULL = Image("resources/obstacle/wall_full.png")
 WALL_HALF = Image("resources/obstacle/wall_half.png")
 WALL_FRAGILE = Image("resources/obstacle/wall_fragile.png")
 
-
 SIMPLE_SWORD = Image("resources/items/simple_sword.png")
+SIMPLE_SPEAR = Image("resources/items/simple_spear.png")
+
+SLIME_1 = Image("resources/slime/slime_1.png")
+SLIME_2 = Image("resources/slime/slime_2.png")
+SLIME_3 = Image("resources/slime/slime_3.png")
+SLIME_4 = Image("resources/slime/slime_4.png")
 
 
 if __name__ == "__main__":

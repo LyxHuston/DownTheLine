@@ -1046,10 +1046,20 @@ class Body:
         self.__original_img = val
         self._rotated_img = pygame.transform.rotate(self.__original_img, self.__rotation)
 
+    @property
+    def pos(self):
+        return self.x, self.y
+
+    @pos.setter
+    def pos(self, val: tuple[int, int]):
+        self.x = val[0]
+        self.y = val[1]
+
     def __init__(self, img: pygame.Surface, rotation: int, pos: tuple[int, int]):
         self.__original_img = img
         self.rotation = rotation
-        self.pos = pos
+        self.x = pos[0]
+        self.y = pos[1]
 
     @property
     def rect(self):
@@ -1071,3 +1081,28 @@ class Body:
 CUSTOM_EVENT_CATCHERS: list[Callable] = []
 PLACES = None
 AREA_QUEUE = deque()
+
+
+def initialized_areas():
+    """
+    gets a list of areas that have been intialized
+    :return:
+    """
+    res = []
+    for area in AREA_QUEUE:
+        if not area.initialized:
+            return res
+        res.append(area)
+    return res
+
+
+def get_last_initialized():
+    """
+    gets the last initialized area.
+    :return:
+    """
+    res = None
+    for area in AREA_QUEUE:
+        if not area.initialized:
+            return res
+        res = area
