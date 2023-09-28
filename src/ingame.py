@@ -122,7 +122,7 @@ def item_input_catch(num: int) -> None:
                 if game_structures.HANDS[num] is None:
                     game_structures.HANDS[num] = entity.pick_up(num)
                 elif game_structures.HANDS[1 - num] is None:
-                    game_structures.HANDS[1 - num] = entity.pick_up(num)
+                    game_structures.HANDS[1 - num] = entity.pick_up(1 - num)
                 elif not entity.picked_up:
                     game_structures.HANDS[num].pos = entity.pos
                     area.entity_list.append(entities.ItemEntity(game_structures.HANDS[num]))
