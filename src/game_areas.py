@@ -216,12 +216,13 @@ class GiftArea(GameArea):
         self.difficulty = count
         self.length = 1000
         spawn = entities.Spawner.make(determiner, self)
-        spawn.y += 200
-        self.length += 200
+        experiment_area = 500
+        spawn.y += experiment_area
+        self.length += experiment_area
         self.entity_list.append(spawn)
-        self.entity_list.append(entities.Obstacle(pos=(0, 200), health=1))
-        self.entity_list.append(entities.Obstacle(pos=(0, 1200), health=10))
-        self.entity_list.append(entities.ItemEntity(items.make_random_reusable(self.random, (0, 100))))
+        self.entity_list.append(entities.Obstacle(pos=(0, experiment_area), health=1))
+        self.entity_list.append(entities.Obstacle(pos=(0, 1000 + experiment_area), health=10))
+        self.entity_list.append(entities.ItemEntity(items.make_random_reusable(self.random, (0, experiment_area // 2))))
 
 
 @make_async(with_lock=True)
