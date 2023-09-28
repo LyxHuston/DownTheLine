@@ -247,6 +247,8 @@ def add_game_area():
                 typ = 4
             if typ < 13 and game_states.LAST_AREA < 10:
                 typ = 13
+            if typ < 33 and game_states.LAST_AREA < 4:
+                typ = 33
             if typ == 0:  # 1/64
                 # GOD room
                 pass
@@ -267,10 +269,8 @@ def add_game_area():
                 pass
             elif typ <= 32:  # 14/64
                 area = BreakThroughArea(determinator, game_states.LAST_AREA)
-                pass
             else:  # 32/64
                 area = BasicArea(determinator, game_states.LAST_AREA)
-                pass
             if area is None:
                 area = GameArea(400)
     game_states.LAST_AREA += 1
