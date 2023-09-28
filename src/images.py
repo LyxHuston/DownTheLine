@@ -27,7 +27,7 @@ class Image:
     """
 
     @property
-    def img(self):
+    def img(self) -> pygame.Surface:
         """
         the image stored in the image class
         :return:
@@ -73,6 +73,12 @@ FENCER_DASHING = Image("resources/entities/fencer/fencer_dashing.png")
 ARCHER_RELAXED = Image("resources/entities/archer/archer_relaxed.png")
 ARCHER_DRAWING = Image("resources/entities/archer/archer_drawing.png")
 ARCHER_DRAWN = Image("resources/entities/archer/archer_drawn.png")
+
+KNIGHT_TOP = Image("resources/entities/knight/knight_top.png")
+KNIGHT_STEP_1 = Image("resources/entities/knight/knight_step_cycle_1.png")
+KNIGHT_STEP_2 = Image("resources/entities/knight/knight_step_cycle_2.png")
+KNIGHT_STABBING = Image("resources/entities/knight/knight_stabbing.png")
+KNIGHT_SHIELDING = Image("resources/entities/knight/knight_shielding.png")
 
 ARROW = Image("resources/entities/projectiles/arrow.png")
 

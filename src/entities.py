@@ -202,6 +202,9 @@ class ItemEntity(Entity):
         self.item.draw(self.item)
 
 
+import items
+
+
 class Glides(Entity):
     """
     an entity that has the glide action.  typically for knockback
@@ -540,6 +543,7 @@ class Archer(Glides):
         if self.glide_speed != 0:
             self.glide_tick()
             return self.health > 0
+        self.rotation = 180 * (self.y < game_states.DISTANCE)
         dist = abs(self.y - game_states.DISTANCE)
         if self.cooldown == 0:
             if dist < 900:
@@ -569,6 +573,123 @@ class Archer(Glides):
         return cls((0, area.random.randint(area.length // 3, 2 * area.length // 3)), area.difficulty, area)
 
 
+class Knight(Glides):
+    """
+    first enemy with a defensive stance
+    """
+
+    cost = 20
+
+    imgs = []
+    frame_change_frequency = 10
+
+    top = images.KNIGHT_TOP
+    stabbing = images.KNIGHT_STABBING
+    shielding = images.KNIGHT_SHIELDING
+
+    def __init__(self, rotation: int, pos: tuple[int, int], hands):
+        super().__init__(self.top.img, rotation, pos)
+        self.hands = hands
+        for i in range(len(hands)):
+            if self.hands[i] is None:
+                continue
+            self.hands[i].pos = (self, i)
+        self.frame = 0
+        self.health = 20
+        self.step = None
+
+    def draw(self):
+        canvas = pygame.Surface((64, 64), flags=pygame.SRCALPHA)
+        if self.step is not None:
+            canvas.blit(
+                self.step,
+                (0, 0)
+            )
+        for hand in self.hands:
+            if hand is None:
+                continue
+            hand.draw(hand)
+            if not items.in_use(hand):
+                continue
+            hand_drawing = None
+            match hand.type:
+                case items.ItemTypes.SimpleStab:
+                    hand_drawing = self.stabbing.img
+                case items.ItemTypes.SimpleShield:
+                    hand_drawing = self.shielding.img
+            if hand_drawing is None:
+                continue
+            canvas.blit(
+                pygame.transform.flip(
+                    hand_drawing,
+                    hand.pos[1] == 0,
+                    False
+                ),
+                (0, 0)
+            )
+        canvas.blit(
+            images.KNIGHT_TOP.img,
+            (0, 0)
+        )
+        self.img = canvas
+        super().draw()
+
+    def tick(self) -> bool:
+        if self.glide_speed > 0:
+            self.glide_tick()
+            return self.health > 0
+        self.rotation = 180 * (self.y < game_states.DISTANCE)
+        dist = abs(self.y - game_states.DISTANCE)
+        desired_dist = 300
+        trigerable = None
+        for hand in self.hands:
+            if hand is None:
+                continue
+            hand.tick(hand)
+            if items.action_available(hand):
+                new_dist = items.find_range(hand)
+                if new_dist < desired_dist:
+                    trigerable = hand
+                    desired_dist = new_dist
+        if trigerable is not None:
+            if dist < desired_dist + 32:
+                trigerable.action(trigerable)
+        if dist < desired_dist - 100:  # back up
+            self.frame = (self.frame - 1) % (self.frame_change_frequency * 6)
+            self.step = self.imgs[self.frame // self.frame_change_frequency]
+            self.y += 5 * ((self.y > game_states.DISTANCE) * 2 - 1)
+        elif (dist > desired_dist + 100) or (trigerable is not None and dist > desired_dist):  # go towards
+            self.y += 5 * ((self.y < game_states.DISTANCE) * 2 - 1)
+            self.frame = (self.frame + 1) % (self.frame_change_frequency * 6)
+            self.step = self.imgs[self.frame // self.frame_change_frequency]
+        else:
+            self.frame = 0
+            self.step = None
+        return self.health > 0
+
+    def hit(self, damage: int, item):
+        self.health -= damage
+        if isinstance(item.pos, int):
+            self.start_glide(12, 15, 1, ((self.y - game_states.DISTANCE) > 0) * 2 - 1)
+        else:
+            self.start_glide(12, 15, 1, ((self.y - item.pos[0]) > 0) * 2 - 1)
+
+    def first_seen(self):
+        self.stabbing.img
+        self.shielding.img
+        self.__class__.imgs = [
+            images.KNIGHT_STEP_1.img,
+            images.KNIGHT_STEP_2.img,
+            images.KNIGHT_STEP_1.img,
+            pygame.transform.flip(images.KNIGHT_STEP_1.img, True, False),
+            pygame.transform.flip(images.KNIGHT_STEP_2.img, True, False),
+            pygame.transform.flip(images.KNIGHT_STEP_1.img, True, False),
+        ]
+
+    @classmethod
+    def make(cls, determiner: int, area):
+        return cls(0, (0, 200), [items.random_simple_stab(1, area.random), None])
+
 class Spawner(Entity):
     """
     superclass for any entity that spawns others.  Also probably its own entity?
@@ -578,7 +699,7 @@ class Spawner(Entity):
 
     imgs = [images.SPAWNER_1, images.SPAWNER_2, images.SPAWNER_3, images.SPAWNER_4]
 
-    allowable = ((Slime, 0), (Crawler, 6), (Fencer, 13), (Archer, 16))
+    allowable = ((Slime, 0), (Crawler, 6), (Fencer, 13), (Archer, 16), (Knight, 25))
 
     cost = 5
 
@@ -672,13 +793,6 @@ class Spawner(Entity):
 
     @classmethod
     def make(cls, determiner: int, area):
-        if area.random.randint(0, area.difficulty) > 20 + area.difficulty // 2:
-            limit = None
-            delay = area.random.randint(12, 17) * 100
-        else:
-            limit = area.random.randint(3, max(area.difficulty // 5, 3))
-            delay = area.random.randint(5, 8) * 20
-        y = area.random.randint(area.length // 3, area.length)
         index = 0
         while index < len(cls.allowable) - 1:
             if area.difficulty < cls.allowable[index][1]:
@@ -686,8 +800,18 @@ class Spawner(Entity):
                 break
             if area.random.randint(0, 1):
                 break
+        entity = cls.allowable[index][0]
+        if area.random.randint(0, area.difficulty) > 20 + area.difficulty // 2 + entity.cost ** 2:
+            limit = None
+            delay = area.random.randint(12, 17) * 100
+        else:
+            limit = area.random.randint(
+                min(3, 5 - (entity.cost - area.difficulty // 4)),
+                min(max(area.difficulty // 5, 3), 4 - (entity.cost - area.difficulty // 4) // 2))
+            delay = area.random.randint(5, 8) * 20
+        y = area.random.randint(area.length // 3, area.length)
         return cls((area.random.randint(100, game_states.WIDTH // 2) * (area.random.randint(0, 1) * 2 - 1), y), limit,
-                   area, delay, cls.allowable[index][0], (0, None), area.difficulty // 10 + 1)
+                   area, delay, entity, (0, None), area.difficulty // 10 + 1)
 
     def draw(self):
         super().draw()
@@ -701,12 +825,29 @@ class Spawner(Entity):
 
 
 if __name__ == "__main__":
-    import game_areas
+    import items
 
-    Crawler.first_seen(Crawler((0, 0), 1, game_areas.GameArea()))
-    frame = 0
-    direction = -1
-    screen = pygame.display.set_mode((100, 100))
+    item_1 = items.simple_stab(
+        60,
+        20,
+        images.SIMPLE_SWORD.img,
+        (0, 40)
+    )
+    item_2 = items.simple_stab(
+        120,
+        10,
+        images.SIMPLE_SPEAR.img,
+        (15, 120),
+        2
+    )
+    item_1.data_pack[0] = True
+    item_2.data_pack[0] = True
+    knight = Knight(0, (0, 0), [item_1, item_2])
+    screen = pygame.display.set_mode((500, 500))
+    game_structures.SCREEN = screen
+    game_states.DISTANCE = 300
+    game_states.CAMERA_BOTTOM = 250
+    game_states.WIDTH = 500
     clock = pygame.time.Clock()
     pygame.display.init()
     running = True
@@ -715,11 +856,8 @@ if __name__ == "__main__":
             if event.type is pygame.QUIT:
                 running = False
                 break
-        clock.tick(1)
+        clock.tick(60)
         screen.fill((0, 0, 0))
-        screen.blit(
-            Crawler.imgs[frame],
-            (0, 0)
-        )
+        knight.draw()
         pygame.display.flip()
-        frame = (frame + direction) % 8
+        knight.rotation += 1

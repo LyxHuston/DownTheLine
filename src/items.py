@@ -20,7 +20,6 @@ handles making items.
 This is going to be full of factory functions, huh.  Factories of factories of factories.  Factoryception.
 """
 
-
 from dataclasses import dataclass
 from typing import Callable, Union, Any
 import game_structures
@@ -29,6 +28,15 @@ import pygame
 import entities
 import images
 import math
+import enum
+
+
+class ItemTypes(enum.IntEnum):
+    """
+    enum of item types
+    """
+    SimpleStab = 0
+    SimpleShield = 0
 
 
 @dataclass
@@ -42,6 +50,31 @@ class Item:
     pos: Union[int, tuple[entities.Entity, int], tuple[int, int]]
     draw: Callable
     data_pack: Any
+    type: ItemTypes
+
+
+def find_range(item) -> int:
+    """
+    finds the effective range of a given item
+    :param item:
+    :return:
+    """
+
+    match item.type:
+        case ItemTypes.SimpleStab:
+            return item.img.get_height()
+
+
+def action_available(item) -> bool:
+    match item.type:
+        case ItemTypes.SimpleStab:
+            return not item.data_pack[0] and item.data_pack[1] >= item.data_pack[2]
+
+
+def in_use(item) -> bool:
+    match item.type:
+        case ItemTypes.SimpleStab:
+            return item.data_pack[0]
 
 
 def offset_point_rotated(origin: tuple[int, int], offset: tuple[int, int], rotation: int) -> tuple[int, int]:
@@ -312,16 +345,45 @@ def simple_stab_tick(item: Item):
     :return:
     """
     if item.data_pack[0]:
-        rect = item.img.get_rect(center=(
-            16 * (item.pos * 2 - 1) * game_states.LAST_DIRECTION,
-            game_states.DISTANCE + (20 + item.img.get_height() // 2) * game_states.LAST_DIRECTION
-        ))
-        for entity in game_structures.all_entities():
-            if entity in item.data_pack[-1]:
-                continue
-            if rect.colliderect(entity.rect):
-                entity.hit(item.data_pack[4], item)
-                item.data_pack[-1].append(entity)
+        if isinstance(item.pos, int):
+            rect = item.img.get_rect(center=(
+                16 * (item.pos * 2 - 1) * game_states.LAST_DIRECTION,
+                game_states.DISTANCE + (20 + item.img.get_height() // 2) * game_states.LAST_DIRECTION
+            ))
+        else:
+            rect = item.img.get_rect(center=offset_point_rotated(
+                item.pos[0].pos,
+                (
+                    item.pos[0].width // 2 * (item.pos[1] * 2 - 1),
+                    20 + item.img.get_height() // 2
+                ),
+                item.pos[0].rotation
+            ))
+            # pygame.draw.rect(
+            #     game_structures.SCREEN,
+            #     (128, 128, 128),
+            #     rect
+            # )
+            # pygame.draw.rect(
+            #     game_structures.SCREEN,
+            #     (128, 128, 128),
+            #     pygame.Rect(-32 + 600, game_states.DISTANCE - 32 + 600, 64, 64)
+            # )
+        if isinstance(item.pos, int):
+            for entity in game_structures.all_entities():
+                if entity in item.data_pack[-1]:
+                    continue
+                if rect.colliderect(entity.rect):
+                    entity.hit(item.data_pack[4], item)
+                    item.data_pack[-1].append(entity)
+        elif "p" not in item.data_pack[-1]:
+            if rect.colliderect(pygame.Rect(-32, game_states.DISTANCE - 32, 64, 64)):
+                item.data_pack[-1].append("p")
+                damage = item.data_pack[4]
+                game_states.HEALTH -= damage
+                game_structures.begin_shake(10 * (1 + damage // 2), (20, 20), (2 * (1 + damage), -5 * (1 + damage)))
+                entities.glide_player(item.data_pack[4] * 3, 20, 3, (
+                        (item.pos[1] if isinstance(item.pos[0], int) else item.pos[0].y) < game_states.DISTANCE) * 2 - 1)
     return True
 
 
@@ -337,7 +399,8 @@ def simple_stab(cooldown: int, duration: int, img: pygame.Surface, pos: tuple[in
         pos,
         simple_stab_draw,
         [False, cooldown, cooldown, duration, damage, images.SIMPLE_STAB_ICON.img, []
-         ]  # state, tracker, cooldown ticks, duration ticks, hit tracker
+         ],  # state, tracker, cooldown ticks, duration ticks, hit tracker
+        ItemTypes.SimpleStab
     )
 
 
@@ -347,9 +410,29 @@ simple_stab_imgs = [images.SIMPLE_SWORD, images.SIMPLE_SPEAR]
 def random_simple_stab(strength: int, random, pos=None):
     img = random.choice(simple_stab_imgs).img
 
+    damage = max(3 - img.get_height() // 100, 0)
+
+    match random.randint(1, 3):
+        case 1:
+            cooldown = max(180 - strength, 70)
+            duration = 70
+        case 2:
+            cooldown = max(120 - 3 * strength, 50)
+            duration = 50
+        case _:
+            cooldown = max(60 - 9 * strength, 30)
+            duration = 10
+
+    if cooldown < 30:
+        cooldown = 30
+
     return Item(
         simple_cooldown_action,
         simple_stab_tick,
         img,
-        pos
+        pos,
+        simple_stab_draw,
+        [False, cooldown, cooldown, duration, damage, images.SIMPLE_STAB_ICON.img, []
+         ],  # state, tracker, cooldown ticks, duration ticks, hit tracker
+        ItemTypes.SimpleStab
     )

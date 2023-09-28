@@ -98,8 +98,8 @@ class BasicArea(GameArea):
     a basic fight area.  Fight a few monsters and continue.
     """
 
-    allowable_thresh_holds = [(entities.Slime, 0), (entities.Crawler, 5), (entities.Fencer, 10), (entities.Archer, 10)]
-    # allowable_thresh_holds = [(entities.Archer, 0)]
+    allowable_thresh_holds = [(entities.Slime, 0), (entities.Crawler, 5), (entities.Fencer, 10), (entities.Archer, 10), (entities.Knight, 15)]
+    # allowable_thresh_holds = [(entities.Knight, 0)]
 
     def __init__(self, determiner, count):
         super().__init__(seed=determiner)
@@ -151,7 +151,7 @@ class BreakThroughArea(GameArea):
         allowance = count // 2
         allowable_entities = []
         for entry in BasicArea.allowable_thresh_holds:
-            if entry[1] > count or not entry[0].seen:
+            if entry[1] > count:  # or not entry[0].seen:
                 break
             allowable_entities.append([entry[0], 0])
         num = 3

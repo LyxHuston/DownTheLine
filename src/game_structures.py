@@ -1441,6 +1441,14 @@ class Body:
         self._rotated_img = None
 
     @property
+    def width(self):
+        return self.__original_img.get_width()
+
+    @property
+    def height(self):
+        return self.__original_img.get_height()
+
+    @property
     def pos(self):
         return self.x, self.y
 
