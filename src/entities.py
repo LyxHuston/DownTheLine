@@ -334,6 +334,7 @@ class Slime(Glides):
     cost = 1
 
     frame_change_frequency = 16
+    alert = images.SLIME_ALERT
     imgs = [images.SLIME_1, images.SLIME_2, images.SLIME_3, images.SLIME_4]
 
     def __init__(self, pos: tuple[int, int] = (0, 0)):
@@ -344,6 +345,7 @@ class Slime(Glides):
         self.max_health = 7
         self.health = 7
         self.random = random.Random()
+        self.wait = 1
 
     def hit(self, damage: int, item):
         self.health -= damage
@@ -353,18 +355,27 @@ class Slime(Glides):
             self.start_glide(damage, 90, 1, ((self.y - item.pos[1]) > 0) * 2 - 1)
 
     def tick(self):
-        self.frame = (self.frame + 1) % (4 * self.frame_change_frequency)
-        self.img = self.imgs[self.frame // self.frame_change_frequency]
         self.glide_tick()
         if self.glide_speed == 0:
-            self.start_glide(
-                self.random.randint(1, 3) * 4,
-                self.random.randint(4, 6) * 60,
-                15,
-                self.random.randint(-1, 1)
-            )
-            if abs(self.y - game_states.CAMERA_BOTTOM - game_states.HEIGHT // 2) > game_states.HEIGHT // 2 and self.glide_speed > 4:
-                self.glide_speed = 4
+            self.wait -= 1
+            if self.wait // 12 == 1:
+                self.img = self.imgs[self.frame // self.frame_change_frequency]
+            else:
+                self.img = self.alert
+            if self.wait == 0:
+                self.start_glide(
+                    self.random.randint(1, 3) * 4,
+                    self.random.randint(4, 6) * 60,
+                    15,
+                    self.random.randint(-1, 1)
+                )
+                if abs(self.y - game_states.CAMERA_BOTTOM - game_states.HEIGHT // 2) > game_states.HEIGHT // 2 and self.glide_speed > 4:
+                    self.glide_speed = 4
+                self.wait = 36
+        else:
+            self.glide_tick()
+            self.frame = (self.frame + 1) % (4 * self.frame_change_frequency)
+            self.img = self.imgs[self.frame // self.frame_change_frequency]
         # print(self.health, self.frame, self.pos, game_states.DISTANCE)
         if abs(self.x) < 32 and abs(self.y - game_states.DISTANCE) < 32:
             game_states.HEALTH -= 1
@@ -375,6 +386,7 @@ class Slime(Glides):
         return self.health > 0
 
     def first_seen(self):
+        self.alert.img
         for i in range(1, 4):
             if isinstance(self.__class__.imgs[i], images.Image):
                 self.__class__.imgs[i] = self.__class__.imgs[i].img
