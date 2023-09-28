@@ -39,7 +39,7 @@ def check_flags(flags: list[str], error_on_duplicates: bool = False):
         if flag in sys.argv:
             if index:
                 raise SyntaxError("Duplicate flags")
-            if sys.argv.count(flag) > 0:
+            if sys.argv.count(flag) > 1:
                 raise SyntaxError("Duplicate flags")
             index = sys.argv.index(flag)
             if not error_on_duplicates:
