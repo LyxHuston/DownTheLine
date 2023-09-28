@@ -4,7 +4,7 @@ where you try to get as far as you can down (or, up)
 a line.
 
 ______________________________________________________________________
-[![License](<https://img.shields.io/badge/GPLv3.0?color=brightgreen>)](https://www.gnu.org/licenses/gpl-3.0.en.html)
+[![License](<https://img.shields.io/badge/License-GPLv3.0-brightgreen.svg>)](https://www.gnu.org/licenses/gpl-3.0.en.html)
 ______________________________________________________________________
 
 Development is currently ongoing, and I hope to release on Steam in under a month!
