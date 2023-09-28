@@ -37,6 +37,7 @@ class ItemTypes(enum.IntEnum):
     """
     SimpleStab = 0
     SimpleShield = 1
+    SimpleThrowable = 2
 
 
 @dataclass
@@ -65,6 +66,8 @@ def find_range(item) -> int:
             return item.img.get_height()
         case ItemTypes.SimpleShield:
             return item.img.get_width()
+        case ItemTypes.SimpleThrowable:
+            return item.data_pack[0].find_range(*item.data_pack[1])
 
 
 def action_available(item) -> bool:
@@ -73,6 +76,8 @@ def action_available(item) -> bool:
             return not item.data_pack[0] and item.data_pack[1] >= item.data_pack[2]
         case ItemTypes.SimpleShield:
             return not item.data_pack[0] and item.data_pack[1] >= item.data_pack[2]
+        case ItemTypes.SimpleThrowable:
+            return True
 
 
 def in_use(item) -> bool:
@@ -81,6 +86,8 @@ def in_use(item) -> bool:
             return item.data_pack[0]
         case ItemTypes.SimpleShield:
             return item.data_pack[0]
+        case ItemTypes.SimpleThrowable:
+            return False
 
 
 def from_player(item) -> bool:
@@ -88,6 +95,8 @@ def from_player(item) -> bool:
         case ItemTypes.SimpleStab:
             return isinstance(item.pos, int)
         case ItemTypes.SimpleShield:
+            return isinstance(item.pos, int)
+        case ItemTypes.SimpleThrowable:
             return isinstance(item.pos, int)
 
 
@@ -524,6 +533,28 @@ def simple_shield_tick(item: Item):
     return True
 
 
+def simple_throwable_action(item: Item):
+    """
+    creates an entity with given arguments
+    :param item:
+    :return:
+    """
+    p = isinstance(item.pos, int)  # if it's from the player
+    if p:
+        pos = (0, game_states.DISTANCE)
+        rot = game_states.LAST_DIRECTION * 90 + 90
+        print(rot)
+        game_structures.HANDS[item.pos] = None  # remove from hands of entity throwing
+    else:
+        pos = item.pos[0].pos
+        rot = item.pos[0].rotation
+        item.pos[0].hands[item.pos[1]] = None  # remove from hands of entity throwing
+    area = game_structures.AREA_QUEUE[0]
+    ent = item.data_pack[0](pos, rot, *item.data_pack[1])  # create entity
+    ent.allied_with_player = p
+    area.entity_list.append(ent)  # add entity to entity list
+
+
 def simple_stab(cooldown: int, duration: int, img: pygame.Surface, pos: tuple[int, int], damage: int = 3) -> Item:
     """
     generate an item that uses a simple stab item
@@ -631,6 +662,35 @@ def make_random_reusable(random, pos):
             return random_simple_stab(game_states.LAST_AREA, random, pos)
         case 1:
             return random_simple_shield(game_states.LAST_AREA, random, pos)
+
+
+def simple_throwable(img, pos, creates, args):
+    """
+    makes a throwable object that creates an entity when thrown with given arguments
+    :param img:
+    :param pos:
+    :param creates:
+    :param args:
+    :return:
+    """
+    return Item(
+        simple_throwable_action,
+        passing,
+        img,
+        pos,
+        simple_draw,
+        [creates, args, images.SIMPLE_THROWABLE_ICON],
+        ItemTypes.SimpleThrowable
+    )
+
+
+def simple_bomb(pos, speed, taper, glide_duration, delay, size, damage):
+    return simple_throwable(
+        images.SIMPLE_BOMB.img,
+        pos,
+        entities.Bomb,
+        (images.SIMPLE_BOMB.img, speed, taper, glide_duration, delay, size, damage)
+    )
 
 
 def make_random_single_use(random, pos):

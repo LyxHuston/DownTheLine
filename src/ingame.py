@@ -107,8 +107,10 @@ def event_catcher(event: pygame.event.Event) -> bool:
 def item_input_catch(num: int) -> None:
     if not pygame.key.get_pressed()[Inputs.ignore_pickup]:
         for area in game_structures.initialized_areas():
-            for i in range(len(area.entity_list)):
-                entity = area.entity_list[i]
+            for entity in area.entity_list:
+                # entity = area.entity_list[i]
+                if isinstance(entity, entities.SpawnerHolder):
+                    entity = entity.holding
                 if not isinstance(entity, entities.ItemEntity):
                     continue
                 if not isinstance(entity.pos[0], int):

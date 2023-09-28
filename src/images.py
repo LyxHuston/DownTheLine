@@ -96,17 +96,22 @@ SIMPLE_SWORD = Image("resources/items/simple_sword.png")
 SIMPLE_SPEAR = Image("resources/items/simple_spear.png")
 SIMPLE_SHIELD = Image("resources/items/simple_shield.png")
 SPIKY_SHIELD = Image("resources/items/spiky_shield.png")
-
+SIMPLE_BOMB = Image("resources/items/simple_bomb.png")
 
 # icons
 SIMPLE_STAB_ICON = Image("resources/items/icons/simple_stab.png")
 SIMPLE_SHIELD_ICON = Image("resources/items/icons/simple_shield.png")
+SIMPLE_THROWABLE_ICON = Image("resources/items/icons/simple_throwable.png")
 
 # particles
 VOID_PARTICLES = [Image("resources/particles/basic_void/basic_void_1.png"),
                   Image("resources/particles/basic_void/basic_void_2.png"),
                   Image("resources/particles/basic_void/basic_void_3.png"),
                   Image("resources/particles/basic_void/basic_void_4.png")]
+
+EXPLOSION_PARTICLES = [Image("resources/particles/explosion/explosion_1.png"),
+                       Image("resources/particles/explosion/explosion_2.png"),
+                       Image("resources/particles/explosion/explosion_3.png")]
 
 # empty
 EMPTY = pygame.Surface((0, 0))

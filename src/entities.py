@@ -1337,6 +1337,71 @@ class SpawnerHolder(Entity):
         self.holding.enter()
 
 
+class Bomb(Glides):
+
+    def __init__(self, pos, rotation, img, speed, taper, glide_duration, delay, size, damage, from_player=False):
+        super().__init__(img, rotation, pos)
+        self.life = delay
+        self.size = size
+        self.damage = damage
+        self.flash_delay = 0
+        self.allied_with_player = from_player
+        self.start_glide(speed, glide_duration, taper, -math.cos(math.radians(rotation)))
+        print(self.glide_direction, self.glide_speed, self.glide_duration)
+
+    def tick(self):
+        self.glide_tick()
+        # print(self.y)
+        self.life -= 1
+        if self.life <= 0:
+            print("exploding")
+            colliding = pygame.Rect(
+                self.x - self.size // 2, self.y - self.size // 2,
+                self.size, self.size
+            )
+            if self.allied_with_player:
+                for entity in game_structures.all_entities():
+                    if colliding.colliderect(entity.rect):
+                        entity.health -= self.damage
+            if colliding.colliderect(pygame.Rect(-32, game_states.DISTANCE - 32, 64, 64)):
+                game_structures.deal_damage(self.damage, self)
+                glide_player(self.damage, 20, 1, (self.y < game_states.DISTANCE) * 2 - 1)
+
+            # make the particles
+            area = game_structures.AREA_QUEUE[0]
+            print("particles")
+            for i in range(1 * self.size ** 2 // (64 ** 2) // 2):
+                area.particle_list.add(Particle(
+                    images.EXPLOSION_PARTICLES,
+                    12,
+                    36,
+                    (
+                        area.random.randint(self.x - self.size // 2 + 32, self.x + self.size // 2 - 32),
+                        area.random.randint(self.y - self.size // 2 + 32, self.y + self.size // 2 - 32)
+                    ),
+                    rotation=90 * area.random.randint(0, 3)
+                ))
+        if self.flashing <= 0:
+            self.flash_delay -= 1
+            if self.flash_delay <= 0:
+                self.flash_delay = self.life // 6 + 8
+                self.flashing = 8
+        return self.life > 0
+
+    @staticmethod
+    def find_range(img, speed, taper, glide_duration, delay, size, damage, from_player=False):
+        """
+        finds the range of the bomb.  More or less correct.
+        """
+        if delay <= glide_duration:
+            return speed * delay
+        if delay <= glide_duration + speed // taper:
+            remainder = delay - glide_duration
+        else:
+            remainder = speed // taper
+        return speed * glide_duration + remainder * (2 * speed - taper * remainder) // 2
+
+
 class DelayedDeploy(Entity):
 
     def __init__(self, delay, area, entity: type(Entity), args):
@@ -1361,12 +1426,12 @@ class Particle(Entity):
 
     __id = 0
 
-    def __init__(self, imgs: list[images.Image] | list[pygame.Surface], tick_rate: int, lifespan: int, pos: tuple[int, int], momentum: tuple[int, int] = (0, 0)):
+    def __init__(self, imgs: list[images.Image] | list[pygame.Surface], tick_rate: int, lifespan: int, pos: tuple[int, int], momentum: tuple[int, int] = (0, 0), rotation: int = 0):
         self.imgs: list[pygame.Surface] = imgs
         if isinstance(self.imgs[0], images.Image):
             for i in range(len(self.imgs)):
                 self.imgs[i] = self.imgs[i].img
-        super().__init__(self.imgs[0], 0, pos)
+        super().__init__(self.imgs[0], rotation, pos)
         self.ticks_per_frame_change = tick_rate
         self.frame_loop = len(self.imgs) * tick_rate
         self.frame = 0
@@ -1430,13 +1495,22 @@ if __name__ == "__main__":
 
     game_structures.HANDS = [None, None]
 
-    game_areas.add_game_area().join()
+    # game_areas.add_game_area().join()
     # game_structures.AREA_QUEUE[0].length += 20000
     # game_states.LAST_AREA_END = game_structures.AREA_QUEUE[0].end_coordinate
     area = game_areas.GameArea(1000, 20)
     area.difficulty = 60
     # area.entity_list.append(Knight.make(5672979812, area))
-    area.entity_list.append(Fish(area))
+    # area.entity_list.append(Fish(area))
+    area.entity_list.append(ingame.entities.ItemEntity(items.simple_bomb(
+        (0, 60),
+        15,
+        1,
+        20,
+        240,
+        600,
+        4
+    )))
 
     area.finalize()
     # area.enter()
