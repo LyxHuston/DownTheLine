@@ -65,6 +65,11 @@ SPAWNER_2 = Image("resources/entities/spawner/spawner_2.png")
 SPAWNER_3 = Image("resources/entities/spawner/spawner_3.png")
 SPAWNER_4 = Image("resources/entities/spawner/spawner_4.png")
 
+FENCER_1 = Image("resources/entities/fencer/fencer_1.png")
+FENCER_2 = Image("resources/entities/fencer/fencer_2.png")
+FENCER_3 = Image("resources/entities/fencer/fencer_3.png")
+FENCER_DASHING = Image("resources/entities/fencer/fencer_dashing.png")
+
 # items
 SIMPLE_SWORD = Image("resources/items/simple_sword.png")
 SIMPLE_SPEAR = Image("resources/items/simple_spear.png")

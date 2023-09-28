@@ -389,6 +389,79 @@ class Crawler(Glides):
         return cls((0, area.random.randint(area.length // 3, area.length)), area.random.randint(1, min(area.difficulty // 4, 5)), area)
 
 
+class Fencer(Glides):
+    """
+    the first entity with an actually semi-complicated movement script. (Spawner doesn't count)
+    Tries to keep distance except for dashes.  Dashes quickly.
+    """
+
+    dashing = images.FENCER_DASHING
+    imgs = [images.FENCER_1, images.FENCER_2, images.FENCER_3]
+    frame_change_frequency = 5
+
+    def __init__(self, pos: tuple[int, int], difficulty: int):
+        super().__init__(images.FENCER_1.img, 0, pos)
+        self.health = 4
+        self.max_health = 4
+        self.cooldown = 0
+        self.cooldown_length = max(180 - difficulty, 30)
+        self.frame = 0
+
+    def tick(self) -> bool:
+        dist = abs(self.y - game_states.DISTANCE)
+        self.rotation = 180 * (self.y < game_states.DISTANCE)
+        if self.glide_speed > 0:
+            self.glide_tick()
+            if abs(self.x) < 40 and abs(self.y - game_states.DISTANCE) < 56:
+                game_states.HEALTH -= 2
+                game_states.DISTANCE = self.y + 56 * ((self.y < game_states.DISTANCE) * 2 - 1)
+                self.start_glide(25, 10, 15, ((self.y - game_states.DISTANCE) > 0) * 2 - 1)
+                glide_player(1, 20, 10, (self.y < game_states.DISTANCE) * 2 - 1)
+                game_structures.begin_shake(10, (20, 20), (13, -9))
+            if self.cooldown > 0:
+                self.cooldown -= 1
+            return self.health > 0
+        if self.cooldown > 0:
+            self.cooldown -= 1
+            if dist < 400:
+                self.y += 5 * ((self.y > game_states.DISTANCE) * 2 - 1)
+            elif dist > 450:
+                self.y += 5 * ((self.y < game_states.DISTANCE) * 2 - 1)
+            self.frame = (self.frame + self.glide_direction) % (3 * self.frame_change_frequency)
+            self.img = self.imgs[self.frame // self.frame_change_frequency]
+        else:
+            if dist < 100:
+                self.start_glide(20, 24, 20, (self.y > game_states.DISTANCE) * 2 - 1)
+                self.cooldown = self.cooldown_length
+                self.img = self.dashing.img
+            elif dist < 300:
+                self.y += 5 * ((self.y > game_states.DISTANCE) * 2 - 1)
+            elif dist < 450 and game_states.CAMERA_BOTTOM + 100 < self.y < game_states.CAMERA_BOTTOM + game_states.HEIGHT - 100:
+                self.start_glide(20, 24, 20, (self.y < game_states.DISTANCE) * 2 - 1)
+                self.cooldown = self.cooldown_length
+                self.img = self.dashing.img
+            else:
+                self.y += 5 * ((self.y < game_states.DISTANCE) * 2 - 1)
+        if abs(self.x) < 40 and abs(self.y - game_states.DISTANCE) < 56:
+            game_states.HEALTH -= 1
+            game_states.DISTANCE = self.y + 56 * ((self.y < game_states.DISTANCE) * 2 - 1)
+            self.start_glide(25, 10, 15, ((self.y - game_states.DISTANCE) > 0) * 2 - 1)
+            glide_player(1, 20, 10, (self.y < game_states.DISTANCE) * 2 - 1)
+            game_structures.begin_shake(10, (20, 20), (13, -9))
+        return self.health > 0
+
+    def hit(self, damage: int, item):
+        self.health -= damage
+        if isinstance(item.pos, int):
+            self.start_glide(25, 10, 15, ((self.y - game_states.DISTANCE) > 0) * 2 - 1)
+        else:
+            self.start_glide(25, 10, 15, ((self.y - item.pos[0]) > 0) * 2 - 1)
+
+    @classmethod
+    def make(cls, determiner: int, area):
+        return cls((0, area.random.randint(area.length // 3, 2 * area.length // 3)), area.difficulty)
+
+
 class Spawner(Entity):
     """
     superclass for any entity that spawns others.  Also probably its own entity?
@@ -398,7 +471,7 @@ class Spawner(Entity):
 
     imgs = [images.SPAWNER_1, images.SPAWNER_2, images.SPAWNER_3, images.SPAWNER_4]
 
-    allowable = ((Slime, 0), (Crawler, 8))
+    allowable = ((Slime, 0), (Crawler, 6), (Fencer, 13))
 
     def __init__(self, pos: tuple[int, int], limit: int | None, area, delay: int, entity: Entity, deposit: tuple[int | None, int | None], speed: int):
         super().__init__(self.imgs[0].img if isinstance(self.imgs[0], images.Image) else self.imgs[0], 0, pos)
