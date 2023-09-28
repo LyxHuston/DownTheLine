@@ -28,6 +28,7 @@ import game_states
 import pygame
 import entities
 import images
+import math
 
 
 @dataclass
@@ -41,6 +42,24 @@ class Item:
     pos: Union[int, tuple[entities.Entity, int], tuple[int, int]]
     draw: Callable
     data_pack: Any
+
+
+def offset_point_rotated(origin: tuple[int, int], offset: tuple[int, int], rotation: int) -> tuple[int, int]:
+    """
+    rotates the offset point, then adds to origin.
+    Uses monster's base orientation (0 is down, +y is down, +x is left)
+    :param origin: center point
+    :param offset: a point to be rotated and added to the origin
+    :param rotation: amount to rotate
+    :return: computed point
+    """
+    rad = math.radians(rotation)
+    cos = math.cos(rad)
+    sin = math.sin(rad)
+    return (
+        round(origin[0] - cos * offset[0] + sin * offset[1]),
+        round(origin[1] - cos * offset[1] - sin * offset[0])
+    )
 
 
 def _wrap(new, old):
@@ -99,8 +118,8 @@ def draw_on_ground_if_not_held(func: Callable):
             func(item)
         elif isinstance(item.pos[0], int):
             draw_on_ground(item)
-        else:  # would be held by an enemy entity, a case which does not exist yet
-            pass
+        else:
+            func(item)
 
     return internal
 
@@ -123,6 +142,8 @@ def draw_by_side_if_not_used(func: Callable):
 
 
 def draw_icon_for_simple_duration_item(item: Item):
+    if not isinstance(item.pos, int):
+        return
     game_structures.SCREEN.blit(
         item.data_pack[5],
         (66 * item.pos, 202)
@@ -152,15 +173,34 @@ def original_simple_draw(item: Item):
     :param item:
     :return:
     """
-    game_structures.SCREEN.blit(
-        pygame.transform.flip(item.img, ((item.pos == 0) != (game_states.LAST_DIRECTION == -1)),
-                              game_states.LAST_DIRECTION == -1),
-        (
-            game_structures.to_screen_x(
-                32 * (item.pos * 2 - 1) * game_states.LAST_DIRECTION) - item.img.get_width() // 2,
-            game_structures.to_screen_y(game_states.DISTANCE) - item.img.get_height() // 2
+    if isinstance(item.pos, int):
+        game_structures.SCREEN.blit(
+            pygame.transform.flip(item.img, ((item.pos == 0) != (game_states.LAST_DIRECTION == -1)),
+                                  game_states.LAST_DIRECTION == -1),
+            (
+                game_structures.to_screen_x(
+                    32 * (item.pos * 2 - 1) * game_states.LAST_DIRECTION) - item.img.get_width() // 2,
+                game_structures.to_screen_y(game_states.DISTANCE) - item.img.get_height() // 2
+            )
         )
-    )
+    else:
+        ent = item.pos[0]
+        hand = item.pos[1] * 2 - 1
+        rotated = pygame.transform.rotate(
+            pygame.transform.flip(item.img, item.pos[1] == 0, False),
+            ent.rotation + 180
+        )
+        game_structures.SCREEN.blit(
+            rotated,
+            game_structures.to_screen_pos(offset_point_rotated(
+                (
+                    ent.x - rotated.get_width() // 2,
+                    ent.y + rotated.get_height() // 2
+                ),
+                (hand * ent.width // 2, 0),
+                ent.rotation
+            ))
+        )
 
 
 simple_draw = draw_on_ground_if_not_held(original_simple_draw)
@@ -199,16 +239,35 @@ def simple_stab_draw(item: Item):
     :param item:
     :return:
     """
-    game_structures.SCREEN.blit(
-        pygame.transform.flip(item.img, ((item.pos == 0) != (game_states.LAST_DIRECTION == -1)),
-                              game_states.LAST_DIRECTION == -1),
-        (
-            game_structures.to_screen_x(
-                16 * (item.pos * 2 - 1) * game_states.LAST_DIRECTION) - item.img.get_width() // 2,
-            game_structures.to_screen_y(game_states.DISTANCE + (
-                    20 + item.img.get_height() // 2) * game_states.LAST_DIRECTION) - item.img.get_height() // 2
+    if isinstance(item.pos, int):
+        game_structures.SCREEN.blit(
+            pygame.transform.flip(item.img, ((item.pos == 0) != (game_states.LAST_DIRECTION == -1)),
+                                  game_states.LAST_DIRECTION == -1),
+            (
+                game_structures.to_screen_x(
+                    16 * (item.pos * 2 - 1) * game_states.LAST_DIRECTION) - item.img.get_width() // 2,
+                game_structures.to_screen_y(game_states.DISTANCE + (
+                        20 + item.img.get_height() // 2) * game_states.LAST_DIRECTION) - item.img.get_height() // 2
+            )
         )
-    )
+    else:
+        ent = item.pos[0]
+        hand = item.pos[1] * 2 - 1
+        rotated = pygame.transform.rotate(
+            pygame.transform.flip(item.img, item.pos[1] == 0, False),
+            ent.rotation + 180
+        )
+        game_structures.SCREEN.blit(
+            rotated,
+            game_structures.to_screen_pos(offset_point_rotated(
+                (
+                    ent.x - rotated.get_width() // 2,
+                    ent.y + rotated.get_height() // 2
+                ),
+                (hand * ent.width // 4, ent.height // 2 + item.img.get_height() // 2),
+                ent.rotation
+            ))
+        )
 
 
 def simple_cooldown_action(item: Item):
@@ -279,4 +338,18 @@ def simple_stab(cooldown: int, duration: int, img: pygame.Surface, pos: tuple[in
         simple_stab_draw,
         [False, cooldown, cooldown, duration, damage, images.SIMPLE_STAB_ICON.img, []
          ]  # state, tracker, cooldown ticks, duration ticks, hit tracker
+    )
+
+
+simple_stab_imgs = [images.SIMPLE_SWORD, images.SIMPLE_SPEAR]
+
+
+def random_simple_stab(strength: int, random, pos=None):
+    img = random.choice(simple_stab_imgs).img
+
+    return Item(
+        simple_cooldown_action,
+        simple_stab_tick,
+        img,
+        pos
     )
