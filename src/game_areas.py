@@ -126,7 +126,7 @@ class BasicArea(GameArea):
                 add = entity.make(determiner, self)
                 add.y = self.length // 2
                 self.entity_list.append(add)
-                self.entity_list.append(entities.Obstacle(pos=(0, self.length)))
+                self.entity_list.append(entities.Obstacle(pos=(0, self.length), health=5))
                 break
 
 
@@ -166,11 +166,11 @@ def add_game_area():
             )))
         case 1:
             area = GameArea(300)
-            area.entity_list.append(entities.Obstacle(pos=(0, area.length)))
+            area.entity_list.append(entities.Obstacle(pos=(0, area.length), health=5))
             area.entity_list.append(entities.Slime((0, area.length // 2)))
         case 2:
             area = GameArea(500)
-            area.entity_list.append(entities.Obstacle(pos=(0, + area.length)))
+            area.entity_list.append(entities.Obstacle(pos=(0, + area.length), health=5))
             area.entity_list.append(entities.Slime((0, area.length // 3)))
             area.entity_list.append(entities.Slime((0, 2 * area.length // 2)))
             area.entity_list.append(entities.ItemEntity(items.simple_stab(

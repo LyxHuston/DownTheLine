@@ -223,10 +223,10 @@ class Obstacle(Entity):
     half = images.WALL_HALF
     fragile = images.WALL_FRAGILE
 
-    def __init__(self, rotation: int = 0, pos: tuple[int, int] = (0, 0)):
+    def __init__(self, rotation: int = 0, pos: tuple[int, int] = (0, 0), health: int = 10):
         super().__init__(self.full.img, rotation, pos)
-        self.health = 10
-        self.max_health = 10
+        self.health = health
+        self.max_health = health
 
     def hit(self, damage: int, item):
         self.health -= damage
