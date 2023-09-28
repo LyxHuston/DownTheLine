@@ -24,7 +24,7 @@ import game_states
 import game_structures
 import images
 import random
-from collections import deque
+import math
 
 
 def glide_player(speed: int, duration: int, taper: int, direction: int):
@@ -112,6 +112,31 @@ class Entity(game_structures.Body):
         :param area:
         :return:
         """
+
+
+def make_invulnerable_version(entity_class):
+    """
+    make invulnerable subclass of an entity class
+    :param entity_class: an entity subclass
+    :return:
+    """
+
+    class New(Entity):
+        """
+        new class with frozen health
+        """
+
+        @property
+        def health(self):
+            """always return 1, setter just passes to avoid errors"""
+            return 1
+
+        @health.setter
+        def health(self, val: int):
+            pass
+
+    return New
+
 
 
 class ItemEntity(Entity):
@@ -460,6 +485,32 @@ class Fencer(Glides):
     @classmethod
     def make(cls, determiner: int, area):
         return cls((0, area.random.randint(area.length // 3, 2 * area.length // 3)), area.difficulty)
+
+
+class Projectile(Entity):
+
+    def __init__(self, img: pygame.Surface, rotation: int, pos: tuple[int, int], health: int = 1, speed: int = 1,
+                 destruct_on_collision: bool = True, damage: int = 1):
+        super().__init__(img, rotation, pos)
+        self.health = health
+        self.move = (round(speed * math.sin(rotation)) , round(speed * math.cos(rotation)))
+        self.destruct_on_collision = destruct_on_collision
+        self.damage = damage
+
+    def tick(self) -> bool:
+        self.x += self.move[0]
+        self.y += self.move[1]
+        if self.y < game_states.BOTTOM:
+            return False
+        if self.y > game_states.LAST_AREA_END + 1000:
+            return False
+        rect = self.rect
+        if rect.right > -32 and rect.left < 32 and rect.bottom < game_states.DISTANCE + 32 and rect.top > game_states.DISTANCE - 32:
+            glide_player(self.damage * 2, 10, 1, (self.y > game_states.Distance) * 2 - 1)
+            if self.destruct_on_collision:
+                return False
+        return self.health > 0
+
 
 
 class Spawner(Entity):
