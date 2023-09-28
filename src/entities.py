@@ -490,27 +490,81 @@ class Fencer(Glides):
 class Projectile(Entity):
 
     def __init__(self, img: pygame.Surface, rotation: int, pos: tuple[int, int], health: int = 1, speed: int = 1,
-                 destruct_on_collision: bool = True, damage: int = 1):
+                 destruct_on_collision: bool = True, damage: int = 1, expiry: int = None):
         super().__init__(img, rotation, pos)
         self.health = health
-        self.move = (round(speed * math.sin(rotation)) , round(speed * math.cos(rotation)))
+        self.move = (round(speed * math.sin(rotation)), -round(speed * math.cos(rotation)))
         self.destruct_on_collision = destruct_on_collision
         self.damage = damage
+        self.expiration_date = expiry
 
     def tick(self) -> bool:
+        self.freeze_y(False)
         self.x += self.move[0]
         self.y += self.move[1]
+        if self.expiration_date == 0:
+            return False
+        if self.expiration_date is not None:
+            self.expiration_date -= 1
         if self.y < game_states.BOTTOM:
             return False
         if self.y > game_states.LAST_AREA_END + 1000:
             return False
         rect = self.rect
         if rect.right > -32 and rect.left < 32 and rect.bottom < game_states.DISTANCE + 32 and rect.top > game_states.DISTANCE - 32:
-            glide_player(self.damage * 2, 10, 1, (self.y > game_states.Distance) * 2 - 1)
+            game_states.HEALTH -= self.damage
+            glide_player(self.damage * 2, 10, 1, (self.y < game_states.DISTANCE) * 2 - 1)
             if self.destruct_on_collision:
                 return False
+        self.freeze_y(True)
         return self.health > 0
 
+
+class Archer(Glides):
+    """
+    first long ranger
+    """
+
+    imgs = [images.ARCHER_DRAWN, images.ARCHER_DRAWING, images.ARCHER_RELAXED]
+
+    def __init__(self, pos: tuple[int, int], difficulty: int, area):
+        super().__init__(images.ARCHER_RELAXED.img, 0, pos)
+        self.health = 4
+        self.area = area
+        self.cooldown_length = max(240 - difficulty * 6, 60)
+        self.cooldown = self.cooldown_length
+
+    def tick(self) -> bool:
+        if self.glide_speed != 0:
+            self.glide_tick()
+            return self.health > 0
+        dist = abs(self.y - game_states.DISTANCE)
+        if self.cooldown == 0:
+            if dist < 900:
+                self.cooldown = self.cooldown_length
+                self.area.entity_list.append(Projectile(images.ARROW.img, self.rotation, (self.x + self.area.random.randint(-1, 1) * 16, self.y), speed=5))
+        elif abs(self.y - game_states.CAMERA_BOTTOM - game_states.HEIGHT // 2) < game_states.HEIGHT // 2:
+            self.cooldown -= 1
+            self.img = self.imgs[3 * self.cooldown // self.cooldown_length]
+        if dist < 150:
+            self.start_glide(20, 10, 2, (self.y > game_states.DISTANCE) * 2 - 1)
+        if dist < 400:
+            self.y += 5 * ((self.y > game_states.DISTANCE) * 2 - 1)
+        elif dist > 450:
+            self.y += 5 * ((self.y < game_states.DISTANCE) * 2 - 1)
+        return self.health > 0
+
+    def transfer(self, area):
+        self.area = area
+
+    def first_seen(self):
+        for i in range(1, 3):
+            if isinstance(self.__class__.imgs[i], images.Image):
+                self.__class__.imgs[i] = self.__class__.imgs[i].img
+
+    @classmethod
+    def make(cls, determiner: int, area):
+        return cls((0, area.random.randint(area.length // 3, 2 * area.length // 3)), area.difficulty, area)
 
 
 class Spawner(Entity):
@@ -522,7 +576,7 @@ class Spawner(Entity):
 
     imgs = [images.SPAWNER_1, images.SPAWNER_2, images.SPAWNER_3, images.SPAWNER_4]
 
-    allowable = ((Slime, 0), (Crawler, 6), (Fencer, 13))
+    allowable = ((Slime, 0), (Crawler, 6), (Fencer, 13), (Archer, 16))
 
     def __init__(self, pos: tuple[int, int], limit: int | None, area, delay: int, entity: Entity, deposit: tuple[int | None, int | None], speed: int):
         super().__init__(self.imgs[0].img if isinstance(self.imgs[0], images.Image) else self.imgs[0], 0, pos)

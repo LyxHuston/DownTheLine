@@ -70,6 +70,12 @@ FENCER_2 = Image("resources/entities/fencer/fencer_2.png")
 FENCER_3 = Image("resources/entities/fencer/fencer_3.png")
 FENCER_DASHING = Image("resources/entities/fencer/fencer_dashing.png")
 
+ARCHER_RELAXED = Image("resources/entities/archer/archer_relaxed.png")
+ARCHER_DRAWING = Image("resources/entities/archer/archer_drawing.png")
+ARCHER_DRAWN = Image("resources/entities/archer/archer_drawn.png")
+
+ARROW = Image("resources/entities/projectiles/arrow.png")
+
 # items
 SIMPLE_SWORD = Image("resources/items/simple_sword.png")
 SIMPLE_SPEAR = Image("resources/items/simple_spear.png")
