@@ -475,6 +475,7 @@ def simple_shield_tick(item: Item):
                         if entity not in item.data_pack[-1]:
                             entity.hit(item.data_pack[4], item)
                             item.data_pack[-1].append(entity)
+                    game_states.DISTANCE -= game_states.LAST_DIRECTION * 2
         else:
             damage = item.data_pack[4]
             correct_distance = item.pos[0].y + item.pos[0].height // 2 * math.cos(math.radians(item.pos[0].rotation))
@@ -489,6 +490,7 @@ def simple_shield_tick(item: Item):
                         if entity not in item.data_pack[-1]:
                             entity.hit(item.data_pack[4], item)
                             item.data_pack[-1].append(entity)
+                    item.pos[0].y -= 2 * math.cos(math.radians(item.pos[0].rotation))
             if rect.colliderect(pygame.Rect(-32, game_states.DISTANCE - 32, 64, 64)):
                 if "p" not in item.data_pack[-1]:
                     item.data_pack.append("p")
@@ -497,6 +499,7 @@ def simple_shield_tick(item: Item):
                             (item.pos[1] if isinstance(item.pos[0], int) else item.pos[0].y) < game_states.DISTANCE) * 2 - 1)
                     game_structures.begin_shake(10 * (1 + damage // 2), (20, 20), (2 * (1 + damage), -5 * (1 + damage)))
                 game_states.DISTANCE = item.pos[0].y + (item.pos[0].height // 2 + item.img.get_width()) * math.cos(math.radians(item.pos[0].rotation))
+                item.pos[0].y -= 2 * math.cos(math.radians(item.pos[0].rotation))
     return True
 
 
