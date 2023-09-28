@@ -36,7 +36,7 @@ class ItemTypes(enum.IntEnum):
     enum of item types
     """
     SimpleStab = 0
-    SimpleShield = 0
+    SimpleShield = 1
 
 
 @dataclass

@@ -76,7 +76,7 @@ def deal_damage(damage: int, source):
                             return
                         continue
         game_states.HEALTH -= damage
-        game_states.INVULNERABILITY_LEFT = damage * 2 + 1
+        game_states.INVULNERABILITY_LEFT = damage * 3 + 1
 
 
 # SCREEN = pygame.display.set_mode((500, 200))
