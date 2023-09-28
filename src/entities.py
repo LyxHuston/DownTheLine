@@ -91,8 +91,9 @@ class Entity(game_structures.Body):
         called when an area initializes.  In most cases, starts AI/movement
         :return:
         """
-        if not self.__class__.seen:
-            self.__class__.seen = True
+        if not type(self).seen:
+            print(type(self).__name__)
+            type(self).seen = True
             self.first_seen()
 
     @classmethod
@@ -281,7 +282,7 @@ class Slime(Glides):
         self.frame = (self.frame + 1) % (4 * self.frame_change_frequency)
         self.img = self.imgs[self.frame // self.frame_change_frequency]
         self.glide_tick()
-        if self.glide_duration == 0:
+        if self.glide_speed == 0:
             self.start_glide(
                 self.random.randint(1, 3) * 4,
                 self.random.randint(4, 6) * 60,
@@ -290,12 +291,10 @@ class Slime(Glides):
             )
             if abs(self.y - game_states.CAMERA_BOTTOM - game_states.HEIGHT // 2) > game_states.HEIGHT // 2 and self.glide_speed > 4:
                 self.glide_speed = 4
-        else:
-            self.glide_duration -= 1
         # print(self.health, self.frame, self.pos, game_states.DISTANCE)
-        if abs(self.x) < 32 and abs(self.y - game_states.DISTANCE) < 64:
+        if abs(self.x) < 32 and abs(self.y - game_states.DISTANCE) < 32:
             game_states.HEALTH -= 1
-            game_states.DISTANCE = self.y + 64 * (((self.y - game_states.DISTANCE) < 0) * 2 - 1)
+            game_states.DISTANCE = self.y + 32 * (((self.y - game_states.DISTANCE) < 0) * 2 - 1)
             glide_player(5, 1, 1, ((self.y - game_states.DISTANCE) < 0) * 2 - 1)
             game_structures.begin_shake(6, (10, 10), (7, 5))
             self.start_glide(0, 30, 0, 0)
@@ -310,6 +309,71 @@ class Slime(Glides):
         new_slime = cls((0, area.random.randint(area.length // 3, area.length)))
         new_slime.random.seed(determiner)
         return new_slime
+
+
+class Crawler(Glides):
+    """
+    crawls towards the player.  Slow, sometimes, but always a threat.
+    """
+
+    frame_change_frequency = 16
+
+    cost = 1
+
+    imgs = []
+
+    def __init__(self, pos: tuple[int, int], speed: int, area):
+        super().__init__(images.CRAWLER_1.img, 0, pos)
+        self.speed = speed * 2
+        self.switch_ticks = max(9 // speed, 1)
+        self.frame = 0
+        self.threshhold = area.start_coordinate
+        self.health = 10
+        self.max_health = 10
+
+    def hit(self, damage: int, item):
+        self.health -= damage
+        self.start_glide(damage, 90, 1, ((self.y - game_states.DISTANCE) > 0) * 2 - 1)
+
+    def tick(self) -> bool:
+        # print(self.y, self.health)
+        self.glide_tick()
+        if (self.glide_speed == 0 or (
+                self.taper == 0 and self.glide_direction != (self.y < game_states.DISTANCE) * 2 - 1)) and game_states.DISTANCE > self.threshhold:
+            if self.threshhold != 0:
+                print("Crawler activated:", self.threshhold)
+                self.threshhold = 0
+            self.start_glide(
+                self.speed,
+                0,
+                0,
+                (self.y < game_states.DISTANCE) * 2 - 1
+            )
+        if self.glide_speed > 0 and self.taper == 0:
+            self.frame = (self.frame + self.glide_direction) % (4 * self.frame_change_frequency * self.switch_ticks)
+            self.img = self.imgs[self.frame // (self.frame_change_frequency * self.switch_ticks)]
+        if abs(self.x) < 28 and abs(self.y - game_states.DISTANCE) < 34:
+            game_states.HEALTH -= 1
+            game_states.DISTANCE = self.y + 34 * (((self.y - game_states.DISTANCE) < 0) * 2 - 1)
+            glide_player(round(self.speed * 1.5), 3, 10, ((self.y - game_states.DISTANCE) < 0) * 2 - 1)
+            game_structures.begin_shake(6, (10, 10), (7, 5))
+        return self.health > 0
+
+    def first_seen(self):
+        self.__class__.imgs = [
+            images.CRAWLER_1.img,
+            images.CRAWLER_2.img,
+            images.CRAWLER_3.img,
+            pygame.transform.flip(images.CRAWLER_2.img, False, True),
+            pygame.transform.flip(images.CRAWLER_1.img, False, True),
+            pygame.transform.flip(images.CRAWLER_2.img, True, True),
+            images.CRAWLER_3.img,
+            pygame.transform.flip(images.CRAWLER_2.img, True, False)
+        ]
+
+    @classmethod
+    def make(cls, determiner: int, area):
+        return cls((0, area.random.randint(area.length // 3, area.length)), area.random.randint(1, area.difficulty), area)
 
 
 if __name__ == "__main__":
