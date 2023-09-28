@@ -84,6 +84,8 @@ class GameArea:
         """
         called at the end of an intialization.  Ensures that the start
         coordinate is offscreen and moves everything to correct position
+
+        DON'T CALL THIS IN __INIT__!!!  Called during add_area().
         :return:
         """
         if self.start_coordinate < game_states.CAMERA_BOTTOM + game_states.HEIGHT + 100 or self.start_coordinate < game_states.LAST_AREA_END:
@@ -97,11 +99,17 @@ class BasicArea(GameArea):
     a basic fight area.  Fight a few monsters and continue.
     """
 
+    allowable_thresh_holds = [(entities.Slime, 0)]
+
     def __init__(self, determiner, count):
         super().__init__()
         self.length = 200 + math.floor(math.log2(count)) * 100
         allowance = count
-        allowable_entities = [[entities.Slime, 0]]
+        allowable_entities = []
+        for entry in self.allowable_thresh_holds:
+            if entry[1] > count:
+                break
+            allowable_entities.append([entry[0], 0])
         num = 3
         while allowance > 0:
             index = (determiner % num) % len(allowable_entities)
@@ -118,7 +126,6 @@ class BasicArea(GameArea):
                 self.entity_list.append(add)
                 self.entity_list.append(entities.Obstacle(pos=(0, self.end_coordinate)))
                 break
-        self.finalize()
 
 
 @make_async(with_lock=True)
