@@ -770,6 +770,7 @@ class Spawner(Entity):
         self.timer = -1
         self.entity = entity
         self.__spawning: Entity | None = None
+        self.__stored_tick_method = None
         self.__destination = deposit
         self.__speed = speed
         self.switch_ticks = max(speed, 1)
@@ -794,6 +795,17 @@ class Spawner(Entity):
                 self.area.entity_list.append(self.__spawning)
                 if self.__list is not None:
                     self.__list[self.__check] = self.__spawning
+                if self.__list is not None:
+                    index = self.__check
+                    previous_tick = self.__stored_tick_method
+
+                    def special_callback():
+                        res = previous_tick()
+                        if not res:
+                            self.__list[index] = None
+                        return res
+
+                    self.__spawning.tick = special_callback
                 self.__spawning = None
                 return
             self.__spawning.x += self.__speed * round(x_dist / dist)
@@ -814,16 +826,17 @@ class Spawner(Entity):
 
             if self.__list is not None:
                 index = self.__check
-                previous_tick = self.__spawning.tick
+                self.__stored_tick_method = self.__spawning.tick
 
                 def special_callback():
-                    res = previous_tick()
-                    if not res:
-                        self.__list[index] = None
-                    return res
+                    if self.__spawning.health > 0:
+                        return True
+                    self.__spawning = None
+                    return False
 
                 self.__spawning.tick = special_callback
 
+            self.area.entity_list.append(self.__spawning)
             self.__spawning.pos = self.pos
             return
         self.timer += 1
@@ -861,7 +874,7 @@ class Spawner(Entity):
                 min(2, 5 - (entity.cost - area.difficulty // 4)),
                 min(max(area.difficulty // 5, 2), 3 - (entity.cost - area.difficulty // 4) // 2))
             delay = area.random.randint(5, 8) * 20
-        y = area.random.randint(area.length // 3, area.length)
+        y = area.random.randint(area.length // 3, area.length - 50)
         return cls((area.random.randint(100, game_states.WIDTH // 2) * (area.random.randint(0, 1) * 2 - 1), y), limit,
                    area, delay, entity, (0, None), area.difficulty // 10 + 1)
 
