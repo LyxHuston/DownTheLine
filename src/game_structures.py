@@ -59,6 +59,8 @@ def begin_shake(duration: int, maximum: tuple[int, int], change_per_tick: tuple[
 
 
 def deal_damage(damage: int, source):
+    if game_states.INVULNERABLE:
+        return
     if game_states.INVULNERABILITY_LEFT == 0:
         for hand in HANDS:
             if hand is None:
@@ -1576,3 +1578,24 @@ def all_entities():
 
 import entities
 import items
+
+
+def make_save():
+    if game_states.AUTOSAVE:
+        import copy
+        import collections
+        game_states.SAVE_DATA = None
+        game_states.QUEUE_SAVE = collections.deque()
+        for area in AREA_QUEUE:
+            copying = copy.copy(area)
+            i = 0
+            while i < len(copying.entity_list):
+                copying.entity_list[i] = copy.copy(copying.entity_list[i])
+                i += 1
+            game_states.QUEUE_SAVE.append(copying)
+        game_states.HANDS_SAVE = [
+            copy.copy(HANDS[0]),
+            copy.copy(HANDS[1])
+        ]
+        print(game_states.HANDS_SAVE)
+        game_states.SAVE_DATA = game_states.__dict__

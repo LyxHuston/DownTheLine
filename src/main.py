@@ -28,14 +28,18 @@ import ingame
 import random
 import sys
 
-
-match sys.argv[1] if len(sys.argv) > 1 else None:
-    case "testing":
-        backdrop = (128, 128, 128)
-        game_structures.SCREEN = pygame.display.set_mode((1000, 700))
-    case _:
-        backdrop = (0, 0, 0)
-        game_structures.SCREEN = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+if len(sys.argv) > 1:
+    match sys.argv[1]:
+        case "testing":
+            backdrop = (128, 128, 128)
+            game_structures.SCREEN = pygame.display.set_mode((1000, 700))
+        case _:
+            backdrop = (0, 0, 0)
+            game_structures.SCREEN = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+    if "--autosave" in sys.argv:
+        game_states.AUTOSAVE = True
+    if "--invulnerable" in sys.argv:
+        game_states.INVULNERABLE = True
 pygame.display.set_caption("Down the Line")
 game_states.WIDTH, game_states.HEIGHT = game_structures.SCREEN.get_size()
 game_states.CAMERA_THRESHOLDS = (min(100, round(game_states.HEIGHT / 4)), min(500, round(game_states.HEIGHT / 2)))

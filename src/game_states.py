@@ -16,7 +16,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 essentially, a bunch of trackers for game states.  If it is more than a single
-function, string, or integer, it's too much and should go in game_structures
+function, string, or integer, it's too much and should go in game_structures.
+Except for dev tool storage
 """
 
 # overall game state
@@ -56,3 +57,9 @@ AREA_QUEUE_MAX_LENGTH = 3
 SEED = 0
 # settings
 DO_TTS = False
+# dev tools
+AUTOSAVE = False
+SAVE_DATA = None
+HANDS_SAVE = None
+QUEUE_SAVE = None
+INVULNERABLE = False

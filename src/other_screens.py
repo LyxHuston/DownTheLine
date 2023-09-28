@@ -21,6 +21,7 @@ handles the ending screens for the game, both won and lost
 import pygame
 import game_structures
 import game_states
+import ingame
 
 
 fade_counter = 0
@@ -106,6 +107,18 @@ def lost():
             border_width=5,
             text_align=0.5
         ))
+        if game_states.AUTOSAVE:
+            game_structures.BUTTONS.add_button(game_structures.Button.make_text_button(
+                "Refresh from Save",
+                25,
+                refresh_from_save,
+                (game_states.WIDTH // 2, game_states.HEIGHT - 20),
+                background_color=(0, 0, 0),
+                outline_color=(255, 255, 255),
+                enforce_width=300,
+                border_width=5,
+                text_align=0.5
+            ))
         fade_counter = 256
     else:
         pass
@@ -114,5 +127,22 @@ def lost():
 def won():
     pass
 
+
 def exit():
     game_states.RUNNING = False
+
+
+def refresh_from_save():
+    """
+    dev tool
+    :return:
+    """
+    for name, val in game_states.SAVE_DATA.items():
+        setattr(game_states, name, val)
+    game_structures.HANDS = game_states.HANDS_SAVE
+    game_structures.AREA_QUEUE = game_states.QUEUE_SAVE
+    game_states.DISTANCE = game_structures.AREA_QUEUE[0].start_coordinate - 100
+    game_states.HEALTH = 5
+    game_states.PLACE = game_structures.PLACES.in_game
+    game_structures.BUTTONS.clear()
+    game_structures.CUSTOM_EVENT_CATCHERS.append(ingame.event_catcher)

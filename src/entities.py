@@ -150,6 +150,7 @@ class Entity(game_structures.Body):
         :param area:
         :return:
         """
+        pass
 
 
 def make_invulnerable_version(entity_class):
@@ -159,7 +160,7 @@ def make_invulnerable_version(entity_class):
     :return:
     """
 
-    class New(Entity):
+    class New(entity_class):
         """
         new class with frozen health
         """
@@ -333,6 +334,9 @@ class Obstacle(Entity):
         self.half.img
         self.fragile.img
         self.hit(0, None)
+
+
+InvulnerableObstacle = make_invulnerable_version(Obstacle)
 
 
 class Slime(Glides):

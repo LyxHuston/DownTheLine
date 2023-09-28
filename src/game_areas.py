@@ -297,3 +297,4 @@ def add_game_area():
     game_states.LAST_AREA_END = area.end_coordinate
     # print(game_states.LAST_AREA_END)
     game_structures.AREA_QUEUE.append(area)
+    game_structures.make_save()
