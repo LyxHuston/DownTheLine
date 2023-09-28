@@ -53,6 +53,7 @@ class Entity(game_structures.Body):
     def health(self, val):
         if val < self.__health:
             self.flashing = 3 * (self.__health - val) + 2
+            # print(self.y, game_states.DISTANCE, self.tick, val, self.tick())
         elif val > self.max_health:
             val = self.max_health
         self.__health = val
@@ -108,6 +109,7 @@ class Entity(game_structures.Body):
                 game_structures.to_screen_y(self.y + self.__y_shake) - img.get_height() // 2
             )
         )
+        return self.pos
 
     def hit(self, damage: int, source):
         """
@@ -275,9 +277,6 @@ def make_item_duplicator(item: items.Item):
     return ItemDuplicator
 
 
-
-
-
 class Glides(Entity):
     """
     an entity that has the glide action.  typically for knockback
@@ -359,9 +358,7 @@ class Obstacle(Entity):
     def enter(self):
         self.freeze_y(True)
         self.freeze_x(True)
-        if not type(self).seen:
-            type(self).seen = True
-            self.first_seen()
+        super().enter()
 
     def first_seen(self):
         self.full.img
@@ -378,7 +375,7 @@ class Slime(Glides):
     slime.  Moves up or down the path.
     """
 
-    cost = 1
+    cost = 2
 
     frame_change_frequency = 16
     alert = images.SLIME_ALERT
@@ -392,7 +389,7 @@ class Slime(Glides):
         self.max_health = 7
         self.health = 7
         self.random = random.Random(seed)
-        self.wait = 1
+        self.wait = 36
 
     def hit(self, damage: int, source):
         self.health -= damage
@@ -424,12 +421,21 @@ class Slime(Glides):
             self.frame = (self.frame + 1) % (4 * self.frame_change_frequency)
             self.img = self.imgs[self.frame // self.frame_change_frequency]
         # print(self.health, self.frame, self.pos, game_states.DISTANCE)
+        pygame.draw.circle(
+            game_structures.SCREEN,
+            (255, 255, 255),
+            game_structures.to_screen_pos(self.pos),
+            32,
+            5
+        )
+        # if self.draw() != self.pos:
+        #     # print("Position discrepancy")
         if abs(self.x) < 32 and abs(self.y - game_states.DISTANCE) < 64:
             game_structures.deal_damage(1, self)
             game_states.DISTANCE = self.y + 64 * (((self.y - game_states.DISTANCE) < 0) * 2 - 1)
             glide_player(5, 2, 1, ((self.y - game_states.DISTANCE) < 0) * 2 - 1)
             game_structures.begin_shake(6, (10, 10), (7, 5))
-            self.start_glide(0, 30, 0, 0)
+            self.start_glide(5, 30, 5, (self.y > game_states.DISTANCE) * 2 - 1)
         return self.health > 0
 
     def first_seen(self):
@@ -462,8 +468,8 @@ class Crawler(Glides):
         self.switch_ticks = max(9 // speed, 1)
         self.frame = 0
         self.threshhold = area.start_coordinate
-        self.max_health = 10
-        self.health = 10
+        self.max_health = 6
+        self.health = 6
 
     def hit(self, damage: int, source):
         self.health -= damage
@@ -488,10 +494,18 @@ class Crawler(Glides):
         if self.glide_speed > 0 and self.taper == 0:
             self.frame = (self.frame + self.glide_direction) % (8 * self.frame_change_frequency * self.switch_ticks)
             self.img = self.imgs[self.frame // (self.frame_change_frequency * self.switch_ticks)]
+        pygame.draw.circle(
+            game_structures.SCREEN,
+            (255, 255, 255),
+            game_structures.to_screen_pos(self.pos),
+            32,
+            5
+        )
         if abs(self.x) < 28 and abs(self.y - game_states.DISTANCE) < 66:
             game_structures.deal_damage(1, self)
+            self.y -= self.glide_speed * self.glide_direction
             game_states.DISTANCE = self.y + 66 * (((self.y - game_states.DISTANCE) < 0) * 2 - 1)
-            glide_player(round(self.speed * 1.5), 3, 10, ((self.y - game_states.DISTANCE) < 0) * 2 - 1)
+            glide_player(round(self.speed * 1.5), 5, 10, ((self.y - game_states.DISTANCE) < 0) * 2 - 1)
             game_structures.begin_shake(6, (10, 10), (7, 5))
         return self.health > 0
 
@@ -521,6 +535,7 @@ class Fencer(Glides):
     dashing = images.FENCER_DASHING
     imgs = [images.FENCER_1, images.FENCER_2, images.FENCER_3]
     frame_change_frequency = 5
+    cost = 10
 
     def __init__(self, pos: tuple[int, int], difficulty: int):
         super().__init__(images.FENCER_1.img, 0, pos)
@@ -797,6 +812,7 @@ class Knight(Glides):
             self.start_glide(12, 15, 1, ((self.y - source.pos[0]) > 0) * 2 - 1)
 
     def first_seen(self):
+        print("seeing")
         self.stabbing.img
         self.shielding.img
         self.__class__.imgs = [
@@ -1030,6 +1046,10 @@ class Spawner(Entity):
 
     cost = 5
 
+    @property
+    def spawning(self):
+        return self.__spawning
+
     def __init__(self, pos: tuple[int, int], limit: int | None, area, delay: int, entity: Entity, deposit: tuple[int | None, int | None], speed: int):
         super().__init__(self.imgs[0].img if isinstance(self.imgs[0], images.Image) else self.imgs[0], 0, pos)
         self.max_health = 3
@@ -1045,7 +1065,7 @@ class Spawner(Entity):
         self.delay = delay
         self.timer = -1
         self.entity = entity
-        self.__spawning: Entity | None = None
+        self.__spawning: SpawnerHolder | None = None
         self.__stored_tick_method = None
         self.__destination = deposit
         self.__speed = speed
@@ -1065,23 +1085,16 @@ class Spawner(Entity):
             dist = abs(x_dist) + abs(y_dist)
             if dist < self.__speed // 2 + 1:
                 self.__spawning.pos = (
-                    self.pos[0] if self.__destination[0] is None else self.__destination[0],
-                    self.pos[1] if self.__destination[1] is None else self.__destination[1]
+                    self.__spawning.x if self.__destination[0] is None else self.__destination[0],
+                    self.__spawning.y if self.__destination[1] is None else self.__destination[1]
                 )
-                self.area.entity_list.append(self.__spawning)
                 if self.__list is not None:
                     self.__list[self.__check] = self.__spawning
-                if self.__list is not None:
-                    index = self.__check
-                    previous_tick = self.__stored_tick_method
-
-                    def special_callback():
-                        res = previous_tick()
-                        if not res:
-                            self.__list[index] = None
-                        return res
-
-                    self.__spawning.tick = special_callback
+                    self.__spawning.index = self.__check
+                else:
+                    self.__spawning.index = None
+                # while not self.__spawning.deployed:
+                self.__spawning.deployed = True
                 self.__spawning = None
                 return
             self.__spawning.x += self.__speed * round(x_dist / dist)
@@ -1097,25 +1110,27 @@ class Spawner(Entity):
             return
         if self.timer == self.delay:
             self.timer = -1
-            self.__spawning = self.entity.make(self.area.random.randint(0, 2 ** 16 - 1), self.area)
+            self.__spawning = SpawnerHolder(self.entity.make(self.area.random.randint(0, 2 ** 16 - 1), self.area),
+                                            self, -1, self.__destination)
             self.__spawning.enter()
-
-            if self.__list is not None:
-                index = self.__check
-                self.__stored_tick_method = self.__spawning.tick
-
-                def special_callback():
-                    if self.__spawning.health > 0:
-                        return True
-                    self.__spawning = None
-                    return False
-
-                self.__spawning.tick = special_callback
-
             self.area.entity_list.append(self.__spawning)
             self.__spawning.pos = self.pos
             return
         self.timer += 1
+
+    def lose(self, index):
+        """
+        signal to the spawner to lose track of an object
+        :param index:
+        :return:
+        """
+        if index is None:
+            return
+        if index == -1:
+            self.__spawning = None
+        else:
+            # print("losing", index, "out of", len(self.__list))
+            self.__list[index] = None
 
     def tick(self):
         self.management_tick()
@@ -1124,44 +1139,163 @@ class Spawner(Entity):
         return self.health > 0
 
     def transfer(self, area):
-        if self.__list is None:
-            return
-        for i in range(len(self.__list)):
-            if self.__list[i] is None:
-                continue
-            if self.__list[i].y > self.area.end_coordinate:
-                self.__list[i] = None
+        if self.__spawning is not None:
+            if self.__spawning.y < self.area.end_coordinate:
+                self.__spawning = None
+        if self.__list is not None:
+            for i in range(len(self.__list)):
+                if self.__list[i] is None:
+                    continue
+                if self.__list[i].y < self.area.end_coordinate:
+                    self.__list[i] = None
+        self.area = area
 
     @classmethod
     def make(cls, determiner: int, area):
         index = 0
-        while index < len(cls.allowable) - 1 and area.random.randint(0, 1):
+        while index < len(cls.allowable) - 1:
             if area.difficulty < cls.allowable[index][1] or not cls.allowable[index][0].seen:
                 index -= 1
                 break
+            if area.random.randint(0, 1):
+                break
             index += 1
+        if area.difficulty < cls.allowable[index][1] or not cls.allowable[index][0].seen:
+            index -= 1
         entity = cls.allowable[index][0]
         if area.random.randint(0, area.difficulty) > 20 + area.difficulty // 2 + entity.cost ** 2:
             limit = None
             delay = area.random.randint(12, 17) * 100
         else:
+            lower = math.floor(area.difficulty / entity.cost / 20)
             limit = area.random.randint(
-                min(2, 5 - (entity.cost - area.difficulty // 4)),
-                min(max(area.difficulty // 5, 2), 3 - (entity.cost - area.difficulty // 4) // 2))
+                max(1, lower),
+                max(1, lower * 2)
+            )
             delay = area.random.randint(5, 8) * 20
-        y = area.random.randint(area.length // 3, area.length - 50)
+        y = area.random.randint(area.length // 3, area.length - 100)
         return cls((area.random.randint(100, game_states.WIDTH // 2) * (area.random.randint(0, 1) * 2 - 1), y), limit,
                    area, delay, entity, (0, None), area.difficulty // 10 + 1)
-
-    def draw(self):
-        super().draw()
-        if self.__spawning is not None:
-            self.__spawning.draw()
 
     def first_seen(self):
         for i in range(1, 4):
             if isinstance(self.__class__.imgs[i], images.Image):
                 self.__class__.imgs[i] = self.__class__.imgs[i].img
+
+
+class SpawnerHolder(Entity):
+    """
+    helper entity class that takes in an entity and wraps it so that the spawner can keep track.
+    Most data should just be passing onto the held entity
+    """
+
+    @property
+    def img(self):
+        return self.holding.img
+
+    @img.setter
+    def img(self, val):
+        self.img = val
+
+    @property
+    def health(self):
+        return self.holding.health
+
+    @health.setter
+    def health(self, val):
+        self.holding.health = val
+
+    @property
+    def pos(self):
+        return self.holding.pos
+
+    @pos.setter
+    def pos(self, val):
+        self.last_moved = 0
+        self.holding.pos = val
+
+    @property
+    def x(self):
+        return self.holding.x
+
+    @x.setter
+    def x(self, val):
+        self.last_moved = 0
+        self.holding.x = val
+
+    @property
+    def y(self):
+        return self.holding.y
+
+    @y.setter
+    def y(self, val):
+        self.last_moved = 0
+        self.holding.y = val
+
+    def freeze_x(self, val: bool = None):
+        return self.holding.freeze_x(val)
+
+    def freeze_y(self, val: bool = None):
+        return self.holding.freeze_y(val)
+
+    @property
+    def rotation(self):
+        return self.holding.rotation
+
+    @rotation.setter
+    def rotation(self, val):
+        self.holding.rotation = val
+
+    __id = 0
+
+    def __init__(self, holding: Entity, holder: Spawner, index, destiny = (None, None)):
+        self.last_moved = 0
+        self.holding: Entity = holding
+        self.holder: Spawner = holder
+        self.index = index
+        self.deployed = False
+        self.id = SpawnerHolder.__id
+        self.destiny = destiny
+        SpawnerHolder.__id += 1
+        super().__init__(holding.img, holding.rotation, holding.pos)
+
+    def hit(self, damage: int, source):
+        # print(f"{self.pos}, {self.health}, {self.deployed}")
+        self.holding.hit(damage, source)
+
+    def tick(self) -> bool:
+        self.last_moved += 1
+        if self.deployed:
+            res = self.holding.tick()
+            if not res:
+                self.holder.lose(self.index)
+            return res
+        if self.holder.spawning is not self:
+            if self.holder.spawning is None:
+                self.deployed = True
+            elif self.holder.spawning.id != self.id:
+                self.deployed = True
+        if self.destiny[0] is None:
+            x_dist = 0
+        else:
+            x_dist = self.destiny[0] - self.x
+        if self.destiny[1] is None:
+            y_dist = 0
+        else:
+            y_dist = self.destiny[1] - self.y
+        dist = abs(x_dist) + abs(y_dist)
+        if dist < 5:
+            self.deployed = True
+        if self.health <= 0:
+            self.holder.lose(self.index)
+            return False
+        return True
+
+    def draw(self):
+        self.holding.draw()
+
+    def enter(self):
+        self.holding.enter()
 
 
 class DelayedDeploy(Entity):
@@ -1217,39 +1351,57 @@ class Particle(Entity):
 
 
 if __name__ == "__main__":
-    import items
+    import game_areas
+    import utility
+    import main
+    import ingame
 
-    item_1 = items.simple_stab(
-        60,
-        20,
-        images.SIMPLE_SWORD.img,
-        (0, 40)
-    )
-    item_2 = items.simple_stab(
-        120,
-        10,
-        images.SIMPLE_SPEAR.img,
-        (15, 120),
-        2
-    )
-    item_1.data_pack[0] = True
-    item_2.data_pack[0] = True
-    knight = Knight(0, (0, 0), [item_1, item_2])
-    screen = pygame.display.set_mode((500, 500))
-    game_structures.SCREEN = screen
-    game_states.DISTANCE = 300
-    game_states.CAMERA_BOTTOM = 250
-    game_states.WIDTH = 500
-    clock = pygame.time.Clock()
-    pygame.display.init()
-    running = True
-    while running:
-        for event in pygame.event.get():
-            if event.type is pygame.QUIT:
-                running = False
-                break
-        clock.tick(60)
-        screen.fill((0, 0, 0))
-        knight.draw()
-        pygame.display.flip()
-        knight.rotation += 1
+    game_states.PLACE = game_structures.PLACES.in_game
+
+    game_structures.CUSTOM_EVENT_CATCHERS.append(ingame.event_catcher)
+    game_states.PLACE = game_structures.PLACES.in_game
+
+    game_states.DISTANCE = 100
+    game_states.BOTTOM = 0
+    game_states.RECORD_DISTANCE = 0
+    game_states.LAST_AREA_END = 0
+    # player state management
+    game_states.HEALTH = 5
+    game_states.LAST_DIRECTION = 1
+    game_states.GLIDE_SPEED = 0
+    game_states.GLIDE_DIRECTION = 0
+    game_states.GLIDE_DURATION = 0
+    game_states.TAPER_AMOUNT = 0
+    # screen shake management
+    game_states.X_DISPLACEMENT = 0
+    game_states.Y_DISPLACEMENT = 0
+    game_states.SHAKE_DURATION = 0
+    game_states.X_LIMIT = 0
+    game_states.Y_LIMIT = 0
+    game_states.X_CHANGE = 0
+    game_states.Y_CHANGE = 0
+    # screen
+    game_states.CAMERA_BOTTOM = 0
+    # area management
+    game_states.AREAS_PASSED = 0
+    game_states.LAST_AREA = 0
+    game_states.AREA_QUEUE_MAX_LENGTH = 3
+
+    game_structures.HANDS = [None, None]
+
+    game_areas.add_game_area().join()
+    # game_structures.AREA_QUEUE[0].length += 20000
+    # game_states.LAST_AREA_END = game_structures.AREA_QUEUE[0].end_coordinate
+    area = game_areas.GameArea(1000, 20)
+    area.entity_list.append(Knight.make(5672979812, area))
+    area.finalize()
+    # area.enter()
+    game_states.LAST_AREA_END = area.end_coordinate
+    game_structures.AREA_QUEUE.append(area)
+    game_areas.add_game_area()
+    game_areas.add_game_area()
+
+    while game_states.RUNNING:
+        game_structures.SCREEN.fill(main.backdrop)
+        game_states.PLACE()
+        utility.tick()

@@ -75,6 +75,9 @@ if len(sys.argv) > 1:
     flag = check_flags(["--print_seed", "-p"])
     if flag:
         game_states.PRINT_SEED = True
+else:
+    backdrop = (0, 0, 0)
+    game_structures.SCREEN = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
 pygame.display.set_caption("Down the Line")
 game_states.WIDTH, game_states.HEIGHT = game_structures.SCREEN.get_size()
 game_states.CAMERA_THRESHOLDS = (min(100, round(game_states.HEIGHT / 4)), min(500, round(game_states.HEIGHT / 2)))

@@ -65,8 +65,7 @@ class GameArea:
             self.__class__.seen = True
             self.start_tutorial()
         for entity in self.entity_list:
-            if isinstance(entity, entities.Entity):
-                entity.enter()
+            entity.enter()
 
     def start_tutorial(self):
         pass
@@ -186,9 +185,9 @@ class BreakThroughArea(GameArea):
             spawner = entities.Spawner.make(determiner, self)
             self.entity_list.append(spawner)
             if spawner.limit is None:
-                allowance -= (spawner.delay // 200 + 1) * (spawner.entity.cost + 1)
+                allowance -= 2 * (spawner.delay // 200 + 1) * (spawner.entity.cost + 1) ** 2
             else:
-                allowance -= (spawner.limit + 1) * spawner.entity.cost
+                allowance -= 2 * (spawner.limit + 1) * spawner.entity.cost ** 2
         allowance = count // 3
         allowable_entities = []
         for entry in BasicArea.allowable_thresh_holds:
@@ -200,7 +199,7 @@ class BreakThroughArea(GameArea):
             index = (determiner % num) % len(allowable_entities)
             num += 1
             entity = allowable_entities[index][0]
-            allowance -= entity.cost + allowable_entities[index][1]
+            allowance -= entity.cost + allowable_entities[index][1] ** 2
             allowable_entities[index][1] += 1
             self.entity_list.append(entity.make(determiner, self))
         self.entity_list.append(entities.Obstacle(pos=(0, self.length)))
@@ -248,8 +247,8 @@ class EnslaughtArea(GameArea):
             pygame.draw.line(
                 game_structures.SCREEN,
                 (255, 255, 255),
-                (game_states.WIDTH // 2 - width // 2),
-                (game_states.WIDTH // 2 + width // 2),
+                (game_states.WIDTH // 2 - width // 2, 20),
+                (game_states.WIDTH // 2 + width // 2, 20),
                 20
             )
 
@@ -281,21 +280,23 @@ class EnslaughtArea(GameArea):
     def event(self):
         target_change = (self.difficulty - self.current_difficulty) // 2 + 8 * self.random.randint(-1, 3)
         if target_change < 0:
+            print("Item duplicator")
             pos = (
                 self.random.randint(100, game_states.WIDTH // 2) * (self.random.randint(0, 1) * 2 - 1),
                 self.random.randint(self.start_coordinate + 100, self.end_coordinate - 100)
             )
-            self.entity_list.append(entities.Spawner(
-                pos,
-                1,
-                self,
-                0,
-                entities.make_item_duplicator(items.make_random_single_use(self.random, pos)),
-                (0, None),
-                1
-            ))
+            # self.entity_list.append(entities.Spawner(
+            #     pos,
+            #     1,
+            #     self,
+            #     0,
+            #     entities.make_item_duplicator(items.make_random_single_use(self.random, pos)),
+            #     (0, None),
+            #     1
+            # ))
             self.current_difficulty -= 20
         elif target_change < 10:
+            print("Lazers")
             for i in range(target_change):
                 self.entity_list.append(entities.DelayedDeploy(
                     i * 60,
@@ -308,10 +309,12 @@ class EnslaughtArea(GameArea):
                     ),
                 ))
         elif target_change < 15:
+            print("Fishies")
             for i in range(target_change // 3):
                 self.entity_list.append(entities.Fish(self))
                 self.current_difficulty += 2
         elif target_change < 30:
+            print("Spawning")
             allowable_entities = []
             for entry in BasicArea.allowable_thresh_holds:
                 if entry[1] > self.difficulty or not entry[0].seen:
@@ -323,8 +326,8 @@ class EnslaughtArea(GameArea):
                 index = (determiner % num) % len(allowable_entities)
                 num += 1
                 entity = allowable_entities[index][0]
-                target_change -= entity.cost + allowable_entities[index][1]
-                self.difficulty += entity.cost + allowable_entities[index][1]
+                target_change -= entity.cost + allowable_entities[index][1] ** 2
+                self.difficulty += entity.cost + allowable_entities[index][1] ** 2
                 allowable_entities[index][1] += 1
                 made_entity = entity.make(determiner, self)
                 if game_states.CAMERA_BOTTOM + made_entity.height < made_entity.y < game_states.CAMERA_BOTTOM + game_states.HEIGHT - made_entity.height:
@@ -334,12 +337,13 @@ class EnslaughtArea(GameArea):
                         made_entity.y = self.start_coordinate
                 self.entity_list.append(made_entity)
         else:
+            print("Spawners")
             for i in range(target_change // 15):
                 spawner = entities.Spawner.make(self.random.randint(0, 2 ** 31), self)
                 if spawner.limit is None:
-                    self.current_difficulty += (spawner.delay // 200 + 1) * (spawner.entity.cost + 1)
+                    self.current_difficulty += (spawner.delay // 200 + 1) * (spawner.entity.cost + 1) ** 2
                 else:
-                    self.current_difficulty += (spawner.limit + 1) * spawner.entity.cost
+                    self.current_difficulty += (spawner.limit + 1) * spawner.entity.cost ** 2
 
 
 @make_async(with_lock=True)
