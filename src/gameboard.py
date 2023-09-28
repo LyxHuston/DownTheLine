@@ -49,6 +49,11 @@ def tick():
     #     (game_states.WIDTH / 2, game_states.HEIGHT - game_states.DISTANCE + game_states.CAMERA_BOTTOM),
     #     20
     # )
+    for item in game_structures.HANDS:
+        if item is None:
+            continue
+        item.tick(item)
+        item.draw(item)
     game_structures.SCREEN.blit(
         pygame.transform.flip(
             player_img,

@@ -6,6 +6,7 @@ import gameboard
 import pygame
 import game_states
 import game_structures
+import items
 
 
 class Inputs:
@@ -90,7 +91,29 @@ def dash_input_catch(direction: int) -> None:
 
 
 def item_input_catch(num: int) -> None:
-    pass
+    for area in game_structures.AREA_QUEUE:
+        if not area.initialized:
+            break
+        for i in range(len(area.entity_list)):
+            entity = area.entity_list[i]
+            if not isinstance(entity, items.Item):
+                continue
+            if not isinstance(entity.pos[0], int):
+                continue
+            if not entity.img.get_rect(center=entity.pos).colliderect(
+                    pygame.Rect(-32, game_states.DISTANCE - 10, 64, 20)):
+                continue
+            if game_structures.HANDS[num] is None:
+                del area.entity_list[i]
+            else:
+                game_structures.HANDS[num].pos = entity.pos
+                area.entity_list[i] = game_structures.HANDS[num]
+            game_structures.HANDS[num] = entity
+            entity.pos = num
+            break
+    if game_structures.HANDS[num] is None:
+        return
+    game_structures.HANDS[num].action(game_structures.HANDS[num])
 
 
 game_structures.CUSTOM_EVENT_CATCHERS.append(event_catcher)

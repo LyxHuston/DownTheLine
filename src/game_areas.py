@@ -6,6 +6,8 @@ import game_structures
 import game_states
 from utility import make_async
 import entities
+import items
+import images
 
 
 class GameArea:
@@ -31,18 +33,23 @@ class GameArea:
         if not self.__class__.seen:
             self.start_tutorial()
         for entity in self.entity_list:
-            entity.enter()
+            if isinstance(entity, entities.Entity):
+                entity.enter()
 
     def start_tutorial(self):
         pass
 
     def draw(self):
         for entity in self.entity_list:
-            entity.draw()
+            if isinstance(entity, entities.Entity):
+                entity.draw()
+            else:
+                entity.draw(entity)
 
     def tick(self):
         i = 0
         while i < len(self.entity_list):
+
             if self.entity_list[i].tick():
                 i += 1
             else:
@@ -55,10 +62,19 @@ def add_game_area():
         case 0:
             area = GameArea()
             area.start_coordinate = game_states.RECORD_DISTANCE + game_states.HEIGHT
-            area.length = 100
+            area.length = 200
             wall = entities.Obstacle()
-            wall.pos = (0, area.start_coordinate + 50)
+            wall.pos = (0, area.start_coordinate + 170)
             area.entity_list.append(wall)
+            weapon = items.Item(
+                items.passing,
+                items.passing,
+                images.SIMPLE_SWORD.img,
+                (0, area.start_coordinate + 40),
+                items.simple_draw,
+                None
+            )
+            area.entity_list.append(weapon)
         case _:
             area = None
     game_states.LAST_AREA += 1

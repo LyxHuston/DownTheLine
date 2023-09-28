@@ -15,9 +15,12 @@ import enum
 from collections import deque
 
 
-SCREEN = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+SCREEN: pygame.Surface = None
 # SCREEN = pygame.display.set_mode((500, 200))
 CLOCK = pygame.time.Clock()
+
+
+HANDS = [None, None]
 
 
 class FontHolder:
@@ -730,7 +733,6 @@ class ButtonHolder(ButtonHolderTemplate):
 BUTTONS = ButtonHolder()
 
 
-
 VOICE_END_EVENT = custom_type()
 VOICE_CHANNEL = None
 
@@ -1019,6 +1021,51 @@ def init() -> None:
 
     class PLACES(enum.Enum):
         in_game = ingame.tick
+
+
+class Body:
+    """
+    a supercontainer for Rects.  Allows for rotation.
+    """
+
+    @property
+    def rotation(self):
+        return self.__rotation
+
+    @rotation.setter
+    def rotation(self, val: int):
+        self.__rotation = val
+        self._rotated_img = pygame.transform.rotate(self.__original_img, val)
+
+    @property
+    def img(self):
+        return self._rotated_img
+
+    @img.setter
+    def img(self, val: Surface):
+        self.__original_img = val
+        self._rotated_img = pygame.transform.rotate(self.img, self.__rotation)
+
+    def __init__(self, img: pygame.Surface, rotation: int, pos: tuple[int, int]):
+        self.__original_img = img
+        self.rotation = rotation
+        self.pos = pos
+
+    @property
+    def rect(self):
+        return self._rotated_img.get_rect(center=self.pos)
+
+    def collide(self, other):
+        """
+        tests if two objects collide.  The other object should be a Body.
+        only currently checks for rectangle collision.  Anything more should be
+        manually implemented.
+        :param other: needs to have a rect value that is a pygame Rect
+        :return:
+        """
+        if not self.rect.colliderect(other.rect):
+            return False
+        return True
 
 
 CUSTOM_EVENT_CATCHERS: list[Callable] = []

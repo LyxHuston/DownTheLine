@@ -1,25 +1,24 @@
 """
 describing all non-player entities
 """
-
+import pygame
 
 import game_states
 import game_structures
-import pygame
+import images
 
 
-class Entity:
+class Entity(game_structures.Body):
     """
     base entity class that describes a few things most entities need to do
     """
 
     seen = False
 
-    def __init__(self):
+    def __init__(self, img: pygame.Surface, rotation: int, pos: tuple[int, int]):
+        super().__init__(img, rotation, pos)
         self.health = 0
         self.max_health = 0
-        self.img: pygame.Surface = None
-        self.pos = (0, 0)
 
     def first_seen(self):
         """
@@ -39,8 +38,8 @@ class Entity:
         game_structures.SCREEN.blit(
             self.img,
             (
-                self.pos[0] + game_states.WIDTH / 2 - self.img.get_width() / 2,
-                game_states.HEIGHT - (self.pos[1] - game_states.CAMERA_BOTTOM) - self.img.get_height() / 2
+                self.pos[0] + game_states.WIDTH // 2 - self.img.get_width() // 2,
+                game_states.HEIGHT + game_states.CAMERA_BOTTOM - self.pos[1] - self.img.get_height() // 2
             )
         )
 
@@ -75,24 +74,23 @@ class Obstacle(Entity):
     harmless obstacles on path.
     """
 
-    full = None
-    half = None
-    fragile = None
+    full = images.WALL_FULL
+    half = images.WALL_HALF
+    fragile = images.WALL_FRAGILE
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, rotation: int = 0, pos: tuple[int, int] = (0, 0)):
+        super().__init__(self.full.img, rotation, pos)
         self.health = 10
         self.max_health = 10
-        self.img = self.full
 
     def hit(self, damage: int):
         self.health -= damage
         if self.health > self.max_health / 2:
-            self.img = self.full
+            self.img = self.full.img
         elif self.health > 1:
-            self.img = self.half
+            self.img = self.half.img
         else:
-            self.img = self.fragile
+            self.img = self.fragile.img
 
     def tick(self):
         if abs(self.pos[0]) < 128 + 32 and abs(game_states.DISTANCE - self.pos[1]) < 56:
@@ -101,7 +99,7 @@ class Obstacle(Entity):
         return self.health > 0
 
     def first_seen(self):
-        self.__class__.full = pygame.image.load("resources/obstacle/wall_full.png")
-        self.__class__.half = pygame.image.load("resources/obstacle/wall_half.png")
-        self.__class__.fragile = pygame.image.load("resources/obstacle/wall_fragile.png")
+        self.full.img
+        self.half.img
+        self.fragile.img
         self.hit(0)
