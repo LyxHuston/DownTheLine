@@ -64,6 +64,17 @@ class GameArea:
             else:
                 del self.entity_list[i]
 
+    def finalize(self):
+        """
+        called at the end of an intialization.  Ensures that the start
+        coordinate is offscreen and moves everything to correct position
+        :return:
+        """
+        if self.start_coordinate < game_states.CAMERA_BOTTOM + game_states.HEIGHT + 100 or self.start_coordinate < game_states.LAST_AREA_END:
+            self.start_coordinate = max(game_states.CAMERA_BOTTOM + game_states.HEIGHT + 100, game_states.LAST_AREA_END)
+        for entity in self.entity_list:
+            entity.pos = (entity.pos[0], entity.pos[1] + self.start_coordinate)
+
 
 class BasicArea(GameArea):
     """
@@ -71,7 +82,6 @@ class BasicArea(GameArea):
     """
 
     def __init__(self, determiner, count):
-        print("Basic area")
         super().__init__()
         self.length = 200 + math.floor(math.log2(count)) * 100
         allowance = count
@@ -92,40 +102,42 @@ class BasicArea(GameArea):
                 self.entity_list.append(add)
                 self.entity_list.append(entities.Obstacle(pos=(0, self.end_coordinate)))
                 break
+        self.finalize()
 
 
 @make_async(with_lock=True)
 def add_game_area():
+    # print(game_states.LAST_AREA)
     match game_states.LAST_AREA:
         case 0:
             area = GameArea(200)
-            area.entity_list.append(entities.Obstacle(pos=(0, area.start_coordinate + 170)))
+            area.entity_list.append(entities.Obstacle(pos=(0, 170)))
             area.entity_list.append(items.simple_stab(
                 60,
                 20,
                 images.SIMPLE_SWORD.img,
-                (0, area.start_coordinate + 40)
+                (0, 40)
             ))
         case 1:
             area = GameArea(300)
-            area.entity_list.append(entities.Obstacle(pos=(0, area.end_coordinate)))
-            area.entity_list.append(entities.Slime((0, area.start_coordinate + area.length // 2)))
+            area.entity_list.append(entities.Obstacle(pos=(0, area.length)))
+            area.entity_list.append(entities.Slime((0, area.length // 2)))
         case 2:
             area = GameArea(500)
-            area.entity_list.append(entities.Obstacle(pos=(0, area.start_coordinate + area.length)))
-            area.entity_list.append(entities.Slime((0, area.start_coordinate + area.length // 3)))
-            area.entity_list.append(entities.Slime((0, area.start_coordinate + 2 * area.length // 2)))
+            area.entity_list.append(entities.Obstacle(pos=(0, + area.length)))
+            area.entity_list.append(entities.Slime((0, area.length // 3)))
+            area.entity_list.append(entities.Slime((0, 2 * area.length // 2)))
             area.entity_list.append(items.simple_stab(
                 120,
                 10,
                 images.SIMPLE_SPEAR.img,
-                (15, area.start_coordinate + 120),
+                (15, 120),
                 2
             ))
             game_states.AREA_QUEUE_MAX_LENGTH = 3
         case _:
             determinator = hash(str(game_states.SEED + game_states.LAST_AREA))
-            print(determinator, game_states.SEED + game_states.LAST_AREA)
+            # print(determinator, game_states.SEED + game_states.LAST_AREA)
             area = None
             typ = determinator % 64
             if typ < 2 and game_states.LAST_AREA < 40:
@@ -161,5 +173,7 @@ def add_game_area():
             if area is None:
                 area = GameArea(400)
     game_states.LAST_AREA += 1
+    area.finalize()
     game_states.LAST_AREA_END = area.end_coordinate
+    # print(game_states.LAST_AREA_END)
     game_structures.AREA_QUEUE.append(area)

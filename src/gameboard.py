@@ -13,40 +13,41 @@ player_img = pygame.image.load("resources/player/player.png")
 heart_img = pygame.image.load("resources/player/hearts.png")
 
 
-def tick():
+def tick(do_tick: bool = True):
     """
     draws the gameboard and handles checking if we need to unload and load a new
     area.  If so, dispatches a thread.
     also, handles shaking the board
     :return:
     """
-    for i in range(len(game_structures.AREA_QUEUE)):
-        if game_structures.AREA_QUEUE[i].start_coordinate < game_states.CAMERA_BOTTOM + game_states.HEIGHT and not game_structures.AREA_QUEUE[i].initialized:
-            game_structures.AREA_QUEUE[i].initialized = True
-            game_structures.AREA_QUEUE[i].enter()
-            break
-        if game_structures.AREA_QUEUE[i].start_coordinate > game_states.CAMERA_BOTTOM + game_states.HEIGHT:
-            break
-    if game_structures.AREA_QUEUE[0].end_coordinate < game_states.CAMERA_BOTTOM:
-        for entity in game_structures.AREA_QUEUE[0].entity_list:
-            if entity.y > game_states.BOTTOM:
-                game_structures.AREA_QUEUE[1].entity_list.append(entity)
-        del game_structures.AREA_QUEUE[0]
-        add_game_area()
-    if game_states.SHAKE_DURATION > 0:
-        game_states.SHAKE_DURATION -= 1
-        if game_states.SHAKE_DURATION == 0:
-            game_states.X_DISPLACEMENT = 0
-            game_states.Y_DISPLACEMENT = 0
-        else:
-            game_states.X_DISPLACEMENT += game_states.X_CHANGE
-            if abs(game_states.X_DISPLACEMENT) > abs(game_states.X_LIMIT):
-                game_states.X_DISPLACEMENT += 2 * (abs(game_states.X_DISPLACEMENT) - abs(game_states.X_LIMIT)) * ((game_states.X_DISPLACEMENT < 0) * 2 - 1)
-                game_states.X_CHANGE *= -1
-            game_states.Y_DISPLACEMENT += game_states.Y_CHANGE
-            if abs(game_states.Y_DISPLACEMENT) > abs(game_states.Y_LIMIT):
-                game_states.Y_DISPLACEMENT += 2 * (abs(game_states.Y_DISPLACEMENT) - abs(game_states.Y_LIMIT)) * ((game_states.Y_DISPLACEMENT < 0) * 2 - 1)
-                game_states.Y_CHANGE *= -1
+    if do_tick:
+        for i in range(len(game_structures.AREA_QUEUE)):
+            if game_structures.AREA_QUEUE[i].start_coordinate < game_states.CAMERA_BOTTOM + game_states.HEIGHT and not game_structures.AREA_QUEUE[i].initialized:
+                game_structures.AREA_QUEUE[i].initialized = True
+                game_structures.AREA_QUEUE[i].enter()
+                break
+            if game_structures.AREA_QUEUE[i].start_coordinate > game_states.CAMERA_BOTTOM + game_states.HEIGHT:
+                break
+        if game_structures.AREA_QUEUE[0].end_coordinate < game_states.CAMERA_BOTTOM:
+            for entity in game_structures.AREA_QUEUE[0].entity_list:
+                if entity.pos[0] > game_states.BOTTOM:
+                    game_structures.AREA_QUEUE[1].entity_list.append(entity)
+            del game_structures.AREA_QUEUE[0]
+            add_game_area()
+        if game_states.SHAKE_DURATION > 0:
+            game_states.SHAKE_DURATION -= 1
+            if game_states.SHAKE_DURATION == 0:
+                game_states.X_DISPLACEMENT = 0
+                game_states.Y_DISPLACEMENT = 0
+            else:
+                game_states.X_DISPLACEMENT += game_states.X_CHANGE
+                if abs(game_states.X_DISPLACEMENT) > abs(game_states.X_LIMIT):
+                    game_states.X_DISPLACEMENT += 2 * (abs(game_states.X_DISPLACEMENT) - abs(game_states.X_LIMIT)) * ((game_states.X_DISPLACEMENT < 0) * 2 - 1)
+                    game_states.X_CHANGE *= -1
+                game_states.Y_DISPLACEMENT += game_states.Y_CHANGE
+                if abs(game_states.Y_DISPLACEMENT) > abs(game_states.Y_LIMIT):
+                    game_states.Y_DISPLACEMENT += 2 * (abs(game_states.Y_DISPLACEMENT) - abs(game_states.Y_LIMIT)) * ((game_states.Y_DISPLACEMENT < 0) * 2 - 1)
+                    game_states.Y_CHANGE *= -1
     pygame.draw.line(
         game_structures.SCREEN,
         (255, 255, 255),
@@ -76,7 +77,8 @@ def tick():
     for item in game_structures.HANDS:
         if item is None:
             continue
-        item.tick(item)
+        if do_tick:
+            item.tick(item)
         item.draw(item)
     game_structures.SCREEN.blit(
         pygame.transform.flip(
@@ -90,5 +92,6 @@ def tick():
         area = game_structures.AREA_QUEUE[i]
         if not area.initialized:
             break
-        area.tick()
+        if do_tick:
+            area.tick()
         area.draw()

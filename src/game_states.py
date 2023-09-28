@@ -1,3 +1,8 @@
+"""
+essentially, a bunch of trackers for game states.  If it is more than a single
+function, string, or integer, it's too much and should go in game_structures
+"""
+
 # overall game state
 RUNNING = True
 PLACE = None
@@ -32,3 +37,5 @@ LAST_AREA = 0
 AREA_QUEUE_MAX_LENGTH = 3
 # the seed
 SEED = 0
+# settings
+DO_TTS = False

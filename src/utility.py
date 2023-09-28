@@ -3,15 +3,6 @@ from typing import Callable, Any, Union
 import traceback
 import logging
 from sys import argv
-import game_structures
-import pygame
-import game_states
-
-
-if len(argv) >= 2 and argv[1] == "admin":
-    admin = True
-else:
-    admin = False
 
 
 def make_async(with_lock: Union[threading.Lock, bool] = None) -> Callable:
@@ -43,6 +34,17 @@ def make_async(with_lock: Union[threading.Lock, bool] = None) -> Callable:
         return async_func
 
     return inner_make_async
+
+
+import game_structures
+import pygame
+import game_states
+
+
+if len(argv) >= 2 and argv[1] == "admin":
+    admin = True
+else:
+    admin = False
 
 
 def add_error_checking(

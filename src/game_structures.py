@@ -14,6 +14,9 @@ from pygame.event import custom_type
 import enum
 from collections import deque
 import game_states
+import utility
+from gtts import gTTS
+from io import BytesIO
 
 
 SCREEN: pygame.Surface = None
@@ -301,6 +304,9 @@ class ButtonHolderTemplate(ABC):
         return text_surface
 
 
+Button = object()
+
+
 class Button(ButtonHolderTemplate):
     """
     dataclass containing information for a button
@@ -414,6 +420,88 @@ class Button(ButtonHolderTemplate):
             outline_width=0
         )
 
+    @staticmethod
+    def make_text_button(
+            text: str,
+            font: int,
+            click: Union[Callable, None],
+            center: tuple[int, int],
+            background_color: Union[tuple[int, int, int], tuple[int, int, int, int], None] = (255, 255, 255, 255),
+            outline_color: tuple[int, int, int] = (0, 0, 0),
+            border_width: int = 0,
+            max_line_pixels: int = 0,
+            max_line_words: int = 0,
+            max_width: int = 0,
+            preserve_words: bool = True,
+            text_align: float = 0,
+            x_align: float = 0.5,
+            y_align: float = 0.5,
+            arguments: dict[str, Any] = None,
+            special_press: Union[tuple[str], str] = (),
+            override_text: str = None,
+            max_lines: int = 0,
+            enforce_width: int = 0
+    ) -> Button:
+        """
+        creates a button object and adds it to handled list
+        :param text: string
+        :param font: size of the font object
+        :param click: function called when the button is clicked
+        :param center: coordinate centers of the button
+        :param background_color: background color for the text
+        :param outline_color: color used for text and border
+        :param border_width: width of border for button
+        :param max_line_pixels: maximum number of pixels in a line, 0 for disabled
+        :param max_line_words: maximum number of words in a line, 0 for disabled
+        :param max_width: maximum width of object.  Scales to be inside of it, if not already.  0 for disabled.
+        :param preserve_words: whether or not to preserve words when considering max line pixels
+        :param text_align: left (0) to right (1) alignment of text
+        :param x_align: where the x value of 'center' is relative to the button, left (0), right (1).  Default center
+        :param y_align: where the y value of 'center' is relative to the button, top (0), bottom (1).  Default center
+        :param arguments: arguments to be used in the click action
+        :param special_press: special keys that press button
+        :param override_text: overrides text for tts
+        :param max_lines: maximum number of lines for the button
+        :param enforce_width: enforces if lines can go over this width
+        :return: a constructed button to be added to the list
+        """
+        text_surface = ButtonHolder.draw_text(
+            text,
+            font,
+            background_color,
+            outline_color,
+            max_line_pixels,
+            max_line_words,
+            max_width,
+            preserve_words,
+            text_align,
+            max_lines=max_lines,
+            enforce_width=enforce_width,
+        )
+        x, y = text_surface.get_size()
+        # if isinstance(special_press, str):  (currently don't have any customizable controls, probably won't ever)
+        #     special = get_special_click(special_press)
+        # else:
+        #     special = tuple([get_special_click(name) for name in special_press])
+        if text == "<":
+            text = "Left"
+        elif text == ">":
+            text = "Right"
+        if override_text is None:
+            override_text = text
+        return Button(
+            click,
+            text_surface,
+            override_text,
+            pygame.Rect(center[0] - x_align * x, center[1] - y_align * y, x, y),
+            background_color,
+            outline_color,
+            (x_align, y_align),
+            border_width,
+            arguments=arguments,
+            special_press=()
+        )
+
     def render_onto(self, onto: Surface, mouse_pos: tuple[int, int]) -> None:
         """
         draw onto a surface
@@ -521,6 +609,187 @@ class Button(ButtonHolderTemplate):
             self.keyed = False
             return 1
         return 0
+
+    def rewrite_button(
+            self,
+            new_text: str,
+            font: int,
+            center: tuple[int, int],
+            instance: int = None,
+            others: list[tuple[ButtonHolderTemplate, float, float, int, int]] = (),
+            max_line_pixels: int = 0,
+            max_width: int = 0,
+            y_align: int = 0.5,
+            x_align: int = 0.5,
+            override_button_name: str = None
+    ) -> None:
+        """
+        change text of target button to new string.  Also moves buttons around
+        as described
+        :param new_text: new text to change it to
+        :param font: font size of it
+        :param center: center of the button to orient around
+        :param instance: typing instance
+        :param others: a list of other buttons to update positions of, with information
+        button object: button to reposition
+        float: offset x by width
+        float: offset y by height
+        integer: static x offset
+        integer: static y offset
+        :param max_line_pixels: maximum pixels in a line
+        :param max_width: maximum width of the button
+        :param y_align: designate where to orient x from
+        :param x_align: designate where to orient y from
+        :param override_button_name: override the button name if any
+        :return: None
+        """
+        if instance is not None and self.typing_instance != instance:
+            return
+        new_img = Button.draw_text(new_text, font, max_line_pixels=max_line_pixels, preserve_words=True)
+        width = new_img.get_width()
+        if width > max_width > 0:
+            new_img = Button.draw_text(
+                new_text,
+                round(font * max_width / width),
+                max_line_pixels=round(max_line_pixels * max_width / width),
+                preserve_words=True
+            )
+            width = new_img.get_width()
+        height = new_img.get_height()
+        self.img = new_img
+        if override_button_name is None:
+            override_button_name = new_text
+        self.text = override_button_name
+        self.rect = new_img.get_rect(topleft=(
+            center[0] - x_align * new_img.get_width(),
+            center[1] - y_align * new_img.get_height()
+        ))
+        for other_obj, offset_width, offset_height, offset_x, offset_y in others:
+            if other_obj is None:
+                continue
+            other_obj.rect.center = (
+                center[0] + offset_width * width + offset_x,
+                center[1] + offset_height * height + offset_y
+            )
+
+    @utility.make_async
+    def write_button_text(
+            self,
+            font: int,
+            max_characters: int = 0,
+            min_characters: int = 0,
+            others: list[tuple[Union[ButtonHolderTemplate], float, float, int, int]] = (),
+            max_line_pixels: int = 0,
+            max_width: int = 0,
+            prepend: str = "",
+            append: str = "",
+            start_text: str = None,
+            callback: Callable = None,
+            y_align: int = 0.5,
+            x_align: int = 0.5,
+            search_against: list[str] = ()
+    ) -> None:
+        """
+        edits a button's text, given an index.  Wrapper for interior async function
+        :param font: font size of it
+        :param max_characters: max characters in a line (0 if no max)
+        :param min_characters: minimum characters in a line
+        :param others: a list of other buttons to update positions of, with information
+        integer: button index
+        float: offset x by width
+        float: offset y by height
+        integer: static x offset
+        integer: static y offset
+        :param max_line_pixels: maximum pixels in a line
+        :param max_width: maximum width of the button
+        :param prepend: prepend string
+        :param append: append string
+        :param start_text: if None, uses button name as start
+        :param callback: function called when the function completes
+        :param y_align: designate where to orient x from
+        :param x_align: designate where to orient y from
+        :param search_against: list to search for matches in
+        :return: None
+        """
+
+        if self.typing_instance is not None:
+            return
+
+        if start_text is None:
+            start_text = self.text
+        current = start_text
+
+        x = self.rect.left + x_align * self.rect.width
+        y = self.rect.top + y_align * self.rect.height
+
+        instance = start_typing(current, self)
+
+        def determine_string(finished: bool = False) -> str:
+            if finished:
+                if search_against == ():
+                    return prepend + current + append
+                if current == "":
+                    return prepend + "<search>" + append
+                match = get_first_match(instance.text, search_against)
+                if match is None:
+                    speak("No match found")
+                    return prepend + "<no match found>" + append
+                return prepend + match + append
+            if search_against == ():
+                return prepend + current + "_" + append
+            if current == "":
+                return prepend + "<search>" + append
+            match = get_first_match(instance.text, search_against)
+            if match is None:
+                speak("No match found")
+                return prepend + "<no match found>" + append
+            return prepend + match + "_" + append
+
+        self.rewrite_button(determine_string(), font, (x, y), instance.instance, others,
+                            max_line_pixels, max_width, y_align, x_align, start_text)
+
+        try:
+            while TYPING.instance == instance.instance and game_states.RUNNING:
+                if instance.text != current:
+                    if len(instance.text) > max_characters > 0:
+                        current = instance.text[0:max_characters]
+                        if "\n" in instance.text[max_characters:]:
+                            end_typing()
+                            break
+                        instance.text = current
+                    current = instance.text
+                    if min_characters <= len(current):
+                        if len(current) > 0 and current[-1] == "\n":
+                            current = current[:-1]
+                            end_typing()
+                            break
+                    if "\n" in current:
+                        instance.text = current[:current.index("\n")]
+                        current = instance.text
+                        end_typing()
+                        break
+                    self.rewrite_button(determine_string(), font, (x, y), instance.instance,
+                                        others, max_line_pixels, max_width, y_align, x_align, start_text)
+        finally:
+            if "\n" in current:
+                current = current[:current.index("\n")]
+            if len(current) > max_characters > 0 or min_characters > len(current):
+                result = start_text
+            else:
+                result = current
+            if search_against != ():
+                result = get_first_match(result, search_against)
+                if result is None:
+                    result = search_against[0]
+            current = result
+            if self.typing_instance == instance.instance:
+                self.rewrite_button(determine_string(finished=True), font, (x, y), instance.instance,
+                                    others,
+                                    max_line_pixels, max_width, y_align, x_align)
+                self.typing_instance = None
+            if callback is not None:
+                callback(result)
+            return result
 
 
 class ButtonHolder(ButtonHolderTemplate):
@@ -755,7 +1024,7 @@ BUTTONS = ButtonHolder()
 
 
 VOICE_END_EVENT = custom_type()
-VOICE_CHANNEL = None
+VOICE_CHANNEL: pygame.mixer.Channel = None
 
 SpeakNode = None
 
@@ -806,8 +1075,7 @@ class QueueSpeech:
         :return:
         """
         # print("Speaking")
-        # self.speach(self.front.text)
-        print("speach issues")
+        self.speach(self.front.text)
 
     def next_speach(self) -> None:
         """
@@ -995,6 +1263,24 @@ class AlertHolder:
         return False
 
 
+@utility.make_async
+def speak(text: str) -> None:
+    """
+    wrapper to make asynchronous speach work
+    :param text: text to read
+    :return: none
+    """
+    if game_states.DO_TTS:
+        mp3_fp = BytesIO()
+        try:
+            tts = gTTS(text)
+            tts.write_to_fp(mp3_fp)
+            mp3_fp.seek(0)
+            VOICE_CHANNEL.play(pygame.mixer.Sound(file=mp3_fp))
+        except:
+            return
+
+
 @dataclass()
 class ControlOption:
     """
@@ -1022,11 +1308,59 @@ class TypingData:
 TYPING = TypingData()
 
 
-def init() -> None:
+def start_typing(start_text: str = "", button: Button = None) -> TypingData:
+    """
+    begins typing, output in cls.text
+    :param start_text: what starting text is
+    :param button: what button editing
+    :return: typing instance
+    """
+    global TYPING
+    TYPING = TypingData(
+        typing=True,
+        text=start_text,
+        button_target=button,
+        instance=TYPING.instance + 1
+    )
+    if button is not None:
+        button.typing_instance = TYPING.instance
+    return TYPING
+
+
+def end_typing() -> str:
+    """
+    ends typing
+    :return: string typed
+    """
+    global TYPING
+    TYPING = TypingData(
+        typing=False,
+        text=TYPING.text
+    )
+    return TYPING.text
+
+
+def get_first_match(substring: str, strings: list[str]) -> Union[str, None]:
+    """
+    finds first string in a list with a matching substring
+    :param substring: searching for
+    :param strings: searching through
+    :return: first instance
+    """
+    if "\n" in substring:
+        substring = substring[:substring.index("\n")]
+    for i, string in enumerate(strings):
+        if substring in string:
+            return string
+    return None
+
+
+def init(start_call) -> None:
     global VOICE_CHANNEL, ALERTS, PLACES
 
     import utility
     import ingame
+    import other_screens
 
     VOICE_CHANNEL = utility.make_reserved_audio_channel()
     ALERTS = AlertHolder(
@@ -1034,15 +1368,19 @@ def init() -> None:
         size=20,
         max_alerts=5,
         speed=10,
-        speak=None,
+        speak=speak,
         draw=ButtonHolder.draw_text,
         border_buffer=5,
         lifespan=300
     )
+
     CUSTOM_EVENT_CATCHERS.append(ALERTS.catch_event)
 
     class PLACES(enum.Enum):
         in_game = ingame.tick
+        start = start_call
+        lost = other_screens.lost
+        won = other_screens.won
 
 
 class Body:

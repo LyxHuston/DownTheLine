@@ -233,4 +233,4 @@ class Slime(Glides):
 
     @classmethod
     def make(cls, determiner: int, area):
-        return cls((0, area.start_coordinate + area.random.randint(area.length // 3, area.length)))
+        return cls((0, area.random.randint(area.length // 3, area.length)))
