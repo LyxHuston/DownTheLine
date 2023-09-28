@@ -695,6 +695,36 @@ def simple_bomb(pos, speed, taper, glide_duration, delay, size, damage):
     )
 
 
+def random_simple_bomb(random, pos):
+    match random.randint(0, 2):
+        case 0:  # archetype.1 1: landmine
+            speed = 0
+            taper = 0
+            glide_duration = 0
+            delay = 15 * random.randint(4, 7)
+        case 1:  # archetype.1 2: glider
+            speed = 5 * random.randint(1, 3)
+            taper = 0
+            glide_duration = 0
+            delay = 15 * random.randint(3, 5)
+        case _:  # archetype.1 3: sitter
+            speed = 5 * random.randint(2, 4)
+            taper = 10
+            glide_duration = 5 * random.randint(3, 5)
+            delay = glide_duration + 60
+    match random.randint(0, 2):
+        case 0:  # archetype.2 1: pinpoint nuke
+            size = 64
+            damage = 64
+        case 1:  # archetype.2 2: semi-precise destruction
+            size = 256
+            damage = 10
+        case _:  # archetype.2 3: screen wide relatively low damage
+            size = 640
+            damage = 4
+    return simple_bomb(pos, speed, taper, glide_duration, delay, size, damage)
+
+
 def make_random_single_use(random, pos):
     """
     makes a random single use item at a position
@@ -702,4 +732,6 @@ def make_random_single_use(random, pos):
     :param pos:
     :return:
     """
-    pass
+    match 0:
+        case 0:
+            return random_simple_bomb(random, pos)
