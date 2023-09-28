@@ -28,12 +28,21 @@ def tick():
         tick_counter = 0
         last_dash_time -= loop_counter
         last_press_for_dash -= loop_counter
-    pressed = pygame.key.get_pressed()
-    direction = pressed[Inputs.up_input] - pressed[Inputs.down_input]
-    if abs(direction) == 1:
-        game_states.LAST_DIRECTION = direction
-    move = 10 * direction
-    game_states.DISTANCE += move
+    if game_states.GLIDE_SPEED > 0:
+        if game_states.GLIDE_DURATION == 0:
+            game_states.GLIDE_SPEED -= game_states.TAPER_AMOUNT
+            if game_states.GLIDE_SPEED <= 0:
+                game_states.GLIDE_SPEED = 0
+        else:
+            game_states.GLIDE_DURATION -= 1
+        game_states.DISTANCE += game_states.GLIDE_SPEED * game_states.GLIDE_DIRECTION
+    else:
+        pressed = pygame.key.get_pressed()
+        direction = pressed[Inputs.up_input] - pressed[Inputs.down_input]
+        if abs(direction) == 1:
+            game_states.LAST_DIRECTION = direction
+        move = 10 * direction
+        game_states.DISTANCE += move
     if game_states.DISTANCE < game_states.BOTTOM:
         game_states.DISTANCE = game_states.BOTTOM
     if game_states.DISTANCE < game_states.CAMERA_BOTTOM + game_states.CAMERA_THRESHOLDS[0]:
@@ -84,7 +93,10 @@ def dash_input_catch(direction: int) -> None:
     if last_dash_input == direction and last_press_for_dash + dash_sensitivity >= tick_counter:
         last_dash_input = 0
         last_dash_time = tick_counter
-        # TODO implement dash
+        game_states.GLIDE_SPEED = 25
+        game_states.TAPER_AMOUNT = 100
+        game_states.GLIDE_DURATION = 20
+        game_states.GLIDE_DIRECTION = direction
         return
     last_dash_input = direction
     last_press_for_dash = tick_counter
