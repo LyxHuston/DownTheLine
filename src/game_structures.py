@@ -1044,7 +1044,7 @@ class Body:
     @img.setter
     def img(self, val: Surface):
         self.__original_img = val
-        self._rotated_img = pygame.transform.rotate(self.img, self.__rotation)
+        self._rotated_img = pygame.transform.rotate(self.__original_img, self.__rotation)
 
     def __init__(self, img: pygame.Surface, rotation: int, pos: tuple[int, int]):
         self.__original_img = img

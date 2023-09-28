@@ -49,8 +49,12 @@ class GameArea:
     def tick(self):
         i = 0
         while i < len(self.entity_list):
-
-            if self.entity_list[i].tick():
+            entity = self.entity_list[i]
+            if isinstance(entity, items.Item):
+                res = entity.tick(entity)
+            else:
+                res = entity.tick()
+            if res:
                 i += 1
             else:
                 del self.entity_list[i]
@@ -66,13 +70,11 @@ def add_game_area():
             wall = entities.Obstacle()
             wall.pos = (0, area.start_coordinate + 170)
             area.entity_list.append(wall)
-            weapon = items.Item(
-                items.passing,
-                items.passing,
+            weapon = items.simple_stab(
+                60,
+                20,
                 images.SIMPLE_SWORD.img,
-                (0, area.start_coordinate + 40),
-                items.simple_draw,
-                None
+                (0, area.start_coordinate + 40)
             )
             area.entity_list.append(weapon)
         case _:

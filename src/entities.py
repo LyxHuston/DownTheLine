@@ -85,7 +85,7 @@ class Obstacle(Entity):
 
     def hit(self, damage: int):
         self.health -= damage
-        if self.health > self.max_health / 2:
+        if self.health > self.max_health // 2:
             self.img = self.full.img
         elif self.health > 1:
             self.img = self.half.img

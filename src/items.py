@@ -69,3 +69,101 @@ def passing(*args):
     :return: True, for use in the tick function
     """
     return True
+
+
+def simple_stab_draw(item: Item):
+    """
+    simple draw function for a stabbing item.  In front of player if stabbing,
+    beside player if not
+    :param item:
+    :return:
+    """
+    if not item.data_pack[0]:
+        simple_draw(item)
+        return
+    if isinstance(item.pos, int):
+        game_structures.SCREEN.blit(
+            pygame.transform.flip(item.img, ((item.pos == 0) != (game_states.LAST_DIRECTION == -1)), game_states.LAST_DIRECTION == -1),
+            (
+                game_states.WIDTH // 2 + 16 * (item.pos * 2 - 1) * game_states.LAST_DIRECTION - item.img.get_width() // 2,
+                game_states.HEIGHT + game_states.CAMERA_BOTTOM - game_states.DISTANCE - item.img.get_height() // 2 - (20 + item.img.get_height() // 2) * game_states.LAST_DIRECTION
+            )
+        )
+    elif isinstance(item.pos[0], int):
+        draw_on_ground(item)
+    else:
+        pass
+
+
+def simple_cooldown_action(item: Item):
+    """
+    a simple action with a cooldown
+    :param item:
+    :return:
+    """
+    if item.data_pack[0]:
+        return False
+    if item.data_pack[1] >= item.data_pack[2]:
+        item.data_pack[0] = True
+        item.data_pack[1] = 0
+        return True
+    return False
+
+
+def simple_duration_tick(item: Item):
+    """
+    simple test for a simple duration and cooldown
+    :param item:
+    :return:
+    """
+    item.data_pack[1] += 1
+    if item.data_pack[0]:
+        if item.data_pack[1] > item.data_pack[3]:
+            item.data_pack[0] = False
+            item.data_pack[1] = 0
+            item.data_pack[-1].clear()
+    else:
+        if item.data_pack[1] > item.data_pack[2]:
+            item.data_pack[1] = item.data_pack[2]
+    return True
+
+
+def simple_stab_tick(item: Item):
+    """
+    tick for stabbing.
+    :param item:
+    :return:
+    """
+    simple_duration_tick(item)
+    if item.data_pack[0]:
+        rect = item.img.get_rect(center=(
+            16 * (item.pos * 2 - 1) * game_states.LAST_DIRECTION,
+            game_states.DISTANCE + (20 + item.img.get_height() // 2) * game_states.LAST_DIRECTION
+        ))
+        for area in game_structures.AREA_QUEUE:
+            if not area.initialized:
+                break
+            for entity in area.entity_list:
+                if not isinstance(entity, entities.Entity):
+                    continue
+                if entity in item.data_pack[-1]:
+                    continue
+                if rect.colliderect(entity.rect):
+                    entity.hit(3)
+                    item.data_pack[-1].append(entity)
+    return True
+
+
+def simple_stab(cooldown: int, duration: int, img: pygame.Surface, pos: tuple[int, int]) -> Item:
+    """
+    generate an item that uses a simple stab item
+    :return: 
+    """
+    return Item(
+        simple_cooldown_action,
+        simple_stab_tick,
+        img,
+        pos,
+        simple_stab_draw,
+        [False, cooldown, cooldown, duration, []]  # state, tracker, cooldown ticks, duration ticks, hit tracker
+    )

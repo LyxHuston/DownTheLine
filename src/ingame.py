@@ -110,7 +110,7 @@ def item_input_catch(num: int) -> None:
                 area.entity_list[i] = game_structures.HANDS[num]
             game_structures.HANDS[num] = entity
             entity.pos = num
-            break
+            return
     if game_structures.HANDS[num] is None:
         return
     game_structures.HANDS[num].action(game_structures.HANDS[num])
