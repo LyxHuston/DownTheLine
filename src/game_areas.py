@@ -148,10 +148,10 @@ class BreakThroughArea(GameArea):
                 allowance -= (spawner.delay // 200 + 1) * (spawner.entity.cost + 1)
             else:
                 allowance -= (spawner.limit + 1) * spawner.entity.cost
-        allowance = count // 2
+        allowance = count // 3
         allowable_entities = []
         for entry in BasicArea.allowable_thresh_holds:
-            if entry[1] > count:  # or not entry[0].seen:
+            if entry[1] > count or not entry[0].seen:
                 break
             allowable_entities.append([entry[0], 0])
         num = 3

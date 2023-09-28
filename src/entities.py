@@ -806,8 +806,8 @@ class Spawner(Entity):
             delay = area.random.randint(12, 17) * 100
         else:
             limit = area.random.randint(
-                min(3, 5 - (entity.cost - area.difficulty // 4)),
-                min(max(area.difficulty // 5, 3), 4 - (entity.cost - area.difficulty // 4) // 2))
+                min(2, 5 - (entity.cost - area.difficulty // 4)),
+                min(max(area.difficulty // 5, 2), 3 - (entity.cost - area.difficulty // 4) // 2))
             delay = area.random.randint(5, 8) * 20
         y = area.random.randint(area.length // 3, area.length)
         return cls((area.random.randint(100, game_states.WIDTH // 2) * (area.random.randint(0, 1) * 2 - 1), y), limit,
