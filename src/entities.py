@@ -234,9 +234,19 @@ class ItemEntity(Entity):
 
     def __init__(self, item):
         self.item = item
+        self.picked_up = False
         super().__init__(item.img, 0, item.pos)
 
+    def pick_up(self, hand):
+        if self.picked_up:
+            return None
+        self.picked_up = True
+        self.item.pos = hand
+        return self.item
+
     def tick(self) -> bool:
+        if self.picked_up:
+            return False
         held = isinstance(self.item.pos, int)
         if not held:
             held = not isinstance(self.item.pos[0], int)
@@ -758,6 +768,8 @@ class Knight(Glides):
         for hand in self.hands:
             if hand is None:
                 continue
+            if hand.pos[0] is not self:
+                hand.pos = (self, hand.pos[1])
             hand.tick(hand)
             if items.action_available(hand):
                 new_dist = items.find_range(hand)
@@ -767,6 +779,7 @@ class Knight(Glides):
         if trigerable is not None:
             if dist < desired_dist + 32:
                 trigerable.action(trigerable)
+                # print(self is trigerable.pos[0], self.pos == trigerable.pos[0].pos)
         if dist < desired_dist - 100:  # back up
             self.frame = (self.frame - 1) % (self.frame_change_frequency * 6)
             self.step = self.imgs[self.frame // self.frame_change_frequency]
@@ -812,7 +825,6 @@ class Knight(Glides):
             self.start_glide(12, 15, 1, ((self.y - source.pos[0]) > 0) * 2 - 1)
 
     def first_seen(self):
-        print("seeing")
         self.stabbing.img
         self.shielding.img
         self.__class__.imgs = [
@@ -824,9 +836,19 @@ class Knight(Glides):
             pygame.transform.flip(images.KNIGHT_STEP_1.img, True, False),
         ]
 
+    def enter(self):
+        super().enter()
+        for i in range(len(self.hands)):
+            if self.hands[i] is None:
+                continue
+            self.hands[i].pos = (self, i)
+
     @classmethod
     def make(cls, determiner: int, area):
-        return cls(0, (0, 200), [items.random_simple_stab(1, area.random), None])
+        making = cls(0, (0, 200), [items.random_simple_stab(1, area.random), None])
+        # making.enter()
+        print("Used make method for knight")
+        return making
 
 
 class Lazer(Entity):
@@ -839,8 +861,8 @@ class Lazer(Entity):
         super().__init__(images.EMPTY, 0, (0, y))
         if not hasattr(self, "ends"):
             self.ends = [
-                LazerEnd(self, 0, (-game_states.WIDTH // 2 + 20, y)),
-                LazerEnd(self, 0, (game_states.WIDTH // 2 - 20, y))
+                ComponentEntity(images.LAZER_END.img, self, 0, (-game_states.WIDTH // 2 + 100, y)),
+                ComponentEntity(images.LAZER_END.img, self, 180, (game_states.WIDTH // 2 - 100, y))
             ]
         area.entity_list.extend(self.ends)
         self.charge_time = charge_time
@@ -855,7 +877,7 @@ class Lazer(Entity):
         for end in self.ends:
             if not end.alive:
                 for kill_end in self.ends:
-                    kill_end.health = 0
+                    kill_end.alive = False
                 return False
         self.cooldown += 1
         if self.firing:
@@ -864,25 +886,8 @@ class Lazer(Entity):
                 for i in range(len(self.ends)):
                     end1 = end2
                     end2 = self.ends[i]
-                    if abs(end1.x) < 32 and abs(end2.x) < 32:  # ends are in the player width case
-                        if abs(end1.y - game_states.DISTANCE) < 32 or abs(end2.y - game_states.DISTANCE) < 32 or (
-                                end1.y < game_states.DISTANCE) != (end2.y < game_states.DISTANCE):
-                            self.hit = True
-                            break
-                        continue
-                    if end1.x == end2.x:  # vertical line case (actual collision should be handled above, if it didn't then continue)
-                        continue
-                    if end1.y == end2.y:  # horizontal line case
-                        if abs(end1.x) < 32 or abs(end2.x) < 32 or (end1.x < 0) != (end2.x < 0):
-                            self.hit = True
-                            break
-                        continue
-                    intercept = end2.y - (end2.x - 32) * (end1.y - end2.y) / (end1.x - end2.x)  # hit left side
-                    if abs(intercept - game_states.DISTANCE) < 32 and (end1.y < intercept) == (end2.y >= intercept):
-                        self.hit = True
-                        break
-                    intercept = end2.y - (end2.x + 32) * (end1.y - end2.y) / (end1.x - end2.x)  # hit right side
-                    if abs(intercept - game_states.DISTANCE) < 32 and (end1.y < intercept) == (end2.y >= intercept):
+                    intercept = end2.y - end2.x * (end1.y - end2.y) / (end1.x - end2.x)  # hit left side
+                    if abs(intercept - game_states.DISTANCE) < 32:
                         self.hit = True
                         break
                 if self.hit:
@@ -890,7 +895,7 @@ class Lazer(Entity):
             if self.cooldown >= self.duration:
                 if self.repeats is not None and self.repeats <= 0:
                     for kill_end in self.ends:
-                        kill_end.health = 0
+                        kill_end.alive = False
                     return False
                 self.cooldown = 0
                 self.hit = False
@@ -904,13 +909,31 @@ class Lazer(Entity):
 
     def draw(self):
         if self.firing:
+            positions = [end.screen_pos for end in self.ends]
+            print(positions)
             pygame.draw.lines(
                 game_structures.SCREEN,
-                (0, 0, 0),
+                (255, 255, 255),
                 True,
-                [game_structures.to_screen_pos(end.pos) for end in self.ends],
+                positions,
                 12
             )
+            end2 = self.ends[-1]
+            for i in range(len(self.ends)):
+                end1 = end2
+                end2 = self.ends[i]
+                intercept = end2.y - end2.x * (end1.y - end2.y) / (end1.x - end2.x)  # hit left side
+                pygame.draw.circle(
+                    game_structures.SCREEN,
+                    (255, 255, 255),
+                    game_structures.to_screen_pos((0, intercept)),
+                    25
+                )
+
+    def transfer(self, area):
+        self.health = 0
+        for end in self.ends:
+            end.alive = False
 
 
 class TrackingLazer(Lazer):
@@ -924,8 +947,10 @@ class TrackingLazer(Lazer):
 
     def tick(self):
         if not self.firing:
-            self.velocity += (self.y + self.velocity * 10 > game_states.DISTANCE) * 2 - 1
+            self.velocity += (self.y + self.velocity * 10 < game_states.DISTANCE) * 2 - 1
             self.y += self.velocity
+            for end in self.ends:
+                end.y += self.velocity
         return super().tick()
 
     @classmethod
@@ -933,27 +958,19 @@ class TrackingLazer(Lazer):
         return cls(area.start_coordinate + area.random.randint(0, 1) * area.length, 120, 60, area, 1, 1)
 
 
-class LazerEnd(Entity):
+class ComponentEntity(Entity):
     """
-    ends of the lazers
+    Any entity that is only a component of another, larger body.  Like lazer ends.
+    All work should be done in the 'brains' entity
     """
 
-    @property
-    def alive(self):
-        return self.health > 0
-
-    def __init__(self, parent: Lazer, rotation: int, pos: tuple[int, int]):
+    def __init__(self, img: pygame.Surface, parent: Entity, rotation: int, pos: tuple[int, int]):
         self.parent = parent
-        super().__init__(images.LAZER_END.img, rotation, pos)
-        self.health = 1
+        super().__init__(img, rotation, pos)
+        self.alive = True
 
-    def transfer(self, area):
-        """
-        don't want this to get transferred tbh
-        :param area:
-        :return:
-        """
-        self.health = 0
+    def tick(self):
+        return self.alive
 
 
 class Fish(Glides):
@@ -961,19 +978,18 @@ class Fish(Glides):
     fish entity that leaps from the void
     """
 
-    frame_change_ticks = 12
-
     def __init__(self, area):
         super().__init__(images.EMPTY, 0, (30000, area.start_coordinate))
         self.max_health = 4
         self.state = 3
         self.health = 4
         self.random = random.Random(area.random.randint(0, 2 ** 32 - 1))
-        self.speed = area.difficulty // 4
+        self.speed = min(area.difficulty // 4, 12)
         self.wait = 0
         self.target_flight = 0
         self.direction = 0
         self.already_hit = False
+        self.frame_change_ticks = 12 // round(math.sqrt(self.speed))
 
     def tick(self):
         self.glide_tick()
@@ -983,7 +999,7 @@ class Fish(Glides):
                 if self.wait <= 0:
                     self.direction = self.random.randint(0, 1) * 2 - 1
                     self.rotation = 90 - 90 * self.direction
-                    self.target_flight = 15 * self.random.randint(3, 5)
+                    self.target_flight = 15 * self.random.randint(3, 5) // round(math.sqrt(self.speed))
                     self.state = 1
                     if self.random.randint(0, 1):  # go on the player
                         self.y = game_states.DISTANCE
@@ -991,14 +1007,16 @@ class Fish(Glides):
                     else:
                         self.y = game_states.DISTANCE + self.random.randint(-400, 400)
                         self.x = (self.random.randint(0, 1) * 2 - 1) * (100 + self.target_flight * self.speed // 2 + self.random.randint(0, 400))
-                    self.x += self.direction + self.target_flight * self.speed // 2
+                    self.x -= self.direction * (self.target_flight * self.speed // 2 + 20)
                     self.wait = 5 * self.frame_change_ticks
             case 1:  # surfacing
                 if self.wait <= 0:
                     self.img = images.FISH.img
                     self.x += self.direction * 20
                     self.wait = self.target_flight
+                    # print(self.target_flight)
                     self.already_hit = False
+                    self.state = 2
                 else:
                     self.img = images.FISH_RIPPLES[4 - self.wait // self.frame_change_ticks].img
             case 2:  # flying
@@ -1006,6 +1024,7 @@ class Fish(Glides):
                     self.x += self.direction * 20
                     self.state = 3
                     self.img = images.FISH_RIPPLES[4].img
+                    self.rotation += 180
                     self.wait = 5 * self.frame_change_ticks
                 else:
                     self.x += self.speed * self.direction
@@ -1062,6 +1081,7 @@ class Spawner(Entity):
             self.__list = None
         else:
             self.__list: list = [None for i in range(limit)]
+        print(limit, self.__list, delay)
         self.delay = delay
         self.timer = -1
         self.entity = entity
@@ -1107,16 +1127,30 @@ class Spawner(Entity):
             self.__check = (self.__check + 1) % len(self.__list)
             if self.__list[self.__check] is None:
                 self.timer = 0
+            elif not self.__list[self.__check].alive:
+                self.__list[self.__check] = None
+                self.timer = 0
             return
-        if self.timer == self.delay:
+        if self.timer >= self.delay:
             self.timer = -1
             self.__spawning = SpawnerHolder(self.entity.make(self.area.random.randint(0, 2 ** 16 - 1), self.area),
-                                            self, -1, self.__destination)
+                                            self, self.__check, self.__destination)
             self.__spawning.enter()
             self.area.entity_list.append(self.__spawning)
             self.__spawning.pos = self.pos
             return
         self.timer += 1
+
+    def draw(self):
+        super().draw()
+        game_structures.SCREEN.blit(
+            game_structures.FONTS[20].render(
+                str(self.__list),
+                False,
+                (0, 0, 0)
+            ),
+            self.screen_pos
+        )
 
     def lose(self, index):
         """
@@ -1254,6 +1288,7 @@ class SpawnerHolder(Entity):
         self.holder: Spawner = holder
         self.index = index
         self.deployed = False
+        self.alive = True
         self.id = SpawnerHolder.__id
         self.destiny = destiny
         SpawnerHolder.__id += 1
@@ -1268,6 +1303,8 @@ class SpawnerHolder(Entity):
         if self.deployed:
             res = self.holding.tick()
             if not res:
+                self.alive = False
+                print("Dying", self.index)
                 self.holder.lose(self.index)
             return res
         if self.holder.spawning is not self:
@@ -1287,7 +1324,8 @@ class SpawnerHolder(Entity):
         if dist < 5:
             self.deployed = True
         if self.health <= 0:
-            self.holder.lose(self.index)
+            self.alive = False
+            self.holder.lose(-1)
             return False
         return True
 
@@ -1300,16 +1338,18 @@ class SpawnerHolder(Entity):
 
 class DelayedDeploy(Entity):
 
-    def __init__(self, delay, area, entity: Entity):
-        super().__init__(images.EMPTY, 0, entity.pos)
+    def __init__(self, delay, area, entity: type(Entity), args):
+        super().__init__(images.EMPTY, 0, (3000, area.start_coordinate))
         self.delay = delay
         self.area = area
         self.entity = entity
+        self.args = args
 
     def tick(self):
         self.delay -= 1
         if self.delay <= 0:
-            self.area.entity_list.append(self.entity)
+            self.area.entity_list.append(self.entity(*self.args))
+            print("delayed deploy initiated")
         return self.delay > 0
 
 
@@ -1393,7 +1433,10 @@ if __name__ == "__main__":
     # game_structures.AREA_QUEUE[0].length += 20000
     # game_states.LAST_AREA_END = game_structures.AREA_QUEUE[0].end_coordinate
     area = game_areas.GameArea(1000, 20)
-    area.entity_list.append(Knight.make(5672979812, area))
+    area.difficulty = 60
+    # area.entity_list.append(Knight.make(5672979812, area))
+    area.entity_list.append(Fish(area))
+
     area.finalize()
     # area.enter()
     game_states.LAST_AREA_END = area.end_coordinate

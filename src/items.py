@@ -254,6 +254,7 @@ def original_simple_draw(item: Item):
             pygame.transform.flip(item.img, item.pos[1] == 0, False),
             ent.rotation + 180
         )
+        # print(ent.pos, (ent.x, ent.y), ent.get_pos(), )
         game_structures.SCREEN.blit(
             rotated,
             game_structures.to_screen_pos(offset_point_rotated(
@@ -316,6 +317,7 @@ def simple_stab_draw(item: Item):
         )
     else:
         ent = item.pos[0]
+        # print(ent.pos, ent.get_pos())
         hand = item.pos[1] * 2 - 1
         rotated = pygame.transform.rotate(
             pygame.transform.flip(item.img, item.pos[1] == 0, False),

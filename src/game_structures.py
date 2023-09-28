@@ -78,7 +78,7 @@ def deal_damage(damage: int, source):
                             return
                         continue
         game_states.HEALTH -= damage
-        game_states.INVULNERABILITY_LEFT = damage * 3 + 1
+        game_states.INVULNERABILITY_LEFT = damage * 10 + 1
         # print(source, source.pos, source.img, source.tick, source.draw)
 
 
@@ -1481,6 +1481,13 @@ class Body:
     def pos(self, val: tuple[int, int]):
         self.x = val[0]
         self.y = val[1]
+
+    @property
+    def screen_pos(self):
+        return to_screen_pos(self.pos)
+
+    def get_pos(self):
+        return self.pos
 
     @property
     def x(self):

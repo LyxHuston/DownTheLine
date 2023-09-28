@@ -141,7 +141,7 @@ def refresh_from_save():
         setattr(game_states, name, val)
     game_structures.HANDS = game_states.HANDS_SAVE
     game_structures.AREA_QUEUE = game_states.QUEUE_SAVE
-    game_states.DISTANCE = game_structures.AREA_QUEUE[0].start_coordinate - 100
+    # game_states.DISTANCE = game_structures.AREA_QUEUE[0].start_coordinate - 100
     game_states.HEALTH = 5
     game_states.PLACE = game_structures.PLACES.in_game
     game_structures.BUTTONS.clear()

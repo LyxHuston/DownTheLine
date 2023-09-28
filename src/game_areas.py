@@ -129,8 +129,9 @@ class GameArea:
         """
         if self.start_coordinate < game_states.CAMERA_BOTTOM + game_states.HEIGHT + 100 or self.start_coordinate < game_states.LAST_AREA_END:
             self.start_coordinate = max(game_states.CAMERA_BOTTOM + game_states.HEIGHT + 100, game_states.LAST_AREA_END)
+        game_states.LAST_AREA_END = self.end_coordinate
         for entity in self.entity_list:
-            entity.pos = (entity.pos[0], entity.pos[1] + self.start_coordinate)
+            entity.y += self.start_coordinate
 
 
 class BasicArea(GameArea):
@@ -234,7 +235,7 @@ class EnslaughtArea(GameArea):
         self.difficulty = count
         self.current_difficulty = count
         self.length = game_states.HEIGHT * 4
-        self.entity_list.append(entities.InvulnerableObstacle(pos=(0, self.length)))
+        self.entity_list.append(entities.InvulnerableObstacle(pos=(0, self.length), health=1))
         self.state = 0  # 0: not started 1: in progress 2: finished, killing off entities
         self.timer = 30 * 60 + 120 * math.floor(math.log2(count))
         self.max = self.timer
@@ -252,18 +253,22 @@ class EnslaughtArea(GameArea):
                 20
             )
 
+    cooldown = 300
+
     def tick(self):
         super(EnslaughtArea, self).tick()
         match self.state:
             case 0:
                 if game_states.DISTANCE > self.start_coordinate + self.length // 2:
                     self.state = 1
-                    self.entity_list.append(entities.InvulnerableObstacle(pos=(0, self.start_coordinate)))
-                    self.cooldown_ticks = 600
+                    end_wall = entities.InvulnerableObstacle(pos=(0, self.start_coordinate))
+                    end_wall.enter()
+                    self.entity_list.append(end_wall)
+                    self.cooldown_ticks = self.cooldown
             case 1:
                 self.timer -= 1
                 if self.cooldown_ticks <= 0:
-                    self.cooldown_ticks = 600
+                    self.cooldown_ticks = self.cooldown
                     self.event()
                 self.cooldown_ticks -= 1
                 if self.timer <= 0:
@@ -301,12 +306,13 @@ class EnslaughtArea(GameArea):
                 self.entity_list.append(entities.DelayedDeploy(
                     i * 60,
                     self,
-                    entities.TrackingLazer(
+                    entities.TrackingLazer,
+                    (
                         self.end_coordinate,
                         60,
                         60,
                         self
-                    ),
+                    )
                 ))
         elif target_change < 15:
             print("Fishies")
@@ -314,7 +320,7 @@ class EnslaughtArea(GameArea):
                 self.entity_list.append(entities.Fish(self))
                 self.current_difficulty += 2
         elif target_change < 30:
-            print("Spawning")
+            # print("Spawning")
             allowable_entities = []
             for entry in BasicArea.allowable_thresh_holds:
                 if entry[1] > self.difficulty or not entry[0].seen:
@@ -327,15 +333,17 @@ class EnslaughtArea(GameArea):
                 num += 1
                 entity = allowable_entities[index][0]
                 target_change -= entity.cost + allowable_entities[index][1] ** 2
-                self.difficulty += entity.cost + allowable_entities[index][1] ** 2
+                self.current_difficulty += entity.cost + allowable_entities[index][1] ** 2
                 allowable_entities[index][1] += 1
                 made_entity = entity.make(determiner, self)
+                made_entity.y += self.start_coordinate
                 if game_states.CAMERA_BOTTOM + made_entity.height < made_entity.y < game_states.CAMERA_BOTTOM + game_states.HEIGHT - made_entity.height:
                     if game_states.DISTANCE - self.start_coordinate < self.length // 2:
-                        made_entity.y = self.end_coordinate
+                        made_entity.y = self.end_coordinate - 100
                     else:
-                        made_entity.y = self.start_coordinate
+                        made_entity.y = self.start_coordinate + 100
                 self.entity_list.append(made_entity)
+                print(made_entity)
         else:
             print("Spawners")
             for i in range(target_change // 15):
@@ -344,6 +352,9 @@ class EnslaughtArea(GameArea):
                     self.current_difficulty += (spawner.delay // 200 + 1) * (spawner.entity.cost + 1) ** 2
                 else:
                     self.current_difficulty += (spawner.limit + 1) * spawner.entity.cost ** 2
+                spawner.y += self.start_coordinate
+                self.entity_list.append(spawner)
+        print(f"{self.current_difficulty}/{self.difficulty}")
 
 
 @make_async(with_lock=True)
@@ -413,7 +424,6 @@ def add_game_area():
                 area = GameArea(400)
     game_states.LAST_AREA += 1
     area.finalize()
-    game_states.LAST_AREA_END = area.end_coordinate
     # print(game_states.LAST_AREA_END)
     game_structures.AREA_QUEUE.append(area)
     game_structures.make_save()

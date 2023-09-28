@@ -115,18 +115,13 @@ def item_input_catch(num: int) -> None:
                     pygame.Rect(-32, game_states.DISTANCE - 10, 64, 20)):
                 continue
             if game_structures.HANDS[num] is None:
-                del area.entity_list[i]
-                game_structures.HANDS[num] = entity.item
-                entity.item.pos = num
+                game_structures.HANDS[num] = entity.pick_up(num)
             elif game_structures.HANDS[1 - num] is None:
-                del area.entity_list[i]
-                game_structures.HANDS[1 - num] = entity.item
-                entity.item.pos = 1 - num
-            else:
+                game_structures.HANDS[1 - num] = entity.pick_up(num)
+            elif not entity.picked_up:
                 game_structures.HANDS[num].pos = entity.pos
-                area.entity_list[i] = entities.ItemEntity(game_structures.HANDS[num])
-                game_structures.HANDS[num] = entity.item
-                entity.item.pos = num
+                area.entity_list.append(entities.ItemEntity(game_structures.HANDS[num]))
+                game_structures.HANDS[num] = entity.pick_up(num)
             return
     if game_structures.HANDS[num] is None:
         return
