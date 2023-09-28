@@ -41,6 +41,8 @@ tick_counter = 0
 
 def tick(do_tick: bool = None):
     if do_tick is None or do_tick:
+        if game_states.INVULNERABILITY_LEFT > 0:
+            game_states.INVULNERABILITY_LEFT -= 1
         if game_states.HEALTH <= 0 and game_states.PLACE is tick:
             import other_screens
             other_screens.lose()

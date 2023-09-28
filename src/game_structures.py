@@ -57,6 +57,12 @@ def begin_shake(duration: int, maximum: tuple[int, int], change_per_tick: tuple[
     game_states.X_CHANGE, game_states.Y_CHANGE = change_per_tick
 
 
+def deal_damage(damage: int):
+    if game_states.INVULNERABILITY_LEFT == 0:
+        game_states.HEALTH -= damage
+        game_states.INVULNERABILITY_LEFT = damage * 2 + 1
+
+
 # SCREEN = pygame.display.set_mode((500, 200))
 CLOCK = pygame.time.Clock()
 

@@ -382,7 +382,7 @@ def simple_stab_tick(item: Item):
             if rect.colliderect(pygame.Rect(-32, game_states.DISTANCE - 32, 64, 64)):
                 item.data_pack[-1].append("p")
                 damage = item.data_pack[4]
-                game_states.HEALTH -= damage
+                game_structures.deal_damage(damage)
                 game_structures.begin_shake(10 * (1 + damage // 2), (20, 20), (2 * (1 + damage), -5 * (1 + damage)))
                 entities.glide_player(item.data_pack[4] * 3, 20, 3, (
                         (item.pos[1] if isinstance(item.pos[0], int) else item.pos[0].y) < game_states.DISTANCE) * 2 - 1)
