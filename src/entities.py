@@ -54,8 +54,8 @@ class Entity(game_structures.Body):
         game_structures.SCREEN.blit(
             self.img,
             (
-                self.pos[0] + game_states.WIDTH // 2 - self.img.get_width() // 2,
-                game_states.HEIGHT + game_states.CAMERA_BOTTOM - self.pos[1] - self.img.get_height() // 2
+                game_structures.to_screen_x(self.x) - self.img.get_width() // 2,
+                game_structures.to_screen_y(self.y) - self.img.get_height() // 2
             )
         )
 
@@ -223,6 +223,7 @@ class Slime(Glides):
             game_states.HEALTH -= 1
             game_states.DISTANCE = self.y + 64 * (((self.y - game_states.DISTANCE) < 0) * 2 - 1)
             glide_player(5, 1, 1, ((self.y - game_states.DISTANCE) < 0) * 2 - 1)
+            game_structures.begin_shake(6, (10, 10), (7, 5))
             self.start_glide(0, 30, 0, 0)
         return self.health > 0
 

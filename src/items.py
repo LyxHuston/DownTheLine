@@ -39,13 +39,13 @@ def simple_draw(item: Item):
         game_structures.SCREEN.blit(
             pygame.transform.flip(item.img, ((item.pos == 0) != (game_states.LAST_DIRECTION == -1)), game_states.LAST_DIRECTION == -1),
             (
-                game_states.WIDTH // 2 + 32 * (item.pos * 2 - 1) * game_states.LAST_DIRECTION - item.img.get_width() // 2,
-                game_states.HEIGHT + game_states.CAMERA_BOTTOM - game_states.DISTANCE - item.img.get_height() // 2
+                game_structures.to_screen_x(32 * (item.pos * 2 - 1) * game_states.LAST_DIRECTION) - item.img.get_width() // 2,
+                game_structures.to_screen_y(game_states.DISTANCE) - item.img.get_height() // 2
             )
         )
     elif isinstance(item.pos[0], int):
         draw_on_ground(item)
-    else:
+    else:  # would be held by an enemy entity, a case which does not exist yet
         pass
 
 
@@ -58,8 +58,8 @@ def draw_on_ground(item):
     game_structures.SCREEN.blit(
         item.img,
         (
-            game_states.WIDTH // 2 + item.pos[0] - item.img.get_width() // 2,
-            game_states.HEIGHT + game_states.CAMERA_BOTTOM - item.pos[1] - item.img.get_height() // 2
+            game_structures.to_screen_x(item.pos[0]) - item.img.get_width() // 2,
+            game_structures.to_screen_y(item.pos[1]) - item.img.get_height() // 2
         )
     )
 
@@ -86,8 +86,8 @@ def simple_stab_draw(item: Item):
         game_structures.SCREEN.blit(
             pygame.transform.flip(item.img, ((item.pos == 0) != (game_states.LAST_DIRECTION == -1)), game_states.LAST_DIRECTION == -1),
             (
-                game_states.WIDTH // 2 + 16 * (item.pos * 2 - 1) * game_states.LAST_DIRECTION - item.img.get_width() // 2,
-                game_states.HEIGHT + game_states.CAMERA_BOTTOM - game_states.DISTANCE - item.img.get_height() // 2 - (20 + item.img.get_height() // 2) * game_states.LAST_DIRECTION
+                game_structures.to_screen_x(16 * (item.pos * 2 - 1) * game_states.LAST_DIRECTION) - item.img.get_width() // 2,
+                game_structures.to_screen_y(game_states.DISTANCE + (20 + item.img.get_height() // 2) * game_states.LAST_DIRECTION) - item.img.get_height() // 2
             )
         )
     elif isinstance(item.pos[0], int):

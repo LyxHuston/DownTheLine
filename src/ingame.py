@@ -109,6 +109,11 @@ def dash_input_catch(direction: int) -> None:
         game_states.TAPER_AMOUNT = 100
         game_states.GLIDE_DURATION = 20
         game_states.GLIDE_DIRECTION = direction
+        game_structures.begin_shake(
+            20,
+            (3, 0),
+            (1, 0)
+        )
         return
     last_dash_input = direction
     last_press_for_dash = tick_counter

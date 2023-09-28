@@ -15,7 +15,7 @@ import sys
 match sys.argv[1] if len(sys.argv) > 1 else None:
     case "testing":
         backdrop = (128, 128, 128)
-        game_structures.SCREEN = pygame.display.set_mode((500, 500))
+        game_structures.SCREEN = pygame.display.set_mode((1000, 700))
     case _:
         backdrop = (0, 0, 0)
         game_structures.SCREEN = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)

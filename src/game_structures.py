@@ -13,9 +13,30 @@ import pygame.mixer
 from pygame.event import custom_type
 import enum
 from collections import deque
+import game_states
 
 
 SCREEN: pygame.Surface = None
+
+
+def to_screen_x(x: int = 0) -> int:
+    return x + game_states.WIDTH // 2 + game_states.X_DISPLACEMENT
+
+
+def to_screen_y(y: int = 0) -> int:
+    return game_states.HEIGHT + game_states.CAMERA_BOTTOM - y - game_states.Y_DISPLACEMENT
+
+
+def to_screen_pos(pos: tuple[int, int] = (0, 0)) -> tuple[int, int]:
+    return to_screen_x(pos[0]), to_screen_y(pos[1])
+
+
+def begin_shake(duration: int, maximum: tuple[int, int], change_per_tick: tuple[int, int]) -> None:
+    game_states.SHAKE_DURATION = duration
+    game_states.X_LIMIT, game_states.Y_LIMIT = maximum
+    game_states.X_CHANGE, game_states.Y_CHANGE = change_per_tick
+
+
 # SCREEN = pygame.display.set_mode((500, 200))
 CLOCK = pygame.time.Clock()
 
@@ -785,7 +806,8 @@ class QueueSpeech:
         :return:
         """
         # print("Speaking")
-        self.speach(self.front.text)
+        # self.speach(self.front.text)
+        print("speach issues")
 
     def next_speach(self) -> None:
         """

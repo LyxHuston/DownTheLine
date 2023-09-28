@@ -17,6 +17,7 @@ def tick():
     """
     draws the gameboard and handles checking if we need to unload and load a new
     area.  If so, dispatches a thread.
+    also, handles shaking the board
     :return:
     """
     for i in range(len(game_structures.AREA_QUEUE)):
@@ -32,11 +33,25 @@ def tick():
                 game_structures.AREA_QUEUE[1].entity_list.append(entity)
         del game_structures.AREA_QUEUE[0]
         add_game_area()
+    if game_states.SHAKE_DURATION > 0:
+        game_states.SHAKE_DURATION -= 1
+        if game_states.SHAKE_DURATION == 0:
+            game_states.X_DISPLACEMENT = 0
+            game_states.Y_DISPLACEMENT = 0
+        else:
+            game_states.X_DISPLACEMENT += game_states.X_CHANGE
+            if abs(game_states.X_DISPLACEMENT) > abs(game_states.X_LIMIT):
+                game_states.X_DISPLACEMENT += 2 * (abs(game_states.X_DISPLACEMENT) - abs(game_states.X_LIMIT)) * ((game_states.X_DISPLACEMENT < 0) * 2 - 1)
+                game_states.X_CHANGE *= -1
+            game_states.Y_DISPLACEMENT += game_states.Y_CHANGE
+            if abs(game_states.Y_DISPLACEMENT) > abs(game_states.Y_LIMIT):
+                game_states.Y_DISPLACEMENT += 2 * (abs(game_states.Y_DISPLACEMENT) - abs(game_states.Y_LIMIT)) * ((game_states.Y_DISPLACEMENT < 0) * 2 - 1)
+                game_states.Y_CHANGE *= -1
     pygame.draw.line(
         game_structures.SCREEN,
         (255, 255, 255),
-        (game_states.WIDTH / 2, game_states.HEIGHT),
-        (game_states.WIDTH / 2, 0),
+        (game_states.WIDTH / 2 + game_states.X_DISPLACEMENT, game_states.HEIGHT),
+        (game_states.WIDTH / 2 + game_states.X_DISPLACEMENT, 0),
         3
     )
     game_structures.SCREEN.blit(
@@ -69,7 +84,7 @@ def tick():
             False,
             game_states.LAST_DIRECTION == -1
         ),
-        (game_states.WIDTH / 2 - 32, game_states.HEIGHT - game_states.DISTANCE + game_states.CAMERA_BOTTOM - 32)
+        (game_structures.to_screen_x(-32), game_structures.to_screen_y(game_states.DISTANCE + 32))
     )
     for i in range(len(game_structures.AREA_QUEUE)):
         area = game_structures.AREA_QUEUE[i]
