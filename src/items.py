@@ -351,6 +351,8 @@ def simple_stab_tick(item: Item):
                 game_states.DISTANCE + (20 + item.img.get_height() // 2) * game_states.LAST_DIRECTION
             ))
         else:
+            if isinstance(item.pos[0], int):
+                return True
             rect = item.img.get_rect(center=offset_point_rotated(
                 item.pos[0].pos,
                 (

@@ -22,7 +22,7 @@ import game_structures
 
 dash_img = pygame.image.load("resources/abilities/ability_icons/dash_icon.png")
 
-dash_sensitivity = 20
+dash_sensitivity = 8
 
 last_press_for_dash = -1 - dash_sensitivity
 
