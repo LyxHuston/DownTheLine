@@ -41,6 +41,9 @@ class Entity(game_structures.Body):
 
     seen = False
 
+    is_item_entity = False
+    is_holder = False
+
     allied_with_player = False
 
     cost = 2
@@ -179,18 +182,27 @@ def make_invulnerable_version(entity_class: type(Entity)) -> type(Entity):
     return New
 
 
-
-class ItemEntity(Entity):
+class ItemEntity(make_invulnerable_version(Entity)):
     """
     wrapper entity for items and abilities while on the ground to make them easier to work with
     """
 
+    is_item_entity = True
+
     @property
     def pos(self):
-        return self.item.pos
+        if isinstance(self.item.pos, int):
+            return 0, 0
+        if isinstance(self.item.pos[0], int):
+            return self.item.pos
+        return 0, 0
 
     @pos.setter
     def pos(self, val: tuple[int, int]):
+        if isinstance(self.item.pos, int):
+            return
+        if not isinstance(self.item.pos[0], int):
+            return
         self.item.pos = (
             self.item.pos[0] if self.freeze_x() else val[0],
             self.item.pos[1] if self.freeze_y() else val[1]
@@ -198,7 +210,7 @@ class ItemEntity(Entity):
 
     @property
     def x(self):
-        return self.item.pos[0]
+        return self.pos[0]
 
     @x.setter
     def x(self, val: int):
@@ -206,7 +218,7 @@ class ItemEntity(Entity):
 
     @property
     def y(self):
-        return self.item.pos[1]
+        return self.pos[1]
 
     @y.setter
     def y(self, val: int):
@@ -1127,18 +1139,21 @@ class Spawner(Entity):
                 return
             self.__check = (self.__check + 1) % len(self.__list)
             if self.__list[self.__check] is None:
+                print("found")
                 self.timer = 0
             elif not self.__list[self.__check].alive:
                 self.__list[self.__check] = None
                 self.timer = 0
             return
         if self.timer >= self.delay:
+            print("spawning")
             self.timer = -1
             self.__spawning = SpawnerHolder(self.entity.make(self.area.random.randint(0, 2 ** 16 - 1), self.area),
                                             self, self.__check, self.__destination)
             self.__spawning.enter()
             self.area.entity_list.append(self.__spawning)
             self.__spawning.pos = self.pos
+            print(self.__spawning.tick())
             return
         self.timer += 1
 
@@ -1224,6 +1239,8 @@ class SpawnerHolder(Entity):
     Most data should just be passing onto the held entity
     """
 
+    is_holder = True
+
     @property
     def img(self):
         return self.holding.img
@@ -1305,7 +1322,7 @@ class SpawnerHolder(Entity):
             res = self.holding.tick()
             if not res:
                 self.alive = False
-                print("Dying", self.index)
+                # print("Dying", self.index)
                 self.holder.lose(self.index)
             return res
         if self.holder.spawning is not self:
@@ -1503,7 +1520,7 @@ if __name__ == "__main__":
     # area.entity_list.append(Knight.make(5672979812, area))
     # area.entity_list.append(Fish(area))
     area.entity_list.append(ingame.entities.ItemEntity(items.simple_bomb(
-        (0, 60),
+        (0, 120),
         15,
         1,
         20,
@@ -1511,6 +1528,23 @@ if __name__ == "__main__":
         600,
         4
     )))
+    area.entity_list.append(Spawner(
+        (-500, 60),
+        1,
+        area,
+        0,
+        make_item_duplicator(items.simple_bomb(
+            (0, 60),
+            15,
+            1,
+            20,
+            240,
+            600,
+            4
+        )),
+        (0, None),
+        1
+    ))
 
     area.finalize()
     # area.enter()

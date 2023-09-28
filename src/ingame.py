@@ -109,9 +109,10 @@ def item_input_catch(num: int) -> None:
         for area in game_structures.initialized_areas():
             for entity in area.entity_list:
                 # entity = area.entity_list[i]
-                if isinstance(entity, entities.SpawnerHolder):
+                if entity.is_holder:
+                    print("extracted from holder")
                     entity = entity.holding
-                if not isinstance(entity, entities.ItemEntity):
+                if not entity.is_item_entity:
                     continue
                 if not isinstance(entity.pos[0], int):
                     continue
