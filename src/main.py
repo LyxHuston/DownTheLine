@@ -68,6 +68,8 @@ def start():
     game_states.Y_LIMIT = 0
     game_states.X_CHANGE = 0
     game_states.Y_CHANGE = 0
+    # screen
+    game_states.CAMERA_BOTTOM = 0
     # area management
     game_states.AREAS_PASSED = 0
     game_states.LAST_AREA = 0
@@ -79,13 +81,15 @@ def start():
     # print(game_states.SEED)
 
     import entities
-    for attr_name, attr_value in entities.__dict__:
-        if issubclass(attr_value, entities.Entity):
-            attr_value.seen = False
+    for attr_value in entities.__dict__.values():
+        if isinstance(attr_value, type):
+            if issubclass(attr_value, entities.Entity):
+                attr_value.seen = False
     import game_areas
-    for attr_name, attr_value in game_areas.__dict__:
-        if issubclass(attr_value, game_areas.GameArea):
-            attr_value.seen = False
+    for attr_value in game_areas.__dict__.values():
+        if isinstance(attr_value, type):
+            if issubclass(attr_value, game_areas.GameArea):
+                attr_value.seen = False
 
     game_structures.AREA_QUEUE.clear()
     add_game_area().join()

@@ -92,7 +92,6 @@ class Entity(game_structures.Body):
         :return:
         """
         if not type(self).seen:
-            print(type(self).__name__)
             type(self).seen = True
             self.first_seen()
 
@@ -302,7 +301,8 @@ class Slime(Glides):
 
     def first_seen(self):
         for i in range(1, 4):
-            self.__class__.imgs[i] = self.__class__.imgs[i].img
+            if isinstance(self.__class__.imgs[i], images.Image):
+                self.__class__.imgs[i] = self.__class__.imgs[i].img
 
     @classmethod
     def make(cls, determiner: int, area):
@@ -341,7 +341,6 @@ class Crawler(Glides):
         if (self.glide_speed == 0 or (
                 self.taper == 0 and self.glide_direction != (self.y < game_states.DISTANCE) * 2 - 1)) and game_states.DISTANCE > self.threshhold:
             if self.threshhold != 0:
-                print("Crawler activated:", self.threshhold)
                 self.threshhold = 0
             self.start_glide(
                 self.speed,
