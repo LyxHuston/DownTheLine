@@ -629,3 +629,13 @@ def make_random_reusable(random, pos):
             return random_simple_stab(game_states.LAST_AREA, random, pos)
         case 1:
             return random_simple_shield(game_states.LAST_AREA, random, pos)
+
+
+def make_random_single_use(random, pos):
+    """
+    makes a random single use item at a position
+    :param random:
+    :param pos:
+    :return:
+    """
+    pass

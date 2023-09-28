@@ -82,6 +82,15 @@ KNIGHT_SHIELDING = Image("resources/entities/knight/knight_shielding.png")
 
 ARROW = Image("resources/entities/projectiles/arrow.png")
 
+LAZER_END = Image("resources/entities/lazer/lazer_end.png")
+
+FISH_RIPPLES = [Image("resources/entities/fish/fish_ripple_1.png"),
+                Image("resources/entities/fish/fish_ripple_2.png"),
+                Image("resources/entities/fish/fish_ripple_3.png"),
+                Image("resources/entities/fish/fish_ripple_4.png"),
+                Image("resources/entities/fish/fish_ripple_5.png")]
+FISH = Image("resources/entities/fish/fish_flight.png")
+
 # items
 SIMPLE_SWORD = Image("resources/items/simple_sword.png")
 SIMPLE_SPEAR = Image("resources/items/simple_spear.png")
@@ -98,6 +107,9 @@ VOID_PARTICLES = [Image("resources/particles/basic_void/basic_void_1.png"),
                   Image("resources/particles/basic_void/basic_void_2.png"),
                   Image("resources/particles/basic_void/basic_void_3.png"),
                   Image("resources/particles/basic_void/basic_void_4.png")]
+
+# empty
+EMPTY = pygame.Surface((0, 0))
 
 if __name__ == "__main__":
     img = name = val = None

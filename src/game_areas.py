@@ -233,6 +233,7 @@ class EnslaughtArea(GameArea):
     def __init__(self, determiner, count):
         super().__init__(seed=determiner)
         self.difficulty = count
+        self.current_difficulty = count
         self.length = game_states.HEIGHT * 4
         self.entity_list.append(entities.InvulnerableObstacle(pos=(0, self.length)))
         self.state = 0  # 0: not started 1: in progress 2: finished, killing off entities
@@ -278,14 +279,76 @@ class EnslaughtArea(GameArea):
                 self.cooldown_ticks -= 1
 
     def event(self):
-        pass
+        target_change = (self.difficulty - self.current_difficulty) // 2 + 8 * self.random.randint(-1, 3)
+        if target_change < 0:
+            pos = (
+                self.random.randint(100, game_states.WIDTH // 2) * (self.random.randint(0, 1) * 2 - 1),
+                self.random.randint(self.start_coordinate + 100, self.end_coordinate - 100)
+            )
+            self.entity_list.append(entities.Spawner(
+                pos,
+                1,
+                self,
+                0,
+                entities.make_item_duplicator(items.make_random_single_use(self.random, pos)),
+                (0, None),
+                1
+            ))
+            self.current_difficulty -= 20
+        elif target_change < 10:
+            for i in range(target_change):
+                self.entity_list.append(entities.DelayedDeploy(
+                    i * 60,
+                    self,
+                    entities.TrackingLazer(
+                        self.end_coordinate,
+                        60,
+                        60,
+                        self
+                    ),
+                ))
+        elif target_change < 15:
+            for i in range(target_change // 3):
+                self.entity_list.append(entities.Fish(self))
+                self.current_difficulty += 2
+        elif target_change < 30:
+            allowable_entities = []
+            for entry in BasicArea.allowable_thresh_holds:
+                if entry[1] > self.difficulty or not entry[0].seen:
+                    break
+                allowable_entities.append([entry[0], 0])
+            num = 3
+            determiner = self.random.randint(0, 2 ** 31)
+            while target_change > 0:
+                index = (determiner % num) % len(allowable_entities)
+                num += 1
+                entity = allowable_entities[index][0]
+                target_change -= entity.cost + allowable_entities[index][1]
+                self.difficulty += entity.cost + allowable_entities[index][1]
+                allowable_entities[index][1] += 1
+                made_entity = entity.make(determiner, self)
+                if game_states.CAMERA_BOTTOM + made_entity.height < made_entity.y < game_states.CAMERA_BOTTOM + game_states.HEIGHT - made_entity.height:
+                    if game_states.DISTANCE - self.start_coordinate < self.length // 2:
+                        made_entity.y = self.end_coordinate
+                    else:
+                        made_entity.y = self.start_coordinate
+                self.entity_list.append(made_entity)
+        else:
+            for i in range(target_change // 15):
+                spawner = entities.Spawner.make(self.random.randint(0, 2 ** 31), self)
+                if spawner.limit is None:
+                    self.current_difficulty += (spawner.delay // 200 + 1) * (spawner.entity.cost + 1)
+                else:
+                    self.current_difficulty += (spawner.limit + 1) * spawner.entity.cost
+
 
 @make_async(with_lock=True)
 def add_game_area():
     # print(game_states.LAST_AREA)
+    determinator = hash(str(game_states.SEED + game_states.LAST_AREA))
     match game_states.LAST_AREA:
         case 0:
-            area = GameArea(200)
+            area = GameArea(200, determinator)
             area.entity_list.append(entities.Obstacle(pos=(0, 170)))
             area.entity_list.append(entities.ItemEntity(items.simple_stab(
                 60,
@@ -294,14 +357,14 @@ def add_game_area():
                 (0, 40)
             )))
         case 1:
-            area = GameArea(300)
+            area = GameArea(300, determinator)
             area.entity_list.append(entities.Obstacle(pos=(0, area.length), health=5))
-            area.entity_list.append(entities.Slime((0, area.length // 2)))
+            area.entity_list.append(entities.Slime((0, area.length // 2), area.random.randint(0, 2 ** 32 - 1)))
         case 2:
-            area = GameArea(500)
+            area = GameArea(500, determinator)
             area.entity_list.append(entities.Obstacle(pos=(0, + area.length), health=5))
-            area.entity_list.append(entities.Slime((0, area.length // 3)))
-            area.entity_list.append(entities.Slime((0, 2 * area.length // 2)))
+            area.entity_list.append(entities.Slime((0, area.length // 3), area.random.randint(0, 2 ** 32 - 1)))
+            area.entity_list.append(entities.Slime((0, 2 * area.length // 2), area.random.randint(0, 2 ** 32 - 1)))
             area.entity_list.append(entities.ItemEntity(items.simple_stab(
                 120,
                 10,
@@ -311,7 +374,6 @@ def add_game_area():
             )))
             game_states.AREA_QUEUE_MAX_LENGTH = 3
         case _:
-            determinator = hash(str(game_states.SEED + game_states.LAST_AREA))
             # print(determinator, game_states.SEED + game_states.LAST_AREA)
             area = None
             typ = determinator % 64
@@ -336,11 +398,9 @@ def add_game_area():
                 # minigame room
                 pass
             elif typ <= 12:  # 6/64
-                # enslaught room
-                pass
+                area = EnslaughtArea(determinator, game_states.LAST_AREA)
             elif typ <= 18:  # 6/64
                 area = GiftArea(determinator, game_states.LAST_AREA)
-                pass
             elif typ <= 32:  # 14/64
                 area = BreakThroughArea(determinator, game_states.LAST_AREA)
             else:  # 32/64

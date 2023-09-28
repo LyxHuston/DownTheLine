@@ -235,6 +235,11 @@ class ItemEntity(Entity):
         super().__init__(item.img, 0, item.pos)
 
     def tick(self) -> bool:
+        held = isinstance(self.item.pos, int)
+        if not held:
+            held = not isinstance(self.item.pos[0], int)
+        if held:
+            return False
         return self.item.tick(self.item)
 
     def draw(self):
@@ -379,14 +384,14 @@ class Slime(Glides):
     alert = images.SLIME_ALERT
     imgs = [images.SLIME_1, images.SLIME_2, images.SLIME_3, images.SLIME_4]
 
-    def __init__(self, pos: tuple[int, int] = (0, 0)):
+    def __init__(self, pos: tuple[int, int] = (0, 0), seed: int = 0):
         if isinstance(self.imgs[0], images.Image):
             self.imgs[0] = self.imgs[0].img
         super().__init__(self.imgs[0], 0, pos)
         self.frame = 0
         self.max_health = 7
         self.health = 7
-        self.random = random.Random()
+        self.random = random.Random(seed)
         self.wait = 1
 
     def hit(self, damage: int, source):
@@ -807,6 +812,211 @@ class Knight(Glides):
     def make(cls, determiner: int, area):
         return cls(0, (0, 200), [items.random_simple_stab(1, area.random), None])
 
+
+class Lazer(Entity):
+    """
+    a lazer that can hurt the player.  Stationary.
+    Superclass, can be subclassed to add/replace ends, ends should be registered pre super call
+    """
+
+    def __init__(self, y: int, charge_time: int, duration: int, area, repeats: int | None = 1, damage: int = 1):
+        super().__init__(images.EMPTY, 0, (0, y))
+        if not hasattr(self, "ends"):
+            self.ends = [
+                LazerEnd(self, 0, (-game_states.WIDTH // 2 + 20, y)),
+                LazerEnd(self, 0, (game_states.WIDTH // 2 - 20, y))
+            ]
+        area.entity_list.extend(self.ends)
+        self.charge_time = charge_time
+        self.cooldown = 0
+        self.firing = False
+        self.duration = duration
+        self.repeats = repeats
+        self.hit = False
+        self.damage = damage
+
+    def tick(self):
+        for end in self.ends:
+            if not end.alive:
+                for kill_end in self.ends:
+                    kill_end.health = 0
+                return False
+        self.cooldown += 1
+        if self.firing:
+            if not self.hit:
+                end2 = self.ends[-1]
+                for i in range(len(self.ends)):
+                    end1 = end2
+                    end2 = self.ends[i]
+                    if abs(end1.x) < 32 and abs(end2.x) < 32:  # ends are in the player width case
+                        if abs(end1.y - game_states.DISTANCE) < 32 or abs(end2.y - game_states.DISTANCE) < 32 or (
+                                end1.y < game_states.DISTANCE) != (end2.y < game_states.DISTANCE):
+                            self.hit = True
+                            break
+                        continue
+                    if end1.x == end2.x:  # vertical line case (actual collision should be handled above, if it didn't then continue)
+                        continue
+                    if end1.y == end2.y:  # horizontal line case
+                        if abs(end1.x) < 32 or abs(end2.x) < 32 or (end1.x < 0) != (end2.x < 0):
+                            self.hit = True
+                            break
+                        continue
+                    intercept = end2.y - (end2.x - 32) * (end1.y - end2.y) / (end1.x - end2.x)  # hit left side
+                    if abs(intercept - game_states.DISTANCE) < 32 and (end1.y < intercept) == (end2.y >= intercept):
+                        self.hit = True
+                        break
+                    intercept = end2.y - (end2.x + 32) * (end1.y - end2.y) / (end1.x - end2.x)  # hit right side
+                    if abs(intercept - game_states.DISTANCE) < 32 and (end1.y < intercept) == (end2.y >= intercept):
+                        self.hit = True
+                        break
+                if self.hit:
+                    game_structures.deal_damage(self.damage, end2)
+            if self.cooldown >= self.duration:
+                if self.repeats is not None and self.repeats <= 0:
+                    for kill_end in self.ends:
+                        kill_end.health = 0
+                    return False
+                self.cooldown = 0
+                self.hit = False
+                self.firing = False
+        else:
+            if self.cooldown >= self.charge_time:
+                self.repeats -= 1
+                self.cooldown = 0
+                self.firing = True
+        return True
+
+    def draw(self):
+        if self.firing:
+            pygame.draw.lines(
+                game_structures.SCREEN,
+                (0, 0, 0),
+                True,
+                [game_structures.to_screen_pos(end.pos) for end in self.ends],
+                12
+            )
+
+
+class TrackingLazer(Lazer):
+    """
+    lazer subclass that chases the player while not firing
+    """
+
+    def __init__(self, y: int, charge_time: int, duration: int, area, repeats: int | None = 1, damage: int = 1):
+        super().__init__(y, charge_time, duration, area, repeats, damage)
+        self.velocity = 0
+
+    def tick(self):
+        if not self.firing:
+            self.velocity += (self.y + self.velocity * 10 > game_states.DISTANCE) * 2 - 1
+            self.y += self.velocity
+        return super().tick()
+
+    @classmethod
+    def make(cls, determiner: int, area):
+        return cls(area.start_coordinate + area.random.randint(0, 1) * area.length, 120, 60, area, 1, 1)
+
+
+class LazerEnd(Entity):
+    """
+    ends of the lazers
+    """
+
+    @property
+    def alive(self):
+        return self.health > 0
+
+    def __init__(self, parent: Lazer, rotation: int, pos: tuple[int, int]):
+        self.parent = parent
+        super().__init__(images.LAZER_END.img, rotation, pos)
+        self.health = 1
+
+    def transfer(self, area):
+        """
+        don't want this to get transferred tbh
+        :param area:
+        :return:
+        """
+        self.health = 0
+
+
+class Fish(Glides):
+    """
+    fish entity that leaps from the void
+    """
+
+    frame_change_ticks = 12
+
+    def __init__(self, area):
+        super().__init__(images.EMPTY, 0, (30000, area.start_coordinate))
+        self.max_health = 4
+        self.state = 3
+        self.health = 4
+        self.random = random.Random(area.random.randint(0, 2 ** 32 - 1))
+        self.speed = area.difficulty // 4
+        self.wait = 0
+        self.target_flight = 0
+        self.direction = 0
+        self.already_hit = False
+
+    def tick(self):
+        self.glide_tick()
+        self.wait -= 1
+        match self.state:
+            case 0:  # underwater
+                if self.wait <= 0:
+                    self.direction = self.random.randint(0, 1) * 2 - 1
+                    self.rotation = 90 - 90 * self.direction
+                    self.target_flight = 15 * self.random.randint(3, 5)
+                    self.state = 1
+                    if self.random.randint(0, 1):  # go on the player
+                        self.y = game_states.DISTANCE
+                        self.x = 0
+                    else:
+                        self.y = game_states.DISTANCE + self.random.randint(-400, 400)
+                        self.x = (self.random.randint(0, 1) * 2 - 1) * (100 + self.target_flight * self.speed // 2 + self.random.randint(0, 400))
+                    self.x += self.direction + self.target_flight * self.speed // 2
+                    self.wait = 5 * self.frame_change_ticks
+            case 1:  # surfacing
+                if self.wait <= 0:
+                    self.img = images.FISH.img
+                    self.x += self.direction * 20
+                    self.wait = self.target_flight
+                    self.already_hit = False
+                else:
+                    self.img = images.FISH_RIPPLES[4 - self.wait // self.frame_change_ticks].img
+            case 2:  # flying
+                if self.wait <= 0:
+                    self.x += self.direction * 20
+                    self.state = 3
+                    self.img = images.FISH_RIPPLES[4].img
+                    self.wait = 5 * self.frame_change_ticks
+                else:
+                    self.x += self.speed * self.direction
+                    if not self.already_hit and abs(self.x) < 64 and abs(self.y - game_states.DISTANCE) < 48:
+                        self.already_hit = True
+                        self.wait //= 2
+                        game_structures.deal_damage(1, self)
+                        glide_player(5, 2, 1, ((self.y - game_states.DISTANCE) < 0) * 2 - 1)
+                        game_structures.begin_shake(6, (10, 10), (-5, 7))
+            case 3:  # diving
+                if self.wait <= 0:
+                    self.state = 0
+                    self.wait = 3 * 60 + 60 * self.random.randint(0, 3)
+                    self.img = images.EMPTY
+                    self.x = 30000  # go offscreen, shoo
+                else:
+                    self.img = images.FISH_RIPPLES[self.wait // self.frame_change_ticks].img
+        return self.health > 0
+
+    def hit(self, damage, source):
+        self.health -= damage
+        if isinstance(source.pos, int):
+            self.start_glide(damage, 20, 1, ((self.y - game_states.DISTANCE) > 0) * 2 - 1)
+        else:
+            self.start_glide(damage, 20, 1, ((self.y - source.pos[1]) > 0) * 2 - 1)
+
+
 class Spawner(Entity):
     """
     superclass for any entity that spawns others.  Also probably its own entity?
@@ -952,6 +1162,21 @@ class Spawner(Entity):
         for i in range(1, 4):
             if isinstance(self.__class__.imgs[i], images.Image):
                 self.__class__.imgs[i] = self.__class__.imgs[i].img
+
+
+class DelayedDeploy(Entity):
+
+    def __init__(self, delay, area, entity: Entity):
+        super().__init__(images.EMPTY, 0, entity.pos)
+        self.delay = delay
+        self.area = area
+        self.entity = entity
+
+    def tick(self):
+        self.delay -= 1
+        if self.delay <= 0:
+            self.area.entity_list.append(self.entity)
+        return self.delay > 0
 
 
 class Particle(Entity):
