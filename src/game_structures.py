@@ -33,6 +33,7 @@ import game_states
 import utility
 from gtts import gTTS
 from io import BytesIO
+import images
 
 
 SCREEN: pygame.Surface = None
@@ -1421,6 +1422,8 @@ class Body:
 
     @img.setter
     def img(self, val: Surface):
+        if isinstance(val, images.Image):
+            val = val.img
         self.__original_img = val
         self._rotated_img = None
 

@@ -388,14 +388,14 @@ class Spawner(Entity):
     superclass for any entity that spawns others.  Also probably its own entity?
     """
 
-    frame_change_frequency = 3
+    frame_change_frequency = 9
 
     imgs = [images.SPAWNER_1, images.SPAWNER_2, images.SPAWNER_3, images.SPAWNER_4]
 
     allowable = ((Slime, 0), (Crawler, 8))
 
     def __init__(self, pos: tuple[int, int], limit: int | None, area, delay: int, entity: Entity, deposit: tuple[int | None, int | None], speed: int):
-        super().__init__(self.imgs[0], 0, pos)
+        super().__init__(self.imgs[0].img if isinstance(self.imgs[0], images.Image) else self.imgs[0], 0, pos)
         self.area = area
         self.limit = limit
         self.__check: int = 0
@@ -405,7 +405,7 @@ class Spawner(Entity):
             self.__list: list = [None for i in range(limit)]
         self.delay = delay
         self.timer = -1
-        self.__entity = entity
+        self.entity = entity
         self.__spawning: Entity | None = None
         self.__destination = deposit
         self.__speed = speed
@@ -414,25 +414,28 @@ class Spawner(Entity):
 
     def management_tick(self):
         if self.__spawning is not None:
-            if abs(self.__spawning.x - self.__destination[0]) < self.__speed //\
-                    2 and abs(self.__spawning.y - self.__destination[1]) < self.__speed // 2:
-                self.__spawning.pos = self.__destination
+            if self.__destination[0] is None:
+                x_dist = 0
+            else:
+                x_dist = self.__destination[0] - self.__spawning.x
+            if self.__destination[1] is None:
+                y_dist = 0
+            else:
+                y_dist = self.__destination[1] - self.__spawning.y
+            dist = abs(x_dist) + abs(y_dist)
+            if dist < self.__speed // 2 + 1:
+                self.__spawning.pos = (
+                    self.pos[0] if self.__destination[0] is None else self.__destination[0],
+                    self.pos[1] if self.__destination[1] is None else self.__destination[1]
+                )
                 self.area.entity_list.append(self.__spawning)
                 if self.__list is not None:
                     self.__list[self.__check] = self.__spawning
                 self.__spawning = None
                 return
-            if self.__destination[0] is None:
-                x_dist = 0
-            else:
-                x_dist = abs(self.__spawning.x - self.__destination[0])
-            if self.__destination[1] is None:
-                y_dist = 0
-            else:
-                y_dist = abs(self.__spawning.y - self.__destination[1])
-            dist = x_dist + y_dist
             self.__spawning.x += self.__speed * round(x_dist / dist)
             self.__spawning.y += self.__speed * round(y_dist / dist)
+            return
         if self.timer == -1:
             if self.__list is None:
                 self.timer = 0
@@ -443,13 +446,15 @@ class Spawner(Entity):
             return
         if self.timer == self.delay:
             self.timer = -1
-            self.__spawning = self.__entity.make(self.area.random.randint(0, 2**16 - 1), self.area)
+            self.__spawning = self.entity.make(self.area.random.randint(0, 2 ** 16 - 1), self.area)
+            self.__spawning.enter()
 
             if self.__list is not None:
                 index = self.__check
+                previous_tick = self.__spawning.tick
 
                 def special_callback():
-                    res = self.__spawning.tick()
+                    res = previous_tick()
                     if not res:
                         self.__list[index] = None
                     return res
@@ -481,7 +486,7 @@ class Spawner(Entity):
             limit = None
             delay = area.random.randint(12, 17) * 100
         else:
-            limit = area.random.randint(3, area.difficulty // 5)
+            limit = area.random.randint(3, max(area.difficulty // 5, 3))
             delay = area.random.randint(5, 8) * 20
         y = area.random.randint(area.length // 3, area.length)
         index = 0
@@ -491,8 +496,13 @@ class Spawner(Entity):
                 break
             if area.random.randint(0, 1):
                 break
-        return cls((0, y), limit, area, delay, cls.allowable[index][0],
-                   (0, None), area.difficulty // 10 + (area.difficulty % 10 == 0))
+        return cls((area.random.randint(100, game_states.WIDTH // 2) * (area.random.randint(0, 1) * 2 - 1), y), limit,
+                   area, delay, cls.allowable[index][0], (0, None), area.difficulty // 10 + 1)
+
+    def draw(self):
+        super().draw()
+        if self.__spawning is not None:
+            self.__spawning.draw()
 
     def first_seen(self):
         for i in range(1, 4):

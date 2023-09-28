@@ -102,7 +102,7 @@ class BasicArea(GameArea):
     # allowable_thresh_holds = [(entities.Crawler, 0)]
 
     def __init__(self, determiner, count):
-        super().__init__(determiner)
+        super().__init__(seed=determiner)
         self.length = 200 + math.floor(math.log2(count)) * 100
         self.difficulty = count
         allowance = count
@@ -128,6 +128,27 @@ class BasicArea(GameArea):
                 self.entity_list.append(add)
                 self.entity_list.append(entities.Obstacle(pos=(0, self.length)))
                 break
+
+
+class BreakThroughArea(GameArea):
+    """
+    area that continually spawns monsters, objective to break through them and
+    destroy the wall at the end
+    """
+
+    def __init__(self, determiner, count):
+        super().__init__(seed=determiner)
+        self.difficulty = count
+        self.length = game_states.HEIGHT // 2 + math.floor(math.log2(count)) * 100
+        allowance = count
+        while allowance > 0:
+            spawner = entities.Spawner.make(determiner, self)
+            self.entity_list.append(spawner)
+            if spawner.limit is None:
+                allowance -= (spawner.delay // 200 + 1) * (spawner.entity.cost + 1)
+            else:
+                allowance -= (spawner.limit + 1) * spawner.entity.cost
+        self.entity_list.append(entities.Obstacle(pos=(0, self.length)))
 
 
 @make_async(with_lock=True)
@@ -190,7 +211,7 @@ def add_game_area():
                 # gift room
                 pass
             elif typ <= 32:  # 14/64
-                # breakthrough
+                area = BreakThroughArea(determinator, game_states.LAST_AREA)
                 pass
             else:  # 32/64
                 area = BasicArea(determinator, game_states.LAST_AREA)
