@@ -106,6 +106,69 @@ class Entity(game_structures.Body):
         raise NotImplementedError(f"Attempted to use make method from generic Entity superclass: {cls.__name__} should implement it separately.")
 
 
+class ItemEntity(Entity):
+    """
+    wrapper entity for items and abilities while on the ground to make them easier to work with
+    """
+
+    @property
+    def pos(self):
+        return self.item.pos
+
+    @pos.setter
+    def pos(self, val: tuple[int, int]):
+        self.item.pos = (
+            self.item.pos[0] if self.freeze_x() else val[0],
+            self.item.pos[1] if self.freeze_y() else val[1]
+        )
+
+    @property
+    def x(self):
+        return self.item.pos[0]
+
+    @x.setter
+    def x(self, val: int):
+        self.pos = (val, self.pos[1])
+
+    @property
+    def y(self):
+        return self.item.pos[1]
+
+    @y.setter
+    def y(self, val: int):
+        self.pos = (self.pos[0], val)
+
+    @property
+    def rotation(self):
+        return self.__rotation
+
+    @rotation.setter
+    def rotation(self, val: int):
+        self.__rotation = val
+        self._rotated_img = None
+
+    @property
+    def img(self):
+        if self._rotated_img is None and self.item.img is not None:
+            self._rotated_img = pygame.transform.rotate(self.item.img, self.__rotation)
+        return self._rotated_img
+
+    @img.setter
+    def img(self, val: pygame.Surface):
+        self.item.img = val
+        self._rotated_img = None
+
+    def __init__(self, item):
+        self.item = item
+        super().__init__(item.img, 0, item.pos)
+
+    def tick(self) -> bool:
+        return self.item.tick(self.item)
+
+    def draw(self):
+        self.item.draw(self.item)
+
+
 class Glides(Entity):
     """
     an entity that has the glide action.  typically for knockback
@@ -173,7 +236,7 @@ class Obstacle(Entity):
         for entity in game_structures.all_entities():
             if entity is self:
                 continue
-            if not isinstance(entity, Entity):
+            if isinstance(entity, ItemEntity):
                 continue
             entity_rect = entity.rect
             if rect.colliderect(entity_rect):
@@ -244,7 +307,9 @@ class Slime(Glides):
 
     @classmethod
     def make(cls, determiner: int, area):
-        return cls((0, area.random.randint(area.length // 3, area.length)))
+        new_slime = cls((0, area.random.randint(area.length // 3, area.length)))
+        new_slime.random.seed(determiner)
+        return new_slime
 
 
 if __name__ == "__main__":

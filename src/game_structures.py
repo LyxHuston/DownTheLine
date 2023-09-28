@@ -1411,16 +1411,18 @@ class Body:
     @rotation.setter
     def rotation(self, val: int):
         self.__rotation = val
-        self._rotated_img = pygame.transform.rotate(self.__original_img, val)
+        self._rotated_img = None
 
     @property
     def img(self):
+        if self._rotated_img is None and self.__original_img is not None:
+            self._rotated_img = pygame.transform.rotate(self.__original_img, self.__rotation)
         return self._rotated_img
 
     @img.setter
     def img(self, val: Surface):
         self.__original_img = val
-        self._rotated_img = pygame.transform.rotate(self.__original_img, self.__rotation)
+        self._rotated_img = None
 
     @property
     def pos(self):
@@ -1469,6 +1471,10 @@ class Body:
 
     @property
     def rect(self):
+        if self.__original_img is None:
+            return None
+        if self._rotated_img is None:
+            self._rotated_img = pygame.transform.rotate(self.__original_img, self.rotation)
         return self._rotated_img.get_rect(center=self.pos)
 
     def collide(self, other):

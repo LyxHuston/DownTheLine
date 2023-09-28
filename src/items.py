@@ -258,8 +258,6 @@ def simple_stab_tick(item: Item):
             game_states.DISTANCE + (20 + item.img.get_height() // 2) * game_states.LAST_DIRECTION
         ))
         for entity in game_structures.all_entities():
-            if not isinstance(entity, entities.Entity):
-                continue
             if entity in item.data_pack[-1]:
                 continue
             if rect.colliderect(entity.rect):

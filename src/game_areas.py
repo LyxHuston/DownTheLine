@@ -61,10 +61,7 @@ class GameArea:
 
     def draw(self):
         for entity in self.entity_list:
-            if isinstance(entity, entities.Entity):
-                entity.draw()
-            else:
-                entity.draw(entity)
+            entity.draw()
 
     def tick(self):
         i = 0
@@ -134,12 +131,12 @@ def add_game_area():
         case 0:
             area = GameArea(200)
             area.entity_list.append(entities.Obstacle(pos=(0, 170)))
-            area.entity_list.append(items.simple_stab(
+            area.entity_list.append(entities.ItemEntity(items.simple_stab(
                 60,
                 20,
                 images.SIMPLE_SWORD.img,
                 (0, 40)
-            ))
+            )))
         case 1:
             area = GameArea(300)
             area.entity_list.append(entities.Obstacle(pos=(0, area.length)))
@@ -149,13 +146,13 @@ def add_game_area():
             area.entity_list.append(entities.Obstacle(pos=(0, + area.length)))
             area.entity_list.append(entities.Slime((0, area.length // 3)))
             area.entity_list.append(entities.Slime((0, 2 * area.length // 2)))
-            area.entity_list.append(items.simple_stab(
+            area.entity_list.append(entities.ItemEntity(items.simple_stab(
                 120,
                 10,
                 images.SIMPLE_SPEAR.img,
                 (15, 120),
                 2
-            ))
+            )))
             game_states.AREA_QUEUE_MAX_LENGTH = 3
         case _:
             determinator = hash(str(game_states.SEED + game_states.LAST_AREA))

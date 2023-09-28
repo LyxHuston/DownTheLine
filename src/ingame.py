@@ -23,6 +23,7 @@ import pygame
 import game_states
 import game_structures
 import items
+import entities
 import abilities
 
 
@@ -102,20 +103,20 @@ def item_input_catch(num: int) -> None:
     for area in game_structures.initialized_areas():
         for i in range(len(area.entity_list)):
             entity = area.entity_list[i]
-            if not isinstance(entity, items.Item):
+            if not isinstance(entity, entities.ItemEntity):
                 continue
             if not isinstance(entity.pos[0], int):
                 continue
-            if not entity.img.get_rect(center=entity.pos).colliderect(
+            if not entity.rect.colliderect(
                     pygame.Rect(-32, game_states.DISTANCE - 10, 64, 20)):
                 continue
             if game_structures.HANDS[num] is None:
                 del area.entity_list[i]
             else:
                 game_structures.HANDS[num].pos = entity.pos
-                area.entity_list[i] = game_structures.HANDS[num]
-            game_structures.HANDS[num] = entity
-            entity.pos = num
+                area.entity_list[i] = entities.ItemEntity(game_structures.HANDS[num])
+            game_structures.HANDS[num] = entity.item
+            entity.item.pos = num
             return
     if game_structures.HANDS[num] is None:
         return
