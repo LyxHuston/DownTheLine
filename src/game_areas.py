@@ -98,7 +98,7 @@ class BasicArea(GameArea):
     a basic fight area.  Fight a few monsters and continue.
     """
 
-    allowable_thresh_holds = [(entities.Slime, 0), (entities.Crawler, 5)]
+    allowable_thresh_holds = [(entities.Slime, 0), (entities.Crawler, 5), (entities.Fencer, 10)]
     # allowable_thresh_holds = [(entities.Fencer, 0)]
 
     def __init__(self, determiner, count):
