@@ -45,7 +45,7 @@ class ThreadWithResult(threading.Thread):
         try:
             self.__result = self._target(*self._args, **self._kwargs)
         except Exception as exc:
-            print(f'{type(exc).__name__}: {exc}', file=stderr)
+            log_error(exc)
 
     def join(self, *args):
         super(ThreadWithResult, self).join(*args)

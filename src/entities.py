@@ -25,6 +25,7 @@ import game_structures
 import images
 import random
 import math
+from typing import Type
 
 
 def glide_player(speed: int, duration: int, taper: int, direction: int):
@@ -156,6 +157,9 @@ class Entity(game_structures.Body):
         :return:
         """
         pass
+
+
+EntityType = Type[Entity]
 
 
 def make_invulnerable_version(entity_class: type(Entity)) -> type(Entity):
@@ -923,7 +927,7 @@ class Lazer(Entity):
     def draw(self):
         if self.firing:
             positions = [end.screen_pos for end in self.ends]
-            print(positions)
+            # print(positions)
             pygame.draw.lines(
                 game_structures.SCREEN,
                 (255, 255, 255),
@@ -1082,7 +1086,7 @@ class Spawner(Entity):
     def spawning(self):
         return self.__spawning
 
-    def __init__(self, pos: tuple[int, int], limit: int | None, area, delay: int, entity: Entity, deposit: tuple[int | None, int | None], speed: int):
+    def __init__(self, pos: tuple[int, int], limit: int | None, area, delay: int, entity: EntityType, deposit: tuple[int | None, int | None], speed: int):
         super().__init__(self.imgs[0].img if isinstance(self.imgs[0], images.Image) else self.imgs[0], 0, pos)
         self.max_health = 3
         self.health = 3
@@ -1094,7 +1098,7 @@ class Spawner(Entity):
             self.__list = None
         else:
             self.__list: list = [None for i in range(limit)]
-        print(limit, self.__list, delay)
+        # print(limit, self.__list, delay)
         self.delay = delay
         self.timer = -1
         self.entity = entity
@@ -1153,7 +1157,7 @@ class Spawner(Entity):
             self.__spawning.enter()
             self.area.entity_list.append(self.__spawning)
             self.__spawning.pos = self.pos
-            print(self.__spawning.tick())
+            # print(self.__spawning.tick())
             return
         self.timer += 1
 
@@ -1364,7 +1368,7 @@ class Bomb(Glides):
         self.flash_delay = 0
         self.allied_with_player = from_player
         self.start_glide(speed, glide_duration, taper, -math.cos(math.radians(rotation)))
-        print(self.glide_direction, self.glide_speed, self.glide_duration)
+        # print(self.glide_direction, self.glide_speed, self.glide_duration)
 
     def tick(self):
         self.glide_tick()
@@ -1387,7 +1391,7 @@ class Bomb(Glides):
             # make the particles
             area = game_structures.AREA_QUEUE[0]
             print("particles")
-            for i in range(1 * self.size ** 2 // (64 ** 2) // 2):
+            for i in range(self.damage * self.size ** 2 // (64 ** 2) // 2 // 4 + 1):
                 area.particle_list.add(Particle(
                     images.EXPLOSION_PARTICLES,
                     12,
@@ -1515,36 +1519,30 @@ if __name__ == "__main__":
     # game_areas.add_game_area().join()
     # game_structures.AREA_QUEUE[0].length += 20000
     # game_states.LAST_AREA_END = game_structures.AREA_QUEUE[0].end_coordinate
-    area = game_areas.GameArea(1000, 20)
+    area = game_areas.GameArea(10000, 20)
     area.difficulty = 60
     # area.entity_list.append(Knight.make(5672979812, area))
     # area.entity_list.append(Fish(area))
-    area.entity_list.append(ingame.entities.ItemEntity(items.simple_bomb(
-        (0, 120),
-        15,
-        1,
-        20,
-        240,
-        600,
-        4
-    )))
-    area.entity_list.append(Spawner(
-        (-500, 60),
-        1,
-        area,
-        0,
-        make_item_duplicator(items.simple_bomb(
-            (0, 60),
-            15,
+    # area.entity_list.append(ingame.entities.ItemEntity(items.simple_bomb(
+    #     (0, 4 * 128),
+    #     15,
+    #     1,
+    #     20,
+    #     240,
+    #     600,
+    #     4
+    # )))
+    for i in range(9):
+        pos = (-200, i * 256)
+        area.entity_list.append(Spawner(
+            pos,
             1,
-            20,
-            240,
-            600,
-            4
-        )),
-        (0, None),
-        1
-    ))
+            area,
+            0,
+            make_item_duplicator(items.random_simple_bomb(area.random, pos)),
+            (0, None),
+            2
+        ))
 
     area.finalize()
     # area.enter()
