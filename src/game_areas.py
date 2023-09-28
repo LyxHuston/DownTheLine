@@ -290,15 +290,15 @@ class EnslaughtArea(GameArea):
                 self.random.randint(100, game_states.WIDTH // 2) * (self.random.randint(0, 1) * 2 - 1),
                 self.random.randint(self.start_coordinate + 100, self.end_coordinate - 100)
             )
-            # self.entity_list.append(entities.Spawner(
-            #     pos,
-            #     1,
-            #     self,
-            #     0,
-            #     entities.make_item_duplicator(items.make_random_single_use(self.random, pos)),
-            #     (0, None),
-            #     1
-            # ))
+            self.entity_list.append(entities.Spawner(
+                pos,
+                1,
+                self,
+                0,
+                entities.make_item_duplicator(items.make_random_single_use(self.random, pos)),
+                (0, None),
+                1
+            ))
             self.current_difficulty -= 20
         elif target_change < 10:
             print("Lazers")
