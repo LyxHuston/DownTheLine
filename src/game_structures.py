@@ -69,17 +69,29 @@ class FontHolder:
     class to hold required fonts dynamically
     """
 
-    def __init__(self, name: str = None) -> None:
+    def __init__(self, name: str = None, fonttype=None) -> None:
         self.fonts = dict()
         self.font_name = name
+        self.font_type = fonttype
 
-    def new_fonts(self, name) -> None:
+    def new_sysfonts(self, name) -> None:
         """
         change font in the holder
         :param name: name of new font
         :return: None
         """
         self.font_name = name
+        self.font_type = SysFont
+        self.fonts.clear()
+
+    def new_fonts(self, path) -> None:
+        """
+        change font in holder
+        :param path:
+        :return:
+        """
+        self.font_name = path
+        self.font_type = Font
         self.fonts.clear()
 
     def __getitem__(self, key: Union[int, float]) -> Font:
@@ -89,11 +101,11 @@ class FontHolder:
         :return: Font object
         """
         if key not in self.fonts.keys():
-            self.fonts[key] = SysFont(self.font_name, int(key))
+            self.fonts[key] = self.font_type(self.font_name, int(key))
         return self.fonts[key]
 
 
-FONTS = FontHolder()
+FONTS = FontHolder(name="resources/fonts/OldEnglishGothicPixelRegular-gx1jp.otf", fonttype=Font)
 
 
 class ButtonHolderTemplate(ABC):

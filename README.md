@@ -16,3 +16,8 @@ ______________________________________________________________________
 [![Pygame](<https://img.shields.io/badge/Pygame-LGPLv2.0-brightgreen.svg>)](https://github.com/pygame/pygame)
 [![Certifi](<https://img.shields.io/badge/Certifi-MPL--2.0-brightgreen.svg>)](https://github.com/certifi/python-certifi)
 ______________________________________________________________________
+
+Other resources I'm using!
+______________________________________________________________________
+[![OldEnglishGothic](<https://img.shields.io/badge/Font-Old_English_Gothic_Pixel_Regular-brightgreen.svg>)](https://www.fontspace.com/old-english-gothic-pixel-font-f83405)
+______________________________________________________________________
