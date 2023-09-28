@@ -30,6 +30,7 @@ import abilities
 class Inputs:
     up_input = pygame.K_w
     down_input = pygame.K_s
+    ignore_pickup = pygame.K_SPACE
     ability_1_input = pygame.K_a
     ability_2_input = pygame.K_d
 
@@ -104,25 +105,26 @@ def event_catcher(event: pygame.event.Event) -> bool:
 
 
 def item_input_catch(num: int) -> None:
-    for area in game_structures.initialized_areas():
-        for i in range(len(area.entity_list)):
-            entity = area.entity_list[i]
-            if not isinstance(entity, entities.ItemEntity):
-                continue
-            if not isinstance(entity.pos[0], int):
-                continue
-            if not entity.rect.colliderect(
-                    pygame.Rect(-32, game_states.DISTANCE - 10, 64, 20)):
-                continue
-            if game_structures.HANDS[num] is None:
-                game_structures.HANDS[num] = entity.pick_up(num)
-            elif game_structures.HANDS[1 - num] is None:
-                game_structures.HANDS[1 - num] = entity.pick_up(num)
-            elif not entity.picked_up:
-                game_structures.HANDS[num].pos = entity.pos
-                area.entity_list.append(entities.ItemEntity(game_structures.HANDS[num]))
-                game_structures.HANDS[num] = entity.pick_up(num)
-            return
+    if not pygame.key.get_pressed()[Inputs.ignore_pickup]:
+        for area in game_structures.initialized_areas():
+            for i in range(len(area.entity_list)):
+                entity = area.entity_list[i]
+                if not isinstance(entity, entities.ItemEntity):
+                    continue
+                if not isinstance(entity.pos[0], int):
+                    continue
+                if not entity.rect.colliderect(
+                        pygame.Rect(-32, game_states.DISTANCE - 10, 64, 20)):
+                    continue
+                if game_structures.HANDS[num] is None:
+                    game_structures.HANDS[num] = entity.pick_up(num)
+                elif game_structures.HANDS[1 - num] is None:
+                    game_structures.HANDS[1 - num] = entity.pick_up(num)
+                elif not entity.picked_up:
+                    game_structures.HANDS[num].pos = entity.pos
+                    area.entity_list.append(entities.ItemEntity(game_structures.HANDS[num]))
+                    game_structures.HANDS[num] = entity.pick_up(num)
+                return
     if game_structures.HANDS[num] is None:
         return
     game_structures.HANDS[num].action(game_structures.HANDS[num])
