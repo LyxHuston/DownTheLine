@@ -79,6 +79,8 @@ def tick(do_tick: bool = None):
 
 
 def event_catcher(event: pygame.event.Event) -> bool:
+    if game_states.HEALTH <= 0:
+        return False
     match event.type:
         case pygame.KEYDOWN:
             match event.key:
@@ -112,11 +114,17 @@ def item_input_catch(num: int) -> None:
                 continue
             if game_structures.HANDS[num] is None:
                 del area.entity_list[i]
+                game_structures.HANDS[num] = entity.item
+                entity.item.pos = num
+            elif game_structures.HANDS[1 - num] is None:
+                del area.entity_list[i]
+                game_structures.HANDS[1 - num] = entity.item
+                entity.item.pos = 1 - num
             else:
                 game_structures.HANDS[num].pos = entity.pos
                 area.entity_list[i] = entities.ItemEntity(game_structures.HANDS[num])
-            game_structures.HANDS[num] = entity.item
-            entity.item.pos = num
+                game_structures.HANDS[num] = entity.item
+                entity.item.pos = num
             return
     if game_structures.HANDS[num] is None:
         return
