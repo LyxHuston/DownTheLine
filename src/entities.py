@@ -43,10 +43,27 @@ class Entity(game_structures.Body):
 
     cost = 2
 
+    @property
+    def health(self):
+        return self.__health
+
+    @health.setter
+    def health(self, val):
+        if val <= self.__health:
+            self.flashing = 3 * (self.__health - val) + 2
+        elif val > self.max_health:
+            val = self.max_health
+        self.__health = val
+
     def __init__(self, img: pygame.Surface, rotation: int, pos: tuple[int, int]):
         super().__init__(img, rotation, pos)
-        self.health = 0
+        self.__health = 0
         self.max_health = 0
+        self.flashing = 0
+        self.__x_shake_momentum = 2
+        self.__x_shake = 0
+        self.__y_shake_momentum = 3
+        self.__y_shake = 0
 
     def first_seen(self):
         """
@@ -56,18 +73,37 @@ class Entity(game_structures.Body):
         """
         pass
 
+    __shake_limit = 4
+
     def draw(self):
         """
-        draw img to screen, in the simplest of cases.  Base entity has no img!
+        draw img to screen, in the simplest of cases.  Base entity has no img!  Handles inverting colors for damage
         :return:
         """
         if self.img is None:
             return
+        if self.flashing > 0:
+            self.flashing -= 1
+            self.__x_shake += self.__x_shake_momentum
+            if abs(self.__x_shake) > self.__shake_limit:
+                self.__x_shake += 2 * (abs(self.__x_shake) - self.__shake_limit) * ((self.__x_shake < 0) * 2 - 1)
+                self.__x_shake_momentum *= -1
+            self.__y_shake += self.__y_shake_momentum
+            if abs(self.__y_shake) > self.__shake_limit:
+                self.__y_shake += 2 * (abs(self.__y_shake) - self.__shake_limit) * ((self.__y_shake < 0) * 2 - 1)
+                self.__y_shake_momentum *= -1
+            img = pygame.Surface(self.img.get_rect().size, flags=pygame.SRCALPHA)
+            img.blit(self.img, (0, 0))
+            img.fill((255, 255, 255), special_flags=pygame.BLEND_ADD)
+            img.blit(self.img, (0, 0), None, pygame.BLEND_RGB_SUB)
+        else:
+            self.__x_shake = self.__y_shake = 0
+            img = self.img
         game_structures.SCREEN.blit(
-            self.img,
+            img,
             (
-                game_structures.to_screen_x(self.x) - self.img.get_width() // 2,
-                game_structures.to_screen_y(self.y) - self.img.get_height() // 2
+                game_structures.to_screen_x(self.x + self.__x_shake) - img.get_width() // 2,
+                game_structures.to_screen_y(self.y + self.__y_shake) - img.get_height() // 2
             )
         )
 
@@ -253,8 +289,8 @@ class Obstacle(Entity):
 
     def __init__(self, rotation: int = 0, pos: tuple[int, int] = (0, 0), health: int = 10):
         super().__init__(self.full.img, rotation, pos)
-        self.health = health
         self.max_health = health
+        self.health = health
 
     def hit(self, damage: int, item):
         self.health -= damage
@@ -305,8 +341,8 @@ class Slime(Glides):
             self.imgs[0] = self.imgs[0].img
         super().__init__(self.imgs[0], 0, pos)
         self.frame = 0
-        self.health = 7
         self.max_health = 7
+        self.health = 7
         self.random = random.Random()
 
     def hit(self, damage: int, item):
@@ -367,8 +403,8 @@ class Crawler(Glides):
         self.switch_ticks = max(9 // speed, 1)
         self.frame = 0
         self.threshhold = area.start_coordinate
-        self.health = 10
         self.max_health = 10
+        self.health = 10
 
     def hit(self, damage: int, item):
         self.health -= damage
@@ -429,8 +465,8 @@ class Fencer(Glides):
 
     def __init__(self, pos: tuple[int, int], difficulty: int):
         super().__init__(images.FENCER_1.img, 0, pos)
-        self.health = 4
         self.max_health = 4
+        self.health = 4
         self.cooldown = 0
         self.cooldown_length = max(180 - difficulty, 30)
         self.frame = 0
@@ -495,6 +531,7 @@ class Projectile(Entity):
     def __init__(self, img: pygame.Surface, rotation: int, pos: tuple[int, int], health: int = 1, speed: int = 1,
                  destruct_on_collision: bool = True, damage: int = 1, expiry: int = None):
         super().__init__(img, rotation, pos)
+        self.max_health = health
         self.health = health
         self.move = (round(speed * math.sin(rotation)), -round(speed * math.cos(rotation)))
         self.destruct_on_collision = destruct_on_collision
@@ -534,6 +571,7 @@ class Archer(Glides):
 
     def __init__(self, pos: tuple[int, int], difficulty: int, area):
         super().__init__(images.ARCHER_RELAXED.img, 0, pos)
+        self.max_health = 4
         self.health = 4
         self.area = area
         self.cooldown_length = max(240 - difficulty * 6, 60)
@@ -595,6 +633,7 @@ class Knight(Glides):
                 continue
             self.hands[i].pos = (self, i)
         self.frame = 0
+        self.max_health = 20
         self.health = 20
         self.step = None
 
@@ -705,6 +744,7 @@ class Spawner(Entity):
 
     def __init__(self, pos: tuple[int, int], limit: int | None, area, delay: int, entity: Entity, deposit: tuple[int | None, int | None], speed: int):
         super().__init__(self.imgs[0].img if isinstance(self.imgs[0], images.Image) else self.imgs[0], 0, pos)
+        self.max_health = 3
         self.health = 3
         self.max_health = 3
         self.area = area
