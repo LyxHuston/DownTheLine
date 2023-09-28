@@ -386,10 +386,10 @@ class Slime(Glides):
             self.frame = (self.frame + 1) % (4 * self.frame_change_frequency)
             self.img = self.imgs[self.frame // self.frame_change_frequency]
         # print(self.health, self.frame, self.pos, game_states.DISTANCE)
-        if abs(self.x) < 32 and abs(self.y - game_states.DISTANCE) < 32:
+        if abs(self.x) < 32 and abs(self.y - game_states.DISTANCE) < 64:
             game_structures.deal_damage(1, self)
-            game_states.DISTANCE = self.y + 32 * (((self.y - game_states.DISTANCE) < 0) * 2 - 1)
-            glide_player(5, 1, 1, ((self.y - game_states.DISTANCE) < 0) * 2 - 1)
+            game_states.DISTANCE = self.y + 64 * (((self.y - game_states.DISTANCE) < 0) * 2 - 1)
+            glide_player(5, 2, 1, ((self.y - game_states.DISTANCE) < 0) * 2 - 1)
             game_structures.begin_shake(6, (10, 10), (7, 5))
             self.start_glide(0, 30, 0, 0)
         return self.health > 0
@@ -450,9 +450,9 @@ class Crawler(Glides):
         if self.glide_speed > 0 and self.taper == 0:
             self.frame = (self.frame + self.glide_direction) % (8 * self.frame_change_frequency * self.switch_ticks)
             self.img = self.imgs[self.frame // (self.frame_change_frequency * self.switch_ticks)]
-        if abs(self.x) < 28 and abs(self.y - game_states.DISTANCE) < 34:
+        if abs(self.x) < 28 and abs(self.y - game_states.DISTANCE) < 66:
             game_structures.deal_damage(1, self)
-            game_states.DISTANCE = self.y + 34 * (((self.y - game_states.DISTANCE) < 0) * 2 - 1)
+            game_states.DISTANCE = self.y + 66 * (((self.y - game_states.DISTANCE) < 0) * 2 - 1)
             glide_player(round(self.speed * 1.5), 3, 10, ((self.y - game_states.DISTANCE) < 0) * 2 - 1)
             game_structures.begin_shake(6, (10, 10), (7, 5))
         return self.health > 0
