@@ -20,11 +20,11 @@ entities
 """
 import pygame
 
-import game_areas
 import game_states
 import game_structures
 import images
 import random
+from collections import deque
 
 
 def glide_player(speed: int, duration: int, taper: int, direction: int):
@@ -105,6 +105,13 @@ class Entity(game_structures.Body):
         :return:
         """
         raise NotImplementedError(f"Attempted to use make method from generic Entity superclass: {cls.__name__} should implement it separately.")
+
+    def transfer(self, area):
+        """
+        called when transferring an entity to a new area, in case the entity needs to do something there
+        :param area:
+        :return:
+        """
 
 
 class ItemEntity(Entity):
@@ -350,7 +357,7 @@ class Crawler(Glides):
                 (self.y < game_states.DISTANCE) * 2 - 1
             )
         if self.glide_speed > 0 and self.taper == 0:
-            self.frame = (self.frame + self.glide_direction) % (4 * self.frame_change_frequency * self.switch_ticks)
+            self.frame = (self.frame + self.glide_direction) % (8 * self.frame_change_frequency * self.switch_ticks)
             self.img = self.imgs[self.frame // (self.frame_change_frequency * self.switch_ticks)]
         if abs(self.x) < 28 and abs(self.y - game_states.DISTANCE) < 34:
             game_states.HEALTH -= 1
@@ -374,6 +381,123 @@ class Crawler(Glides):
     @classmethod
     def make(cls, determiner: int, area):
         return cls((0, area.random.randint(area.length // 3, area.length)), area.random.randint(1, min(area.difficulty // 4, 5)), area)
+
+
+class Spawner(Entity):
+    """
+    superclass for any entity that spawns others.  Also probably its own entity?
+    """
+
+    frame_change_frequency = 3
+
+    imgs = [images.SPAWNER_1, images.SPAWNER_2, images.SPAWNER_3, images.SPAWNER_4]
+
+    allowable = ((Slime, 0), (Crawler, 8))
+
+    def __init__(self, pos: tuple[int, int], limit: int | None, area, delay: int, entity: Entity, deposit: tuple[int | None, int | None], speed: int):
+        super().__init__(self.imgs[0], 0, pos)
+        self.area = area
+        self.limit = limit
+        self.__check: int = 0
+        if limit is None:
+            self.__list = None
+        else:
+            self.__list: list = [None for i in range(limit)]
+        self.delay = delay
+        self.timer = -1
+        self.__entity = entity
+        self.__spawning: Entity | None = None
+        self.__destination = deposit
+        self.__speed = speed
+        self.switch_ticks = max(speed, 1)
+        self.frame = 0
+
+    def management_tick(self):
+        if self.__spawning is not None:
+            if abs(self.__spawning.x - self.__destination[0]) < self.__speed //\
+                    2 and abs(self.__spawning.y - self.__destination[1]) < self.__speed // 2:
+                self.__spawning.pos = self.__destination
+                self.area.entity_list.append(self.__spawning)
+                if self.__list is not None:
+                    self.__list[self.__check] = self.__spawning
+                self.__spawning = None
+                return
+            if self.__destination[0] is None:
+                x_dist = 0
+            else:
+                x_dist = abs(self.__spawning.x - self.__destination[0])
+            if self.__destination[1] is None:
+                y_dist = 0
+            else:
+                y_dist = abs(self.__spawning.y - self.__destination[1])
+            dist = x_dist + y_dist
+            self.__spawning.x += self.__speed * round(x_dist / dist)
+            self.__spawning.y += self.__speed * round(y_dist / dist)
+        if self.timer == -1:
+            if self.__list is None:
+                self.timer = 0
+                return
+            self.__check = (self.__check + 1) % len(self.__list)
+            if self.__list[self.__check] is None:
+                self.timer = 0
+            return
+        if self.timer == self.delay:
+            self.timer = -1
+            self.__spawning = self.__entity.make(self.area.random.randint(0, 2**16 - 1), self.area)
+
+            if self.__list is not None:
+                index = self.__check
+
+                def special_callback():
+                    res = self.__spawning.tick()
+                    if not res:
+                        self.__list[index] = None
+                    return res
+
+                self.__spawning.tick = special_callback
+
+            self.__spawning.pos = self.pos
+            return
+        self.timer += 1
+
+    def tick(self):
+        self.management_tick()
+        self.frame = (self.frame + 1) % (4 * self.frame_change_frequency * self.switch_ticks)
+        self.img = self.imgs[self.frame // (self.frame_change_frequency * self.switch_ticks)]
+        return True
+
+    def transfer(self, area):
+        if self.__list is None:
+            return
+        for i in range(len(self.__list)):
+            if self.__list[i] is None:
+                continue
+            if self.__list[i].y > self.area.end_coordinate:
+                self.__list[i] = None
+
+    @classmethod
+    def make(cls, determiner: int, area):
+        if area.random.randint(0, area.difficulty) > 20 + area.difficulty // 2:
+            limit = None
+            delay = area.random.randint(12, 17) * 100
+        else:
+            limit = area.random.randint(3, area.difficulty // 5)
+            delay = area.random.randint(5, 8) * 20
+        y = area.random.randint(area.length // 3, area.length)
+        index = 0
+        while index < len(cls.allowable) - 1:
+            if area.difficulty < cls.allowable[index][1]:
+                index -= 1
+                break
+            if area.random.randint(0, 1):
+                break
+        return cls((0, y), limit, area, delay, cls.allowable[index][0],
+                   (0, None), area.difficulty // 10 + (area.difficulty % 10 == 0))
+
+    def first_seen(self):
+        for i in range(1, 4):
+            if isinstance(self.__class__.imgs[i], images.Image):
+                self.__class__.imgs[i] = self.__class__.imgs[i].img
 
 
 if __name__ == "__main__":

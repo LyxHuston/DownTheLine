@@ -60,6 +60,10 @@ CRAWLER_1 = Image("resources/entities/crawler/crawler_extended.png")
 CRAWLER_2 = Image("resources/entities/crawler/crawler_retracting.png")
 CRAWLER_3 = Image("resources/entities/crawler/crawler_mid_step.png")
 
+SPAWNER_1 = Image("resources/entities/spawner/spawner_1.png")
+SPAWNER_2 = Image("resources/entities/spawner/spawner_2.png")
+SPAWNER_3 = Image("resources/entities/spawner/spawner_3.png")
+SPAWNER_4 = Image("resources/entities/spawner/spawner_4.png")
 
 # items
 SIMPLE_SWORD = Image("resources/items/simple_sword.png")
