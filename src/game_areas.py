@@ -1,6 +1,7 @@
 """
 handles making and managing game areas
 """
+import random
 
 import game_structures
 import game_states
@@ -8,6 +9,7 @@ from utility import make_async
 import entities
 import items
 import images
+import math
 
 
 class GameArea:
@@ -26,11 +28,14 @@ class GameArea:
         self.length = length
         self.initialized = False
         self.entity_list = []
+        self.random = random.Random()
 
     seen = False
 
     def enter(self):
         if not self.__class__.seen:
+            print("first seen")
+            self.__class__.seen = True
             self.start_tutorial()
         for entity in self.entity_list:
             if isinstance(entity, entities.Entity):
@@ -58,6 +63,35 @@ class GameArea:
                 i += 1
             else:
                 del self.entity_list[i]
+
+
+class BasicArea(GameArea):
+    """
+    a basic fight area.  Fight a few monsters and continue.
+    """
+
+    def __init__(self, determiner, count):
+        print("Basic area")
+        super().__init__()
+        self.length = 200 + math.floor(math.log2(count)) * 100
+        allowance = count
+        allowable_entities = [[entities.Slime, 0]]
+        num = 3
+        while allowance > 0:
+            index = (determiner % num) % len(allowable_entities)
+            entity = allowable_entities[index][0]
+            if entity.seen:
+                allowance -= entity.cost + allowable_entities[index][1]
+                allowable_entities[index][1] += 1
+                self.entity_list.append(entity.make(determiner, self))
+            else:
+                self.entity_list.clear()
+                self.length = 200
+                add = entity.make(determiner, self)
+                add.y = self.start_coordinate + self.length // 2
+                self.entity_list.append(add)
+                self.entity_list.append(entities.Obstacle(pos=(0, self.end_coordinate)))
+                break
 
 
 @make_async(with_lock=True)
@@ -92,6 +126,7 @@ def add_game_area():
         case _:
             determinator = hash(str(game_states.SEED + game_states.LAST_AREA))
             print(determinator, game_states.SEED + game_states.LAST_AREA)
+            area = None
             typ = determinator % 64
             if typ < 2 and game_states.LAST_AREA < 40:
                 typ = 2
@@ -118,12 +153,13 @@ def add_game_area():
                 # gift room
                 pass
             elif typ <= 32:  # 14/64
-                # miniboss
+                # breakthrough
                 pass
             else:  # 32/64
-                # basic fight
+                area = BasicArea(determinator, game_states.LAST_AREA)
                 pass
-            area = GameArea(400)
+            if area is None:
+                area = GameArea(400)
     game_states.LAST_AREA += 1
     game_states.LAST_AREA_END = area.end_coordinate
     game_structures.AREA_QUEUE.append(area)

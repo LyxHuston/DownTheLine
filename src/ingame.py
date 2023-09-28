@@ -9,6 +9,9 @@ import game_structures
 import items
 
 
+dash_img = pygame.image.load("resources/abilities/ability_icons/dash_icon.png")
+
+
 class Inputs:
     up_input = pygame.K_w
     down_input = pygame.K_s
@@ -51,6 +54,15 @@ def tick():
         game_states.CAMERA_BOTTOM = game_states.DISTANCE + game_states.CAMERA_THRESHOLDS[1] - game_states.HEIGHT
     if game_states.DISTANCE > game_states.RECORD_DISTANCE:
         game_states.RECORD_DISTANCE = game_states.DISTANCE
+    game_structures.SCREEN.blit(
+        dash_img,
+        (0, 136)
+    )
+    pygame.draw.rect(
+        game_structures.SCREEN,
+        (0, 0, 0),
+        pygame.Rect(0, 136, 64 - round(-64 * (last_dash_time - tick_counter) / dash_cooldown), 64),
+    )
     gameboard.tick()
 
 

@@ -11,6 +11,7 @@ import game_structures
 import game_states
 import pygame
 import entities
+import images
 
 
 @dataclass
@@ -151,6 +152,23 @@ def simple_stab_tick(item: Item):
                 if rect.colliderect(entity.rect):
                     entity.hit(item.data_pack[4], item)
                     item.data_pack[-1].append(entity)
+    if isinstance(item.pos, int):
+        game_structures.SCREEN.blit(
+            item.data_pack[5],
+            (66 * item.pos, 202)
+        )
+        if item.data_pack[0]:
+            pygame.draw.rect(
+                game_structures.SCREEN,
+                (0, 0, 0),
+                pygame.Rect(66 * item.pos, 202, 64, 64),
+            )
+        else:
+            pygame.draw.rect(
+                game_structures.SCREEN,
+                (0, 0, 0),
+                pygame.Rect(66 * item.pos, 202, 64 - round(64 * item.data_pack[1] / item.data_pack[2]), 64),
+            )
     return True
 
 
@@ -165,5 +183,6 @@ def simple_stab(cooldown: int, duration: int, img: pygame.Surface, pos: tuple[in
         img,
         pos,
         simple_stab_draw,
-        [False, cooldown, cooldown, duration, damage, []]  # state, tracker, cooldown ticks, duration ticks, hit tracker
+        [False, cooldown, cooldown, duration, damage, images.SIMPLE_STAB_ICON.img, []
+         ]  # state, tracker, cooldown ticks, duration ticks, hit tracker
     )

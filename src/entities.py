@@ -29,6 +29,8 @@ class Entity(game_structures.Body):
 
     seen = False
 
+    cost = 2
+
     def __init__(self, img: pygame.Surface, rotation: int, pos: tuple[int, int]):
         super().__init__(img, rotation, pos)
         self.health = 0
@@ -82,6 +84,16 @@ class Entity(game_structures.Body):
             self.__class__.seen = True
             self.first_seen()
 
+    @classmethod
+    def make(cls, determiner: int, area):
+        """
+        makes an entity in the given area of the specific entity
+        :param determiner:
+        :param area:
+        :return:
+        """
+        raise NotImplementedError(f"Attempted to use make method from generic Entity superclass: {cls.__name__} should implement it separately.")
+
 
 class Glides(Entity):
     """
@@ -122,6 +134,8 @@ class Obstacle(Entity):
     """
     harmless obstacles on path.
     """
+
+    cost = 0
 
     full = images.WALL_FULL
     half = images.WALL_HALF
@@ -171,6 +185,8 @@ class Slime(Glides):
     slime.  Moves up or down the path.
     """
 
+    cost = 1
+
     frame_change_frequency = 16
     imgs = [images.SLIME_1, images.SLIME_2, images.SLIME_3, images.SLIME_4]
 
@@ -198,6 +214,8 @@ class Slime(Glides):
                 15,
                 self.random.randint(-1, 1)
             )
+            if abs(self.y - game_states.CAMERA_BOTTOM - game_states.HEIGHT // 2) > game_states.HEIGHT // 2 and self.glide_speed > 4:
+                self.glide_speed = 4
         else:
             self.glide_duration -= 1
         # print(self.health, self.frame, self.pos, game_states.DISTANCE)
@@ -210,4 +228,8 @@ class Slime(Glides):
 
     def first_seen(self):
         for i in range(1, 4):
-            self.imgs[i] = self.imgs[i].img
+            self.__class__.imgs[i] = self.__class__.imgs[i].img
+
+    @classmethod
+    def make(cls, determiner: int, area):
+        return cls((0, area.start_coordinate + area.random.randint(area.length // 3, area.length)))
