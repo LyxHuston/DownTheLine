@@ -245,3 +245,7 @@ class Slime(Glides):
     @classmethod
     def make(cls, determiner: int, area):
         return cls((0, area.random.randint(area.length // 3, area.length)))
+
+
+if __name__ == "__main__":
+    slime = Slime((0, 20))

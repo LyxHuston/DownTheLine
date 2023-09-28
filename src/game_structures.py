@@ -1431,9 +1431,39 @@ class Body:
         self.x = val[0]
         self.y = val[1]
 
+    @property
+    def x(self):
+        return self._x
+
+    @x.setter
+    def x(self, val: int):
+        if not self.__x_frozen:
+            self._x = val
+
+    def freeze_x(self, val: bool = None):
+        if val is not None:
+            self.__x_frozen = val
+        return self.__x_frozen
+
+    @property
+    def y(self):
+        return self._y
+
+    @y.setter
+    def y(self, val: int):
+        if not self.__y_frozen:
+            self._y = val
+
+    def freeze_y(self, val: bool = None):
+        if val is not None:
+            self.__y_frozen = val
+        return self.__y_frozen
+
     def __init__(self, img: pygame.Surface, rotation: int, pos: tuple[int, int]):
         self.__original_img = img
         self.rotation = rotation
+        self.__x_frozen = False
+        self.__y_frozen = False
         self.x = pos[0]
         self.y = pos[1]
 
