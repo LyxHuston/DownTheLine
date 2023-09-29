@@ -56,7 +56,10 @@ class Entity(game_structures.Body):
     @health.setter
     def health(self, val):
         if val < self.__health:
-            self.flashing = 3 * (self.__health - val) + 2
+            self.flashing = 6 * (self.__health - val) + 2
+            self.__shake_limit = 2 * (self.__health - val)
+            self.__x_shake_momentum = (self.__health - val) ** 1.5 // 2
+            self.__y_shake_momentum = 3 * (self.__health - val) ** 1.5 // 4
             # print(self.y, game_states.DISTANCE, self.tick, val, self.tick())
         elif val > self.max_health:
             val = self.max_health
@@ -71,6 +74,7 @@ class Entity(game_structures.Body):
         self.__x_shake = 0
         self.__y_shake_momentum = 3
         self.__y_shake = 0
+        self.__shake_limit = 0
 
     def first_seen(self):
         """
@@ -79,8 +83,6 @@ class Entity(game_structures.Body):
         :return:
         """
         pass
-
-    __shake_limit = 4
 
     def draw(self):
         """
