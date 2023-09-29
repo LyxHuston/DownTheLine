@@ -158,6 +158,13 @@ class FontHolder:
 FONTS = FontHolder(name="resources/fonts/OldEnglishGothicPixelRegular-gx1jp.otf", fonttype=Font)
 
 
+def get_special_click(indicator: str | int):
+    if not isinstance(indicator, str):
+        return indicator
+    else:
+        return getattr(ingame.Inputs, indicator)
+
+
 class ButtonHolderTemplate(ABC):
     """
     buttonholder abstract class
@@ -558,10 +565,10 @@ class Button(ButtonHolderTemplate):
             enforce_width=enforce_width,
         )
         x, y = text_surface.get_size()
-        # if isinstance(special_press, str):  (currently don't have any customizable controls, probably won't ever)
-        #     special = get_special_click(special_press)
-        # else:
-        #     special = tuple([get_special_click(name) for name in special_press])
+        if isinstance(special_press, str) or isinstance(special_press, int):
+            special = get_special_click(special_press)
+        else:
+            special = tuple([get_special_click(name) for name in special_press])
         if text == "<":
             text = "Left"
         elif text == ">":
@@ -578,7 +585,7 @@ class Button(ButtonHolderTemplate):
             (x_align, y_align),
             border_width,
             arguments=arguments,
-            special_press=()
+            special_press=special
         )
 
     def render_onto(self, onto: Surface, mouse_pos: tuple[int, int]) -> None:
@@ -1631,3 +1638,6 @@ def make_save():
             copy.copy(HANDS[1])
         ]
         game_states.SAVE_DATA = game_states.__dict__
+
+
+import ingame

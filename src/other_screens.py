@@ -34,10 +34,28 @@ overlay = pygame.Surface(game_structures.SCREEN.get_size(), pygame.SRCALPHA)
 def lose():
     global fade_counter, tick_counter, next_tick_max
 
+    game_structures.BUTTONS.add_button(game_structures.Button.make_text_button(
+        "Press Space or click to skip",
+        40,
+        skip_wait,
+        (game_states.WIDTH, 0),
+        x_align=1,
+        y_align=0,
+        background_color=(0, 0, 0),
+        outline_color=(255, 255, 255),
+        border_width=5,
+        special_press=ingame.Inputs.ignore_pickup
+    ))
+
     fade_counter = 0
     tick_counter = 0
     next_tick_max = 0
     del game_structures.CUSTOM_EVENT_CATCHERS[1]
+
+
+def skip_wait():
+    global fade_counter
+    fade_counter = 255
 
 
 def lost():
@@ -57,19 +75,20 @@ def lost():
             next_tick_max += 0.5
     elif fade_counter == 255:
         import main
+        game_structures.BUTTONS.clear()
         game_structures.BUTTONS.add_button(game_structures.Button.make_text_button(
             "You Died",
-            200,
+            400,
             None,
-            (game_states.WIDTH // 2, 200),
+            (game_states.WIDTH // 2, 400),
             background_color=(0, 0, 0),
             outline_color=(255, 255, 255)
         ))
         game_structures.BUTTONS.add_button(game_structures.Button.make_text_button(
             f"You traveled {game_states.RECORD_DISTANCE} units",
-            40,
+            80,
             None,
-            (game_states.WIDTH // 2 - 300, 350),
+            (game_states.WIDTH // 2 - 600, 700),
             background_color=(0, 0, 0),
             outline_color=(255, 255, 255),
             text_align=0,
@@ -77,9 +96,9 @@ def lost():
         ))
         game_structures.BUTTONS.add_button(game_structures.Button.make_text_button(
             f"You passed {game_states.AREAS_PASSED} areas",
-            40,
+            80,
             None,
-            (game_states.WIDTH // 2 - 300, 400),
+            (game_states.WIDTH // 2 - 600, 800),
             background_color=(0, 0, 0),
             outline_color=(255, 255, 255),
             text_align=0,
@@ -87,23 +106,23 @@ def lost():
         ))
         game_structures.BUTTONS.add_button(game_structures.Button.make_text_button(
             "Play Again",
-            50,
+            100,
             main.start,
-            (game_states.WIDTH // 2 - 200, game_states.HEIGHT - 100),
+            (game_states.WIDTH // 2 - 400, game_states.HEIGHT - 200),
             background_color=(0, 0, 0),
             outline_color=(255, 255, 255),
-            enforce_width=300,
+            enforce_width=600,
             border_width=5,
             text_align=0.5
         ))
         game_structures.BUTTONS.add_button(game_structures.Button.make_text_button(
             "Quit",
-            50,
+            100,
             exit,
-            (game_states.WIDTH // 2 + 200, game_states.HEIGHT - 100),
+            (game_states.WIDTH // 2 + 400, game_states.HEIGHT - 200),
             background_color=(0, 0, 0),
             outline_color=(255, 255, 255),
-            enforce_width=300,
+            enforce_width=600,
             border_width=5,
             text_align=0.5
         ))
@@ -112,10 +131,10 @@ def lost():
                 "Refresh from Save",
                 25,
                 refresh_from_save,
-                (game_states.WIDTH // 2, game_states.HEIGHT - 20),
+                (game_states.WIDTH // 2, game_states.HEIGHT - 40),
                 background_color=(0, 0, 0),
                 outline_color=(255, 255, 255),
-                enforce_width=300,
+                enforce_width=600,
                 border_width=5,
                 text_align=0.5
             ))
