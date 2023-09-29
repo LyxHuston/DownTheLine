@@ -130,7 +130,7 @@ def tick(do_tick: bool = True):
     if total > 0:
         goal = game_states.DISTANCE + game_states.HEIGHT / 2 * (abs(mass) * mass / total ** 2)
     else:
-        goal = game_states.DISTANCE
+        goal = game_states.DISTANCE + game_states.HEIGHT * game_states.LAST_DIRECTION
     goal -= game_states.HEIGHT / 2
-    camera_move += min(max(mass, 1), 3) / 324 * (goal - game_states.CAMERA_BOTTOM)
+    camera_move += (min(total, 2) + 2) / 324 * (goal - game_states.CAMERA_BOTTOM)
     game_states.CAMERA_BOTTOM += camera_move
