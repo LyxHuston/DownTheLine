@@ -178,14 +178,18 @@ def tick() -> None:
     also handles some other actions that need to happen every frame
     :return: noting
     """
-    game_structures.BUTTONS.render_onto(game_structures.SCREEN, pygame.mouse.get_pos())
+    mouse_pos = pygame.mouse.get_pos()
+    if game_structures.TRUE_SCREEN is not None:
+        factor = game_states.HEIGHT / game_structures.TRUE_HEIGHT
+        mouse_pos = (mouse_pos[0] * factor, mouse_pos[1] * factor)
+    game_structures.BUTTONS.render_onto(game_structures.SCREEN, mouse_pos)
     alert_img = game_structures.ALERTS.tick()
     if alert_img is not None:
         game_structures.SCREEN.blit(
             alert_img,
             (240 * 2 - game_structures.ALERTS.width / 2, 0)
         )
-    pygame.display.flip()
+    game_structures.display_screen()
     game_structures.CLOCK.tick(60)
     for event in pygame.event.get():
         event_handled = False
@@ -224,7 +228,11 @@ def tick() -> None:
                 game_structures.BUTTONS.special_key_click(event.key)
         elif event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 1:
-                event_handled = game_structures.BUTTONS.do_click(event.pos)
+                pos = event.pos
+                if game_structures.TRUE_SCREEN is not None:
+                    factor = game_states.HEIGHT / game_structures.TRUE_HEIGHT
+                    pos = (pos[0] * factor, pos[1] * factor)
+                event_handled = game_structures.BUTTONS.do_click(pos)
         if not event_handled:
             for catcher in game_structures.CUSTOM_EVENT_CATCHERS:
                 if catcher(event):

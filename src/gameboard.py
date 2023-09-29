@@ -23,10 +23,14 @@ import game_states
 import game_structures
 from game_areas import add_game_area
 import pygame
+import math
 
 
 player_img = pygame.image.load("resources/player/player.png")
 heart_img = pygame.image.load("resources/player/hearts.png")
+
+
+camera_move = 0
 
 
 def tick(do_tick: bool = True):
@@ -36,6 +40,7 @@ def tick(do_tick: bool = True):
     also, handles shaking the board
     :return:
     """
+    global camera_move
     if do_tick:
         for i in range(len(game_structures.AREA_QUEUE)):
             if game_structures.AREA_QUEUE[i].start_coordinate < game_states.CAMERA_BOTTOM + game_states.HEIGHT and not game_structures.AREA_QUEUE[i].initialized:
@@ -73,12 +78,20 @@ def tick(do_tick: bool = True):
         (game_states.WIDTH / 2 + game_states.X_DISPLACEMENT, 0),
         3
     )
+    if game_states.DISTANCE < game_states.CAMERA_BOTTOM + game_states.CAMERA_THRESHOLDS[0]:
+        game_states.CAMERA_BOTTOM = game_states.DISTANCE - game_states.CAMERA_THRESHOLDS[0]
+    if game_states.DISTANCE > game_states.CAMERA_BOTTOM + game_states.HEIGHT - game_states.CAMERA_THRESHOLDS[1]:
+        game_states.CAMERA_BOTTOM = game_states.DISTANCE + game_states.CAMERA_THRESHOLDS[1] - game_states.HEIGHT
+    mass = 0
+    total = 0
     for i in range(len(game_structures.AREA_QUEUE)):
         area = game_structures.AREA_QUEUE[i]
         if not area.initialized:
             break
         if do_tick:
-            area.tick()
+            ret = area.tick()
+            mass += ret[0]
+            total += ret[1]
         area.draw()
     game_structures.SCREEN.blit(
         game_structures.FONTS[64].render(
@@ -113,3 +126,11 @@ def tick(do_tick: bool = True):
         ),
         (game_structures.to_screen_x(-32), game_structures.to_screen_y(game_states.DISTANCE + 32))
     )
+    camera_move = camera_move // 2
+    if total > 0:
+        goal = game_states.DISTANCE + game_states.HEIGHT / 2 * (abs(mass) * mass / total ** 2)
+    else:
+        goal = game_states.DISTANCE
+    goal -= game_states.HEIGHT / 2
+    camera_move += min(max(mass, 1), 3) / 324 * (goal - game_states.CAMERA_BOTTOM)
+    game_states.CAMERA_BOTTOM += camera_move

@@ -447,13 +447,13 @@ class Slime(Glides):
             self.frame = (self.frame + 1) % (4 * self.frame_change_frequency)
             self.img = self.imgs[self.frame // self.frame_change_frequency]
         # print(self.health, self.frame, self.pos, game_states.DISTANCE)
-        pygame.draw.circle(
-            game_structures.SCREEN,
-            (255, 255, 255),
-            game_structures.to_screen_pos(self.pos),
-            32,
-            5
-        )
+        # pygame.draw.circle(
+        #     game_structures.SCREEN,
+        #     (255, 255, 255),
+        #     game_structures.to_screen_pos(self.pos),
+        #     32,
+        #     5
+        # )
         # if self.draw() != self.pos:
         #     # print("Position discrepancy")
         if abs(self.x) < 32 and abs(self.y - game_states.DISTANCE) < 64:
@@ -520,13 +520,13 @@ class Crawler(Glides):
         if self.glide_speed > 0 and self.taper == 0:
             self.frame = (self.frame + self.glide_direction) % (8 * self.frame_change_frequency * self.switch_ticks)
             self.img = self.imgs[self.frame // (self.frame_change_frequency * self.switch_ticks)]
-        pygame.draw.circle(
-            game_structures.SCREEN,
-            (255, 255, 255),
-            game_structures.to_screen_pos(self.pos),
-            32,
-            5
-        )
+        # pygame.draw.circle(
+        #     game_structures.SCREEN,
+        #     (255, 255, 255),
+        #     game_structures.to_screen_pos(self.pos),
+        #     32,
+        #     5
+        # )
         if abs(self.x) < 28 and abs(self.y - game_states.DISTANCE) < 66:
             game_structures.deal_damage(1, self)
             self.y -= self.glide_speed * self.glide_direction
@@ -863,7 +863,7 @@ class Knight(Glides):
     def make(cls, determiner: int, area):
         making = cls(0, (0, 200), [items.random_simple_stab(1, area.random), None])
         # making.enter()
-        print("Used make method for knight")
+        # print("Used make method for knight")
         return making
 
 
@@ -1143,14 +1143,14 @@ class Spawner(Entity):
                 return
             self.__check = (self.__check + 1) % len(self.__list)
             if self.__list[self.__check] is None:
-                print("found")
+                # print("found")
                 self.timer = 0
             elif not self.__list[self.__check].alive:
                 self.__list[self.__check] = None
                 self.timer = 0
             return
         if self.timer >= self.delay:
-            print("spawning")
+            # print("spawning")
             self.timer = -1
             self.__spawning = SpawnerHolder(self.entity.make(self.area.random.randint(0, 2 ** 16 - 1), self.area),
                                             self, self.__check, self.__destination)
@@ -1163,14 +1163,14 @@ class Spawner(Entity):
 
     def draw(self):
         super().draw()
-        game_structures.SCREEN.blit(
-            game_structures.FONTS[20].render(
-                str(self.__list),
-                False,
-                (0, 0, 0)
-            ),
-            self.screen_pos
-        )
+        # game_structures.SCREEN.blit(
+        #     game_structures.FONTS[20].render(
+        #         str(self.__list),
+        #         False,
+        #         (0, 0, 0)
+        #     ),
+        #     self.screen_pos
+        # )
 
     def lose(self, index):
         """
@@ -1375,7 +1375,7 @@ class Bomb(Glides):
         # print(self.y)
         self.life -= 1
         if self.life <= 0:
-            print("exploding")
+            # print("exploding")
             colliding = pygame.Rect(
                 self.x - self.size // 2, self.y - self.size // 2,
                 self.size, self.size
@@ -1390,7 +1390,7 @@ class Bomb(Glides):
 
             # make the particles
             area = game_structures.AREA_QUEUE[0]
-            print("particles")
+            # print("particles")
             for i in range(self.damage * self.size ** 2 // (64 ** 2) // 2 // 4 + 1):
                 area.particle_list.add(Particle(
                     images.EXPLOSION_PARTICLES,
@@ -1436,7 +1436,7 @@ class DelayedDeploy(Entity):
         self.delay -= 1
         if self.delay <= 0:
             self.area.entity_list.append(self.entity(*self.args))
-            print("delayed deploy initiated")
+            # print("delayed deploy initiated")
         return self.delay > 0
 
 

@@ -38,6 +38,31 @@ import images
 
 
 SCREEN: pygame.Surface = None
+TRUE_SCREEN: pygame.Surface = None
+TRUE_HEIGHT: int = 0
+TRUE_WIDTH: int = 0
+
+
+def display_screen():
+    if TRUE_HEIGHT > 0:
+        pygame.transform.smoothscale(SCREEN, (TRUE_WIDTH, TRUE_HEIGHT), TRUE_SCREEN)
+    pygame.display.flip()
+
+
+__minimum_height = 2 * 864
+
+
+def determine_screen():
+    global TRUE_HEIGHT, TRUE_WIDTH, TRUE_SCREEN, SCREEN
+    # print(game_states.HEIGHT, __minimum_height)
+    if game_states.HEIGHT < __minimum_height:
+        TRUE_SCREEN = SCREEN
+        # print("resize")
+        TRUE_HEIGHT = game_states.HEIGHT
+        TRUE_WIDTH = game_states.WIDTH
+        game_states.WIDTH = round(game_states.WIDTH * __minimum_height / game_states.HEIGHT)  # scale width appropriately
+        game_states.HEIGHT = __minimum_height
+        SCREEN = pygame.Surface((game_states.WIDTH, game_states.HEIGHT))
 
 
 def to_screen_x(x: int = 0) -> int:

@@ -71,10 +71,6 @@ def tick(do_tick: bool = None):
             game_states.DISTANCE += move
         if game_states.DISTANCE < game_states.BOTTOM:
             game_states.DISTANCE = game_states.BOTTOM
-        if game_states.DISTANCE < game_states.CAMERA_BOTTOM + game_states.CAMERA_THRESHOLDS[0]:
-            game_states.CAMERA_BOTTOM = game_states.DISTANCE - game_states.CAMERA_THRESHOLDS[0]
-        if game_states.DISTANCE > game_states.CAMERA_BOTTOM + game_states.HEIGHT - game_states.CAMERA_THRESHOLDS[1]:
-            game_states.CAMERA_BOTTOM = game_states.DISTANCE + game_states.CAMERA_THRESHOLDS[1] - game_states.HEIGHT
         if game_states.DISTANCE > game_states.RECORD_DISTANCE:
             game_states.RECORD_DISTANCE = game_states.DISTANCE
     abilities.draw_dash_icon(tick_counter)
@@ -110,7 +106,7 @@ def item_input_catch(num: int) -> None:
             for entity in area.entity_list:
                 # entity = area.entity_list[i]
                 if entity.is_holder:
-                    print("extracted from holder")
+                    # print("extracted from holder")
                     entity = entity.holding
                 if not entity.is_item_entity:
                     continue

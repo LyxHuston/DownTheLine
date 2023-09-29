@@ -113,11 +113,21 @@ class GameArea:
             ))
         # print(len(self.particle_list))
         i = 0
+        mass = 0
+        total = 0
         while i < len(self.entity_list):
-            if self.entity_list[i].tick():
+            e = self.entity_list[i]
+            if e.tick():
                 i += 1
+                if game_states.DISTANCE + game_states.HEIGHT > e.y > game_states.DISTANCE:
+                    mass += 1
+                    total += 1
+                elif game_states.DISTANCE - game_states.HEIGHT < e.y < game_states.DISTANCE:
+                    mass -= 1
+                    total += 1
             else:
                 del self.entity_list[i]
+        return mass, total
 
     def finalize(self):
         """
@@ -256,7 +266,7 @@ class EnslaughtArea(GameArea):
     cooldown = 300
 
     def tick(self):
-        super(EnslaughtArea, self).tick()
+        ret = super(EnslaughtArea, self).tick()
         match self.state:
             case 0:
                 if game_states.DISTANCE > self.start_coordinate + self.length // 2:
@@ -281,11 +291,12 @@ class EnslaughtArea(GameArea):
                     for entity in self.entity_list:
                         entity.health -= 1
                 self.cooldown_ticks -= 1
+        return ret
 
     def event(self):
         target_change = (self.difficulty - self.current_difficulty) // 2 + 8 * self.random.randint(-1, 3)
         if target_change < 0:
-            print("Item duplicator")
+            # print("Item duplicator")
             pos = (
                 self.random.randint(100, game_states.WIDTH // 2) * (self.random.randint(0, 1) * 2 - 1),
                 self.random.randint(self.start_coordinate + 100, self.end_coordinate - 100)
@@ -301,7 +312,7 @@ class EnslaughtArea(GameArea):
             ))
             self.current_difficulty -= 20
         elif target_change < 10:
-            print("Lazers")
+            # print("Lazers")
             for i in range(target_change):
                 self.entity_list.append(entities.DelayedDeploy(
                     i * 60,
@@ -315,7 +326,7 @@ class EnslaughtArea(GameArea):
                     )
                 ))
         elif target_change < 15:
-            print("Fishies")
+            # print("Fishies")
             for i in range(target_change // 3):
                 self.entity_list.append(entities.Fish(self))
                 self.current_difficulty += 2
@@ -343,9 +354,9 @@ class EnslaughtArea(GameArea):
                     else:
                         made_entity.y = self.start_coordinate + 100
                 self.entity_list.append(made_entity)
-                print(made_entity)
+                # print(made_entity)
         else:
-            print("Spawners")
+            # print("Spawners")
             for i in range(target_change // 15):
                 spawner = entities.Spawner.make(self.random.randint(0, 2 ** 31), self)
                 if spawner.limit is None:
@@ -354,7 +365,7 @@ class EnslaughtArea(GameArea):
                     self.current_difficulty += (spawner.limit + 1) * spawner.entity.cost ** 2
                 spawner.y += self.start_coordinate
                 self.entity_list.append(spawner)
-        print(f"{self.current_difficulty}/{self.difficulty}")
+        # print(f"{self.current_difficulty}/{self.difficulty}")
 
 
 @make_async(with_lock=True)

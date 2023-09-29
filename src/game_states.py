@@ -52,7 +52,7 @@ CAMERA_BOTTOM = 0
 # area management
 AREAS_PASSED = 0
 LAST_AREA = 0
-AREA_QUEUE_MAX_LENGTH = 3
+AREA_QUEUE_MAX_LENGTH = 7
 # the seed
 SEED = 0
 # settings

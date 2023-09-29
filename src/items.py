@@ -545,7 +545,7 @@ def simple_throwable_action(item: Item):
     if p:
         pos = (0, game_states.DISTANCE)
         rot = game_states.LAST_DIRECTION * 90 + 90
-        print(rot)
+        # print(rot)
         game_structures.HANDS[item.pos] = None  # remove from hands of entity throwing
     else:
         pos = item.pos[0].pos
