@@ -220,11 +220,7 @@ class BreakThroughArea(GameArea):
             allowable_entities.append([entry[0], 0])
         num = 3
         while allowance > 0:
-            try:
-                index = (determiner % num) % len(allowable_entities)
-            except Exception as e:
-                print(allowable_entities, BasicArea.allowable_thresh_holds, entities.Slime.seen, count)
-                raise e
+            index = (determiner % num) % len(allowable_entities)
             num += 1
             entity = allowable_entities[index][0]
             allowance -= entity.cost + allowable_entities[index][1] ** 2
