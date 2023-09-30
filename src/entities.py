@@ -409,6 +409,7 @@ class Slime(Glides):
     frame_change_frequency = 16
     alert = images.SLIME_ALERT
     imgs = [images.SLIME_1, images.SLIME_2, images.SLIME_3, images.SLIME_4]
+    seen = True
 
     def __init__(self, pos: tuple[int, int] = (0, 0), seed: int = 0):
         if isinstance(self.imgs[0], images.Image):

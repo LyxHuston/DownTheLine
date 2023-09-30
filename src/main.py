@@ -120,7 +120,6 @@ def start():
     # area management
     game_states.AREAS_PASSED = 0
     game_states.LAST_AREA = 0
-    game_states.AREA_QUEUE_MAX_LENGTH = 3
 
     game_structures.HANDS = [None, None]
 
