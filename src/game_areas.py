@@ -167,7 +167,7 @@ class BasicArea(GameArea):
 
     def __init__(self, determiner, count):
         super().__init__(seed=determiner)
-        self.length = 200 + math.floor(math.log2(count)) * 100
+        self.length = 300 + math.floor(math.log2(count)) * 150
         self.difficulty = count
         allowance = count
         allowable_entities = []
@@ -186,7 +186,7 @@ class BasicArea(GameArea):
                 self.entity_list.append(entity.make(determiner, self))
             else:
                 self.entity_list.clear()
-                self.length = 1000
+                self.length = 1500
                 add = entity.make(determiner, self)
                 add.y = self.length // 2
                 self.entity_list.append(add)
@@ -203,7 +203,7 @@ class BreakThroughArea(GameArea):
     def __init__(self, determiner, count):
         super().__init__(seed=determiner)
         self.difficulty = count
-        self.length = game_states.HEIGHT // 2 + math.floor(math.log2(count)) * 100
+        self.length = game_states.HEIGHT // 2 + math.floor(math.log2(count)) * 150
         allowance = count
         while allowance > 0:
             spawner = entities.Spawner.make(determiner, self)
@@ -237,9 +237,9 @@ class GiftArea(GameArea):
     def __init__(self, determiner, count):
         super().__init__(seed=determiner)
         self.difficulty = count
-        self.length = 1000
+        self.length = 1500
         spawn = entities.Spawner.make(determiner, self)
-        experiment_area = 500
+        experiment_area = 900
         spawn.y += experiment_area
         self.length += experiment_area
         self.entity_list.append(spawn)
@@ -387,20 +387,20 @@ def add_game_area():
     determinator = hash(str(game_states.SEED + game_states.LAST_AREA))
     match game_states.LAST_AREA:
         case 0:
-            area = GameArea(200, determinator)
+            area = GameArea(300, determinator)
             area.entity_list.append(entities.Obstacle(pos=(0, 170)))
             area.entity_list.append(entities.ItemEntity(items.simple_stab(
                 50,
                 20,
                 images.SIMPLE_SWORD.img,
-                (0, 40)
+                (0, 60)
             )))
         case 1:
-            area = GameArea(300, determinator)
+            area = GameArea(450, determinator)
             area.entity_list.append(entities.Obstacle(pos=(0, area.length), health=5))
             area.entity_list.append(entities.Slime((0, area.length // 2), area.random.randint(0, 2 ** 32 - 1)))
         case 2:
-            area = GameArea(500, determinator)
+            area = GameArea(750, determinator)
             area.entity_list.append(entities.Obstacle(pos=(0, + area.length), health=5))
             area.entity_list.append(entities.Slime((0, area.length // 3), area.random.randint(0, 2 ** 32 - 1)))
             area.entity_list.append(entities.Slime((0, 2 * area.length // 2), area.random.randint(0, 2 ** 32 - 1)))
@@ -408,7 +408,7 @@ def add_game_area():
                 100,
                 10,
                 images.SIMPLE_SPEAR.img,
-                (15, 120),
+                (15, 180),
                 2
             )))
             game_states.AREA_QUEUE_MAX_LENGTH = 3
