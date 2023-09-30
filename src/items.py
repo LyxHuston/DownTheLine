@@ -29,6 +29,7 @@ import entities
 import images
 import math
 import enum
+import draw_constants
 
 
 class ItemTypes(enum.IntEnum):
@@ -50,6 +51,7 @@ class Item:
     img: pygame.Surface
     pos: Union[int, tuple[entities.Entity, int], tuple[int, int]]
     draw: Callable
+    icon: pygame.Surface
     data_pack: Any
     type: ItemTypes
 
@@ -100,7 +102,7 @@ def from_player(item) -> bool:
             return isinstance(item.pos, int)
 
 
-def deepcopy_datapack_factory(item) -> tuple[Callable, Callable, pygame.Surface, Any, Callable, Callable, ItemTypes]:
+def deepcopy_datapack_factory(item) -> tuple[Callable, Callable, pygame.Surface, Any, Callable, pygame.Surface, Callable, ItemTypes]:
     """
     makes a factory function that returns duplicates of the item datapack for separate use
     :param item: any item
@@ -112,12 +114,13 @@ def deepcopy_datapack_factory(item) -> tuple[Callable, Callable, pygame.Surface,
         case ItemTypes.SimpleShield:
             contents = (*item.data_pack[:-1], [])
         case ItemTypes.SimpleThrowable:
-            contents = (*item.data_pack[:-1], images.SIMPLE_THROWABLE_ICON.img)
+            contents = item.data_pack[:]
 
     def factory():
         return list(contents)
 
-    return item.action, item.tick, item.img, item.pos, item.draw, factory, item.type
+    return item.action, item.tick, item.img, item.pos, item.draw, item.icon, factory, item.type
+
 
 def offset_point_rotated(origin: tuple[int, int], offset: tuple[int, int], rotation: int) -> tuple[int, int]:
     """
@@ -216,28 +219,33 @@ def draw_by_side_if_not_used(func: Callable):
     return internal
 
 
-def draw_icon_for_simple_duration_item(item: Item):
+@make_add_wrapper
+def draw_icon(item: Item):
     if not isinstance(item.pos, int):
         return
     game_structures.SCREEN.blit(
-        item.data_pack[5],
-        (66 * item.pos, 202)
+        item.icon,
+        ((draw_constants.icon_size + 4) * item.pos, draw_constants.row_separation * 3)
     )
+
+
+@make_add_wrapper
+@draw_icon
+def draw_icon_for_simple_duration_item(item: Item):
+    if not isinstance(item.pos, int):
+        return
     if item.data_pack[0]:
         pygame.draw.rect(
             game_structures.SCREEN,
             (0, 0, 0),
-            pygame.Rect(66 * item.pos, 202, 64, 64),
+            pygame.Rect((draw_constants.icon_size + 4) * item.pos, draw_constants.row_separation * 3, draw_constants.icon_size, draw_constants.icon_size),
         )
     else:
         pygame.draw.rect(
             game_structures.SCREEN,
             (0, 0, 0),
-            pygame.Rect(66 * item.pos, 202, 64 - round(64 * item.data_pack[1] / item.data_pack[2]), 64),
+            pygame.Rect((draw_constants.icon_size + 4) * item.pos, draw_constants.row_separation * 3, draw_constants.icon_size - round(draw_constants.icon_size * item.data_pack[1] / item.data_pack[2]), draw_constants.icon_size),
         )
-
-
-add_simple_duration_icon = make_add_wrapper(draw_icon_for_simple_duration_item)
 
 
 def original_simple_draw(item: Item):
@@ -279,7 +287,7 @@ def original_simple_draw(item: Item):
         )
 
 
-simple_draw = draw_on_ground_if_not_held(original_simple_draw)
+simple_draw = draw_on_ground_if_not_held(draw_icon(original_simple_draw))
 
 
 def draw_on_ground(item):
@@ -306,7 +314,7 @@ def passing(*args):
 
 
 @draw_on_ground_if_not_held
-@add_simple_duration_icon
+@draw_icon_for_simple_duration_item
 @draw_by_side_if_not_used
 def simple_stab_draw(item: Item):
     """
@@ -348,7 +356,7 @@ def simple_stab_draw(item: Item):
 
 
 @draw_on_ground_if_not_held
-@add_simple_duration_icon
+@draw_icon_for_simple_duration_item
 @draw_by_side_if_not_used
 def simple_shield_draw(item: Item):
     """
@@ -552,6 +560,7 @@ def simple_throwable_action(item: Item):
         rot = item.pos[0].rotation
         item.pos[0].hands[item.pos[1]] = None  # remove from hands of entity throwing
     area = game_structures.AREA_QUEUE[0]
+    # print(item)
     ent = item.data_pack[0](pos, rot, *item.data_pack[1])  # create entity
     ent.allied_with_player = p
     area.entity_list.append(ent)  # add entity to entity list
@@ -567,7 +576,8 @@ def simple_stab(cooldown: int, duration: int, img: pygame.Surface, pos: tuple[in
         img,
         pos,
         simple_stab_draw,
-        [False, cooldown, cooldown, duration, damage, images.SIMPLE_STAB_ICON.img, []
+        images.SIMPLE_STAB_ICON.img,
+        [False, cooldown, cooldown, duration, damage, []
          ],  # state, tracker, cooldown ticks, duration ticks, hit tracker
         ItemTypes.SimpleStab
     )
@@ -595,16 +605,7 @@ def random_simple_stab(strength: int, random, pos=None):
     if cooldown < 30:
         cooldown = 30
 
-    return Item(
-        simple_cooldown_action,
-        simple_stab_tick,
-        img,
-        pos,
-        simple_stab_draw,
-        [False, cooldown, cooldown, duration, damage, images.SIMPLE_STAB_ICON.img, []
-         ],  # state, tracker, cooldown ticks, duration ticks, hit tracker
-        ItemTypes.SimpleStab
-    )
+    return simple_stab(cooldown, duration, img, pos, damage)
 
 
 def simple_shield(cooldown: int, duration: int, img: pygame.Surface, pos: tuple[int, int], damage: int = 0) -> Item:
@@ -617,7 +618,8 @@ def simple_shield(cooldown: int, duration: int, img: pygame.Surface, pos: tuple[
         img,
         pos,
         simple_shield_draw,
-        [False, cooldown, cooldown, duration, damage, images.SIMPLE_SHIELD_ICON.img, []],
+        images.SIMPLE_SHIELD_ICON.img,
+        [False, cooldown, cooldown, duration, damage, []],
         ItemTypes.SimpleShield
     )
 
@@ -642,15 +644,7 @@ def random_simple_shield(strength: int, random, pos=None):
     cooldown += 10 * random.randint(1, 3)
     duration = allotment - cooldown
 
-    return Item(
-        simple_cooldown_action,
-        simple_shield_tick,
-        simple_shield_imgs[damage].img,
-        pos,
-        simple_shield_draw,
-        [False, cooldown, cooldown, duration, damage, images.SIMPLE_SHIELD_ICON.img, []],
-        ItemTypes.SimpleShield
-    )
+    return simple_shield(cooldown, duration, simple_shield_imgs[damage].img, pos, damage)
 
 
 def make_random_reusable(random, pos):
@@ -681,7 +675,8 @@ def simple_throwable(img, pos, creates, args):
         img,
         pos,
         simple_draw,
-        [creates, args, images.SIMPLE_THROWABLE_ICON],
+        images.SIMPLE_THROWABLE_ICON.img,
+        [creates, args],
         ItemTypes.SimpleThrowable
     )
 

@@ -70,9 +70,9 @@ class Entity(game_structures.Body):
         self.__health = 0
         self.max_health = 0
         self.flashing = 0
-        self.__x_shake_momentum = 2
+        self.__x_shake_momentum = 0
         self.__x_shake = 0
-        self.__y_shake_momentum = 3
+        self.__y_shake_momentum = 0
         self.__y_shake = 0
         self.__shake_limit = 0
 
@@ -106,7 +106,7 @@ class Entity(game_structures.Body):
             img.fill((255, 255, 255), special_flags=pygame.BLEND_ADD)
             img.blit(self.img, (0, 0), None, pygame.BLEND_RGB_SUB)
         else:
-            self.__x_shake = self.__y_shake = 0
+            self.__x_shake = self.__y_shake = self.__x_shake_momentum = self.__y_shake_momentum = 0
             img = self.img
         game_structures.SCREEN.blit(
             img,
@@ -286,7 +286,7 @@ def make_item_duplicator(item: items.Item):
     :return:
     """
 
-    action, tick, img, pos, draw, data_pack_factory, typ = items.deepcopy_datapack_factory(item)
+    action, tick, img, pos, draw, icon, data_pack_factory, typ = items.deepcopy_datapack_factory(item)
 
     class ItemDuplicator(ItemEntity):
 
@@ -298,6 +298,7 @@ def make_item_duplicator(item: items.Item):
                 img,
                 pos,
                 draw,
+                icon,
                 data_pack_factory(),
                 typ
             ))

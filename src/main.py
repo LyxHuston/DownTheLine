@@ -81,7 +81,7 @@ else:
 pygame.display.set_caption("Down the Line")
 game_states.WIDTH, game_states.HEIGHT = game_structures.SCREEN.get_size()
 game_structures.determine_screen()
-print(game_states.WIDTH, game_states.HEIGHT)
+# print(game_states.WIDTH, game_states.HEIGHT)
 game_states.CAMERA_THRESHOLDS = (min(500, round(game_states.HEIGHT / 3)), min(500, round(game_states.HEIGHT / 3)))
 
 

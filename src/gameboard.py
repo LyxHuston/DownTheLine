@@ -23,7 +23,9 @@ import game_states
 import game_structures
 from game_areas import add_game_area
 import pygame
-import math
+import abilities
+import ingame
+import draw_constants
 
 
 player_img = pygame.image.load("resources/player/player.png")
@@ -94,7 +96,7 @@ def tick(do_tick: bool = True):
             total += ret[1]
         area.draw()
     game_structures.SCREEN.blit(
-        game_structures.FONTS[64].render(
+        game_structures.FONTS[128].render(
             str(game_states.RECORD_DISTANCE),
             False,
             (255, 255, 255)
@@ -104,8 +106,9 @@ def tick(do_tick: bool = True):
     for i in range(game_states.HEALTH):
         game_structures.SCREEN.blit(
             heart_img,
-            (i * 66, 68)
+            (i * (draw_constants.icon_size + 4), draw_constants.row_separation)
         )
+    abilities.draw_dash_icon(ingame.tick_counter)
     # pygame.draw.circle(
     #     game_structures.SCREEN,
     #     (255, 255, 255),

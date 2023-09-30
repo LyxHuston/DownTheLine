@@ -73,7 +73,6 @@ def tick(do_tick: bool = None):
             game_states.DISTANCE = game_states.BOTTOM
         if game_states.DISTANCE > game_states.RECORD_DISTANCE:
             game_states.RECORD_DISTANCE = game_states.DISTANCE
-    abilities.draw_dash_icon(tick_counter)
     gameboard.tick(do_tick if isinstance(do_tick, bool) else True)
 
 
