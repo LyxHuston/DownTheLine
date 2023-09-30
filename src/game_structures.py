@@ -45,7 +45,7 @@ TRUE_WIDTH: int = 0
 
 def display_screen():
     if TRUE_HEIGHT > 0:
-        pygame.transform.smoothscale(SCREEN, (TRUE_WIDTH, TRUE_HEIGHT), TRUE_SCREEN)
+        pygame.transform.scale(SCREEN, (TRUE_WIDTH, TRUE_HEIGHT), TRUE_SCREEN)
     pygame.display.flip()
 
 
