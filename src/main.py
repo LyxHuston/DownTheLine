@@ -131,6 +131,7 @@ def start():
         if isinstance(attr_value, type):
             if issubclass(attr_value, entities.Entity):
                 attr_value.seen = False
+    entities.Slime.seen = True
     import game_areas
     for attr_value in game_areas.__dict__.values():
         if isinstance(attr_value, type):
