@@ -47,6 +47,7 @@ class GameArea:
         self.start_coordinate = max(game_states.RECORD_DISTANCE + game_states.HEIGHT, game_states.LAST_AREA_END)
         self.length = length
         self.initialized = False
+        self.boundary_crossed = False
         self.entity_list = []
         self.particle_args: tuple[list[images.Image] | list[pygame.Surface], int, int] = (
             images.VOID_PARTICLES, 30, 120
@@ -60,12 +61,12 @@ class GameArea:
 
     seen = False
 
-    def enter(self):
+    def final_load(self):
         if not self.__class__.seen:
             self.__class__.seen = True
             self.start_tutorial()
         for entity in self.entity_list:
-            entity.enter()
+            entity.final_load()
 
     def start_tutorial(self):
         pass
@@ -91,6 +92,7 @@ class GameArea:
             height = self.start_coordinate + self.random.randint(0, self.region_length - 1) + region * self.region_length
             if height > self.end_coordinate - self.taper_length // 2:
                 break
+            # noinspection PyTypeChecker
             self.particle_list.add(entities.Particle(
                 *self.particle_args,
                 (
@@ -101,6 +103,7 @@ class GameArea:
             region += 1
         self.spawn_end = not self.spawn_end
         if self.random.randint(0, self.region_length // self.taper_length) == 0:
+            # noinspection PyTypeChecker
             self.particle_list.add(entities.Particle(
                 *self.particle_args,
                 (
@@ -127,7 +130,17 @@ class GameArea:
                     total += 1
             else:
                 del self.entity_list[i]
+        if not self.boundary_crossed and game_states.DISTANCE > self.start_coordinate:
+            self.boundary_crossed = True
+            self.cross_boundary()
         return mass, total
+
+    def cross_boundary(self):
+        """
+        called when player actually enters an area.  Usually used for a tutorial or gods.
+        :return:
+        """
+        pass
 
     def finalize(self):
         """
@@ -272,7 +285,7 @@ class EnslaughtArea(GameArea):
                 if game_states.DISTANCE > self.start_coordinate + self.length // 2:
                     self.state = 1
                     end_wall = entities.InvulnerableObstacle(pos=(0, self.start_coordinate))
-                    end_wall.enter()
+                    end_wall.final_load()
                     self.entity_list.append(end_wall)
                     self.cooldown_ticks = self.cooldown
             case 1:

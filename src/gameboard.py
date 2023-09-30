@@ -47,7 +47,7 @@ def tick(do_tick: bool = True):
         for i in range(len(game_structures.AREA_QUEUE)):
             if game_structures.AREA_QUEUE[i].start_coordinate < game_states.CAMERA_BOTTOM + game_states.HEIGHT and not game_structures.AREA_QUEUE[i].initialized:
                 game_structures.AREA_QUEUE[i].initialized = True
-                game_structures.AREA_QUEUE[i].enter()
+                game_structures.AREA_QUEUE[i].final_load()
                 break
             if game_structures.AREA_QUEUE[i].start_coordinate > game_states.CAMERA_BOTTOM + game_states.HEIGHT:
                 break

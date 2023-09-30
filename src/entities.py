@@ -133,7 +133,7 @@ class Entity(game_structures.Body):
         """
         return self.health > 0
 
-    def enter(self):
+    def final_load(self):
         """
         called when an area initializes.  In most cases, starts AI/movement
         :return:
@@ -384,10 +384,10 @@ class Obstacle(Entity):
                     pass
         return self.health > 0
 
-    def enter(self):
+    def final_load(self):
         self.freeze_y(True)
         self.freeze_x(True)
-        super().enter()
+        super().final_load()
 
     def first_seen(self):
         self.full.img
@@ -855,8 +855,8 @@ class Knight(Glides):
             pygame.transform.flip(images.KNIGHT_STEP_1.img, True, False),
         ]
 
-    def enter(self):
-        super().enter()
+    def final_load(self):
+        super().final_load()
         for i in range(len(self.hands)):
             if self.hands[i] is None:
                 continue
@@ -1157,7 +1157,7 @@ class Spawner(Entity):
             self.timer = -1
             self.__spawning = SpawnerHolder(self.entity.make(self.area.random.randint(0, 2 ** 16 - 1), self.area),
                                             self, self.__check, self.__destination)
-            self.__spawning.enter()
+            self.__spawning.final_load()
             self.area.entity_list.append(self.__spawning)
             self.__spawning.pos = self.pos
             # print(self.__spawning.tick())
@@ -1357,8 +1357,8 @@ class SpawnerHolder(Entity):
     def draw(self):
         self.holding.draw()
 
-    def enter(self):
-        self.holding.enter()
+    def final_load(self):
+        self.holding.final_load()
 
 
 class Bomb(Glides):
