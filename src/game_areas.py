@@ -377,7 +377,7 @@ def add_game_area():
             area = GameArea(200, determinator)
             area.entity_list.append(entities.Obstacle(pos=(0, 170)))
             area.entity_list.append(entities.ItemEntity(items.simple_stab(
-                60,
+                50,
                 20,
                 images.SIMPLE_SWORD.img,
                 (0, 40)
@@ -392,7 +392,7 @@ def add_game_area():
             area.entity_list.append(entities.Slime((0, area.length // 3), area.random.randint(0, 2 ** 32 - 1)))
             area.entity_list.append(entities.Slime((0, 2 * area.length // 2), area.random.randint(0, 2 ** 32 - 1)))
             area.entity_list.append(entities.ItemEntity(items.simple_stab(
-                120,
+                100,
                 10,
                 images.SIMPLE_SPEAR.img,
                 (15, 120),
