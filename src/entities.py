@@ -188,7 +188,10 @@ def make_invulnerable_version(entity_class: type(Entity)) -> type(Entity):
     return New
 
 
-class ItemEntity(make_invulnerable_version(Entity)):
+InvulnerableEntity = make_invulnerable_version(Entity)
+
+
+class ItemEntity(InvulnerableEntity):
     """
     wrapper entity for items and abilities while on the ground to make them easier to work with
     """
@@ -871,7 +874,7 @@ class Knight(Glides):
         return making
 
 
-class Lazer(Entity):
+class Lazer(InvulnerableEntity):
     """
     a lazer that can hurt the player.  Stationary.
     Superclass, can be subclassed to add/replace ends, ends should be registered pre super call
@@ -881,10 +884,12 @@ class Lazer(Entity):
         super().__init__(images.EMPTY, 0, (0, y))
         if not hasattr(self, "ends"):
             self.ends = [
-                ComponentEntity(images.LAZER_END.img, self, 0, (-game_states.WIDTH // 2 + 100, y)),
-                ComponentEntity(images.LAZER_END.img, self, 180, (game_states.WIDTH // 2 - 100, y))
+                ComponentEntity(images.LAZER_END.img, self, 90, (-game_states.WIDTH // 2 + 100, y)),
+                ComponentEntity(images.LAZER_END.img, self, 270, (game_states.WIDTH // 2 - 100, y))
             ]
         area.entity_list.extend(self.ends)
+        self.area = area
+        self.random = random.Random(area.random.randint(0, 2 ** 32 - 1))
         self.charge_time = charge_time
         self.cooldown = 0
         self.firing = False
@@ -922,6 +927,18 @@ class Lazer(Entity):
                 self.hit = False
                 self.firing = False
         else:
+            speed = 5 * self.cooldown / self.charge_time
+            spread = round(90 * (1 - (self.cooldown / self.charge_time) ** 3))
+            for end in self.ends:
+                rot = end.rotation + self.random.randint(-spread, spread)
+                self.area.particle_list.add(Particle(
+                    images.STEAM_PARTICLES,
+                    4,
+                    12,
+                    (end.x + 10 * math.sin(math.radians(end.rotation)), end.y - 10 * math.cos(math.radians(end.rotation))),
+                    (round(speed * math.sin(math.radians(rot))), round(speed * -1 * math.cos(math.radians(rot)))),
+                    rot
+                ))
             if self.cooldown >= self.charge_time:
                 self.repeats -= 1
                 self.cooldown = 0
@@ -971,7 +988,7 @@ class TrackingLazer(Lazer):
             self.velocity += (self.y + self.velocity * 10 < game_states.DISTANCE) * 2 - 1
             self.y += self.velocity
             for end in self.ends:
-                end.y += self.velocity
+                end.y = self.y
         return super().tick()
 
     @classmethod
@@ -1536,17 +1553,26 @@ if __name__ == "__main__":
     #     600,
     #     4
     # )))
-    for i in range(9):
-        pos = (-200, i * 256)
-        area.entity_list.append(Spawner(
-            pos,
-            1,
-            area,
-            0,
-            make_item_duplicator(items.random_simple_bomb(area.random, pos)),
-            (0, None),
-            2
-        ))
+    # for i in range(9):
+    #     pos = (-200, i * 256)
+    #     area.entity_list.append(Spawner(
+    #         pos,
+    #         1,
+    #         area,
+    #         0,
+    #         make_item_duplicator(items.random_simple_bomb(area.random, pos)),
+    #         (0, None),
+    #         2
+    #     ))
+    area.entity_list.append(Spawner(
+        (500, 600),
+        1,
+        area,
+        0,
+        TrackingLazer,
+        (None, None),
+        2
+    ))
 
     area.finalize()
     # area.enter()

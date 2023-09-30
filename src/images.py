@@ -113,6 +113,10 @@ EXPLOSION_PARTICLES = [Image("resources/particles/explosion/explosion_1.png"),
                        Image("resources/particles/explosion/explosion_2.png"),
                        Image("resources/particles/explosion/explosion_3.png")]
 
+STEAM_PARTICLES = [Image("resources/particles/steam/steam_1.png"),
+                   Image("resources/particles/steam/steam_2.png"),
+                   Image("resources/particles/steam/steam_3.png")]
+
 # empty
 EMPTY = pygame.Surface((0, 0))
 
