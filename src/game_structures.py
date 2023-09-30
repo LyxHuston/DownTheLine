@@ -85,7 +85,7 @@ def begin_shake(duration: int, maximum: tuple[int, int], change_per_tick: tuple[
 
 def deal_damage(damage: int, source):
     if game_states.INVULNERABLE:
-        return
+        return False
     if game_states.INVULNERABILITY_LEFT == 0:
         for hand in HANDS:
             if hand is None:
@@ -94,16 +94,17 @@ def deal_damage(damage: int, source):
                 if hand.data_pack[0]:
                     if isinstance(source, entities.Entity):
                         if (source.y > game_states.DISTANCE) != (game_states.LAST_DIRECTION == -1):
-                            return
+                            return False
                         continue
                     if isinstance(source.pos, int):
                         continue
                     elif isinstance(source.pos[0], entities.Entity):
                         if (source.pos[0].y > game_states.DISTANCE) != (game_states.LAST_DIRECTION == -1):
-                            return
+                            return False
                         continue
         game_states.HEALTH -= damage
         game_states.INVULNERABILITY_LEFT = damage * 10 + 1
+        return True
         # print(source, source.pos, source.img, source.tick, source.draw)
 
 

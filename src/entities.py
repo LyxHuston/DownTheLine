@@ -460,11 +460,11 @@ class Slime(Glides):
         # if self.draw() != self.pos:
         #     # print("Position discrepancy")
         if abs(self.x) < 32 and abs(self.y - game_states.DISTANCE) < 64:
-            game_structures.deal_damage(1, self)
-            game_states.DISTANCE = self.y + 64 * (((self.y - game_states.DISTANCE) < 0) * 2 - 1)
-            glide_player(5, 2, 1, ((self.y - game_states.DISTANCE) < 0) * 2 - 1)
-            game_structures.begin_shake(6, (10, 10), (7, 5))
+            if game_structures.deal_damage(1, self):
+                glide_player(5, 2, 1, ((self.y - game_states.DISTANCE) < 0) * 2 - 1)
+                game_structures.begin_shake(6, (10, 10), (7, 5))
             self.start_glide(5, 30, 5, (self.y > game_states.DISTANCE) * 2 - 1)
+            game_states.DISTANCE = self.y + 64 * (((self.y - game_states.DISTANCE) < 0) * 2 - 1)
         return self.health > 0
 
     def first_seen(self):
@@ -531,11 +531,11 @@ class Crawler(Glides):
         #     5
         # )
         if abs(self.x) < 28 and abs(self.y - game_states.DISTANCE) < 66:
-            game_structures.deal_damage(1, self)
+            if game_structures.deal_damage(1, self):
+                glide_player(round(self.speed * 1.5), 5, 10, ((self.y - game_states.DISTANCE) < 0) * 2 - 1)
+                game_structures.begin_shake(6, (10, 10), (7, 5))
             self.y -= self.glide_speed * self.glide_direction
             game_states.DISTANCE = self.y + 66 * (((self.y - game_states.DISTANCE) < 0) * 2 - 1)
-            glide_player(round(self.speed * 1.5), 5, 10, ((self.y - game_states.DISTANCE) < 0) * 2 - 1)
-            game_structures.begin_shake(6, (10, 10), (7, 5))
         return self.health > 0
 
     def first_seen(self):
@@ -580,11 +580,11 @@ class Fencer(Glides):
         if self.glide_speed > 0:
             self.glide_tick()
             if abs(self.x) < 40 and abs(self.y - game_states.DISTANCE) < 56:
-                game_structures.deal_damage(2, self)
+                if game_structures.deal_damage(2, self):
+                    glide_player(1, 20, 10, (self.y < game_states.DISTANCE) * 2 - 1)
+                    game_structures.begin_shake(10, (20, 20), (13, -9))
                 game_states.DISTANCE = self.y + 56 * ((self.y < game_states.DISTANCE) * 2 - 1)
                 self.start_glide(25, 10, 15, ((self.y - game_states.DISTANCE) > 0) * 2 - 1)
-                glide_player(1, 20, 10, (self.y < game_states.DISTANCE) * 2 - 1)
-                game_structures.begin_shake(10, (20, 20), (13, -9))
             if self.cooldown > 0:
                 self.cooldown -= 1
             return self.health > 0
@@ -610,11 +610,11 @@ class Fencer(Glides):
             else:
                 self.y += 5 * ((self.y < game_states.DISTANCE) * 2 - 1)
         if abs(self.x) < 40 and abs(self.y - game_states.DISTANCE) < 56:
-            game_structures.deal_damage(1, self)
+            if game_structures.deal_damage(1, self):
+                glide_player(1, 20, 10, (self.y < game_states.DISTANCE) * 2 - 1)
+                game_structures.begin_shake(10, (20, 20), (13, -9))
             game_states.DISTANCE = self.y + 56 * ((self.y < game_states.DISTANCE) * 2 - 1)
             self.start_glide(25, 10, 15, ((self.y - game_states.DISTANCE) > 0) * 2 - 1)
-            glide_player(1, 20, 10, (self.y < game_states.DISTANCE) * 2 - 1)
-            game_structures.begin_shake(10, (20, 20), (13, -9))
         return self.health > 0
 
     def hit(self, damage: int, source):
@@ -655,8 +655,8 @@ class Projectile(Entity):
             return False
         rect = self.rect
         if rect.right > -32 and rect.left < 32 and rect.bottom < game_states.DISTANCE + 32 and rect.top > game_states.DISTANCE - 32:
-            game_structures.deal_damage(self.damage, self)
-            glide_player(self.damage * 2, 10, 1, (self.y < game_states.DISTANCE) * 2 - 1)
+            if game_structures.deal_damage(self.damage, self):
+                glide_player(self.damage * 2, 10, 1, (self.y < game_states.DISTANCE) * 2 - 1)
             if self.destruct_on_collision:
                 return False
         self.freeze_y(True)
@@ -1051,9 +1051,9 @@ class Fish(Glides):
                     if not self.already_hit and abs(self.x) < 64 and abs(self.y - game_states.DISTANCE) < 48:
                         self.already_hit = True
                         self.wait //= 2
-                        game_structures.deal_damage(1, self)
-                        glide_player(5, 2, 1, ((self.y - game_states.DISTANCE) < 0) * 2 - 1)
-                        game_structures.begin_shake(6, (10, 10), (-5, 7))
+                        if game_structures.deal_damage(1, self):
+                            glide_player(5, 2, 1, ((self.y - game_states.DISTANCE) < 0) * 2 - 1)
+                            game_structures.begin_shake(6, (10, 10), (-5, 7))
             case 3:  # diving
                 if self.wait <= 0:
                     self.state = 0
@@ -1386,10 +1386,10 @@ class Bomb(Glides):
             if self.allied_with_player:
                 for entity in game_structures.all_entities():
                     if colliding.colliderect(entity.rect):
-                        entity.health -= self.damage
+                        entity.hit(self.damage, self)
             if colliding.colliderect(pygame.Rect(-32, game_states.DISTANCE - 32, 64, 64)):
-                game_structures.deal_damage(self.damage, self)
-                glide_player(self.damage, 20, 1, (self.y < game_states.DISTANCE) * 2 - 1)
+                if game_structures.deal_damage(self.damage, self):
+                    glide_player(self.damage, 20, 1, (self.y < game_states.DISTANCE) * 2 - 1)
 
             # make the particles
             area = game_structures.AREA_QUEUE[0]
