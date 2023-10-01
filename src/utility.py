@@ -52,7 +52,7 @@ class ThreadWithResult(threading.Thread):
         return self.__result
 
 
-def make_async(with_lock: Union[threading.Lock, bool] = None) -> Callable:
+def make_async(*args, with_lock: Union[threading.Lock, bool] = None) -> Callable:
     """
     makes a function asynchronous
     :param with_lock:
@@ -79,6 +79,9 @@ def make_async(with_lock: Union[threading.Lock, bool] = None) -> Callable:
             return thread
 
         return async_func
+
+    if len(args) == 1:
+        return inner_make_async(args[0])
 
     return inner_make_async
 
