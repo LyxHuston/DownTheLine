@@ -408,14 +408,14 @@ class MinigameArea(GameArea):
                 self.length = game_states.HEIGHT
                 self.entity_list.append(entities.ItemEntity(items.simple_stab(
                     10,
-                    35,
+                    60,
                     images.SIMPLE_SPEAR.img,
                     (5, self.length - 200),
                     0
                 )))
                 self.entity_list.append(entities.ItemEntity(items.simple_stab(
                     10,
-                    35,
+                    60,
                     images.SIMPLE_SPEAR.img,
                     (-5, self.length - 400),
                     0
@@ -435,7 +435,6 @@ class MinigameArea(GameArea):
                 if game_states.DISTANCE > self.start_coordinate + self.length // 2:
                     self.state = 1
                     end_wall = entities.InvulnerableObstacle(pos=(0, self.start_coordinate), health=1)
-                    print(self.length, game_states.HEIGHT, self.start_coordinate)
                     end_wall.final_load()
                     self.entity_list.append(end_wall)
                     match self.type:
@@ -445,7 +444,7 @@ class MinigameArea(GameArea):
                                 for i2 in range(10):
                                     wave.append((entities.Fish, [self]))
                                 wave = [(entities.MassDelayedDeploy, (60 * 10, self, wave))]
-                            self.entity_list.append(wave[0][0](*wave[0][1]))
+                            self.entity_list.append(entities.MassDelayedDeploy(0, wave[0][1][1], wave[0][1][2]))
                         case 1:  # notes
                             self.enforce_center = self.start_coordinate + self.length // 2
                         case _:  # lazer dodge
@@ -456,8 +455,8 @@ class MinigameArea(GameArea):
                             for i in range(self.difficulty // 10):
                                 match self.random.randint(0, 1):
                                     case 0:  # safety zone(s)
-                                        charge_bonus = 20
-                                        delay = ticks_to_cross + 2 * charge_bonus
+                                        charge_bonus = 10
+                                        delay = ticks_to_cross + charge_bonus
                                         pre_safe_creation = [
                                             (entities.Lazer, (y, ticks_to_cross + charge_bonus, charge_bonus, self))
                                             for y in range(self.start_coordinate + 64, self.end_coordinate, 64)
@@ -472,7 +471,8 @@ class MinigameArea(GameArea):
                                                 entities.DelayedDeploy,
                                                 (tracker_delay * tracker_count,
                                                  self, entities.TrackingLazer,
-                                                 (3 * tracker_delay, 15, self))
+                                                 (self.start_coordinate + self.length * (tracker_count % 2),
+                                                  3 * tracker_delay, 15, self))
                                             ))
                                         delay *= tracker_delay
                                     case 2:  # juggle 3 trackers
@@ -483,8 +483,8 @@ class MinigameArea(GameArea):
                                                 entities.DelayedDeploy,
                                                 (tracker_delay * tracker_count,
                                                  self, entities.TrackingLazer,
-                                                 (3 * tracker_delay, 15, self),
-                                                 repeats)
+                                                 (self.start_coordinate + self.length * (tracker_count % 2),
+                                                  3 * tracker_delay, 15, self, repeats))
                                             ))
                                         delay = tracker_delay * (repeats + 1)
                                 wave = [(entities.MassDelayedDeploy, (delay, self, wave))]
@@ -608,10 +608,10 @@ if __name__ == "__main__":
 
     game_structures.HANDS = [None, None]
 
+    add_game_area()
+    add_game_area()
     add_game_area().join()
-    add_game_area()
-    add_game_area()
-    area = MinigameArea(783248948, 60)
+    area = MinigameArea(54985673879, 60)
     area.finalize()
     game_states.LAST_AREA_END = area.end_coordinate
     game_structures.AREA_QUEUE.append(area)

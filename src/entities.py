@@ -1379,6 +1379,9 @@ class SpawnerHolder(Entity):
         self.holding.final_load()
 
 
+note_speed = 15
+
+
 class NoteSpawner(InvulnerableEntity):
     """
     spawns notes for minigame area
@@ -1396,6 +1399,7 @@ class NoteSpawner(InvulnerableEntity):
         super(NoteSpawner, self).__init__(images.EMPTY, 0, (0, area.length))
         self.waves = area.difficulty // 10
         self.area = area
+        self.padding = 360 // round(math.sqrt(area.difficulty))
         self.last_y = 0
         self.random = random.Random(area.random.randint(0, 2 ** 32 - 1))
         self.start_track = start_track
@@ -1419,33 +1423,38 @@ class NoteSpawner(InvulnerableEntity):
                 case 1:  # arpeggio
                     direction = self.random.randint(0, 1) * 2 - 1
                     offscreen = 0
-                    spacing = 3
+                    spacing = 9
                     for i in range(45 // spacing):
                         self.last_y += direction * 10 * spacing
                         self.area.entity_list.append(Note(self.last_y, offscreen=offscreen))
-                        offscreen += 10 * spacing
+                        offscreen += note_speed * spacing
+                    self.cooldown_track = 45
                 case other:
                     if other == 2 and self.last_dash_arpeggio > abilities.dash_cooldown + 10:  # dash arpeggio
                         self.last_dash_arpeggio = 0
                         direction = self.random.randint(0, 1) * 2 - 1
                         offscreen = 0
-                        spacing = 3
-                        for i in range(45 // spacing):
+                        spacing = 5
+                        for i in range(20 // spacing):
                             self.last_y += direction * 25 * spacing
                             self.area.entity_list.append(Note(self.last_y, offscreen=offscreen))
-                            offscreen += 10 * spacing
+                            offscreen += note_speed * spacing
+                        self.cooldown_track = 20
                     else:  # switch arpeggio
                         direction = self.random.randint(0, 1) * 2 - 1
                         offscreen = 0
-                        spacing = 3
+                        spacing = 9
                         for i in range(45 // spacing):
                             if self.random.random() < 0.125:
                                 direction *= -1
-                                self.last_y += direction * 20 * spacing
+                                self.last_y += direction * 64 * spacing
                             self.last_y += direction * 10 * spacing
                             self.area.entity_list.append(Note(self.last_y, offscreen=offscreen))
-                            offscreen += 10 * spacing
+                            offscreen += note_speed * spacing
+                        self.cooldown_track = 45
+            self.cooldown_track += 30
             self.waves -= 1
+            self.last_y = min(self.area.end_coordinate - 128, max(self.area.start_coordinate + 128, self.last_y))
         return self.waves > 0
 
 
@@ -1463,7 +1472,7 @@ class Note(InvulnerableEntity):
 
     def tick(self):
         self.freeze_x(False)
-        self.x -= 10
+        self.x -= note_speed
         if self.x < -game_states.WIDTH // 2 - 32:
             if self.loop:
                 self.x = game_states.WIDTH // 2 + 32
