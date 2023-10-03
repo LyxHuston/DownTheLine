@@ -556,8 +556,7 @@ def add_game_area():
                 # boss room
                 pass
             elif typ <= 6:  # 3/64
-                # minigame room
-                pass
+                area = MinigameArea(determinator, game_states.LAST_AREA)
             elif typ <= 12:  # 6/64
                 area = EnslaughtArea(determinator, game_states.LAST_AREA)
             elif typ <= 18:  # 6/64
@@ -616,7 +615,7 @@ if __name__ == "__main__":
     add_game_area()
     add_game_area()
     add_game_area().join()
-    area = MinigameArea(178712847818, 60)
+    area = MinigameArea(90230923, 20)
     area.finalize()
     game_states.LAST_AREA_END = area.end_coordinate
     game_structures.AREA_QUEUE.append(area)
