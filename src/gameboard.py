@@ -84,6 +84,7 @@ def tick(do_tick: bool = True):
         game_states.CAMERA_BOTTOM = game_states.DISTANCE - game_states.CAMERA_THRESHOLDS[0]
     if game_states.DISTANCE > game_states.CAMERA_BOTTOM + game_states.HEIGHT - game_states.CAMERA_THRESHOLDS[1]:
         game_states.CAMERA_BOTTOM = game_states.DISTANCE + game_states.CAMERA_THRESHOLDS[1] - game_states.HEIGHT
+    enforce_goal = None
     mass = 0
     total = 0
     for i in range(len(game_structures.AREA_QUEUE)):
@@ -94,6 +95,8 @@ def tick(do_tick: bool = True):
             ret = area.tick()
             mass += ret[0]
             total += ret[1]
+            if enforce_goal is None:
+                enforce_goal = area.enforce_center
         area.draw()
     game_structures.SCREEN.blit(
         game_structures.FONTS[128].render(
@@ -130,10 +133,15 @@ def tick(do_tick: bool = True):
         (game_structures.to_screen_x(-32), game_structures.to_screen_y(game_states.DISTANCE + 32))
     )
     camera_move = camera_move // 2
-    if total > 0:
+    if enforce_goal is not None:
+        goal = enforce_goal
+        total = 2
+    elif total > 0:
         goal = game_states.DISTANCE + game_states.HEIGHT / 2 * (abs(mass) * mass / total ** 2)
     else:
         goal = game_states.DISTANCE + game_states.HEIGHT * game_states.LAST_DIRECTION
-    goal -= game_states.HEIGHT / 2
+    goal -= game_states.HEIGHT // 2
     camera_move += (min(total, 2) + 2) / 324 * (goal - game_states.CAMERA_BOTTOM)
+    if enforce_goal is not None and camera_move < 1 and goal != game_states.CAMERA_BOTTOM:
+        game_states.CAMERA_BOTTOM += goal - game_states.CAMERA_BOTTOM > 0
     game_states.CAMERA_BOTTOM += camera_move

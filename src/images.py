@@ -91,6 +91,8 @@ FISH_RIPPLES = [Image("resources/entities/fish/fish_ripple_1.png"),
                 Image("resources/entities/fish/fish_ripple_5.png")]
 FISH = Image("resources/entities/fish/fish_flight.png")
 
+TARGET = Image("resources/entities/target/target.png")
+
 # items
 SIMPLE_SWORD = Image("resources/items/simple_sword.png")
 SIMPLE_SPEAR = Image("resources/items/simple_spear.png")

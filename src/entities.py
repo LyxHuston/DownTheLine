@@ -20,12 +20,13 @@ entities
 """
 import pygame
 
+import abilities
 import game_states
 import game_structures
 import images
 import random
 import math
-from typing import Type
+from typing import Type, Iterable
 
 
 def glide_player(speed: int, duration: int, taper: int, direction: int):
@@ -164,7 +165,7 @@ class Entity(game_structures.Body):
 EntityType = Type[Entity]
 
 
-def make_invulnerable_version(entity_class: type(Entity)) -> type(Entity):
+def make_invulnerable_version(entity_class: Type[Entity]) -> Type[Entity]:
     """
     make invulnerable subclass of an entity class
     :param entity_class: an entity subclass
@@ -188,7 +189,7 @@ def make_invulnerable_version(entity_class: type(Entity)) -> type(Entity):
     return New
 
 
-InvulnerableEntity = make_invulnerable_version(Entity)
+InvulnerableEntity: Type[Entity] = make_invulnerable_version(Entity)
 
 
 class ItemEntity(InvulnerableEntity):
@@ -384,7 +385,6 @@ class Obstacle(Entity):
                     entity.x = self.x + (32 + entity_rect.width // 2) * ((entity.x - self.x > 0) * 2 - 1)
                 else:
                     entity.y = self.y + (24 + entity_rect.height // 2) * ((entity.y - self.y > 0) * 2 - 1)
-                    pass
         return self.health > 0
 
     def final_load(self):
@@ -1379,6 +1379,102 @@ class SpawnerHolder(Entity):
         self.holding.final_load()
 
 
+class NoteSpawner(InvulnerableEntity):
+    """
+    spawns notes for minigame area
+    """
+
+    @property  # Just being lazy lol
+    def last_y(self):
+        return self.__last_y
+
+    @last_y.setter
+    def last_y(self, val):
+        self.__last_y = max(self.area.start_coordinate, min(self.area.end_coordinate, val))
+
+    def __init__(self, area, start_track):
+        super(NoteSpawner, self).__init__(images.EMPTY, 0, (0, area.length))
+        self.waves = area.difficulty // 10
+        self.area = area
+        self.last_y = 0
+        self.random = random.Random(area.random.randint(0, 2 ** 32 - 1))
+        self.start_track = start_track
+        self.cooldown_track = 0
+        self.last_dash_arpeggio = 0
+
+    def tick(self):
+        if self.start_track is not None:
+            if not self.start_track.alive:
+                self.last_y = self.area.length // 2 + self.area.start_coordinate
+                self.start_track = None
+            return True
+        self.cooldown_track -= 1
+        self.last_dash_arpeggio += 1
+        if self.cooldown_track <= 0:
+            match self.random.randint(0, 3):
+                case 0:  # single note
+                    self.area.entity_list.append(Note(self.last_y))
+                    self.cooldown_track = 30 + 15 * self.random.randint(0, 2)
+                    self.last_y += self.random.randint(-2, 2) * 5 * self.cooldown_track
+                case 1:  # arpeggio
+                    direction = self.random.randint(0, 1) * 2 - 1
+                    offscreen = 0
+                    spacing = 3
+                    for i in range(45 // spacing):
+                        self.last_y += direction * 10 * spacing
+                        self.area.entity_list.append(Note(self.last_y, offscreen=offscreen))
+                        offscreen += 10 * spacing
+                case other:
+                    if other == 2 and self.last_dash_arpeggio > abilities.dash_cooldown + 10:  # dash arpeggio
+                        self.last_dash_arpeggio = 0
+                        direction = self.random.randint(0, 1) * 2 - 1
+                        offscreen = 0
+                        spacing = 3
+                        for i in range(45 // spacing):
+                            self.last_y += direction * 25 * spacing
+                            self.area.entity_list.append(Note(self.last_y, offscreen=offscreen))
+                            offscreen += 10 * spacing
+                    else:  # switch arpeggio
+                        direction = self.random.randint(0, 1) * 2 - 1
+                        offscreen = 0
+                        spacing = 3
+                        for i in range(45 // spacing):
+                            if self.random.random() < 0.125:
+                                direction *= -1
+                                self.last_y += direction * 20 * spacing
+                            self.last_y += direction * 10 * spacing
+                            self.area.entity_list.append(Note(self.last_y, offscreen=offscreen))
+                            offscreen += 10 * spacing
+            self.waves -= 1
+        return self.waves > 0
+
+
+class Note(InvulnerableEntity):
+
+    def __init__(self, y, loop: bool = False, offscreen: int = 0):
+        super(Note, self).__init__(images.TARGET.img, 0, (game_states.WIDTH // 2 + 32 + offscreen, y))
+        self.freeze_y(True)
+        self.alive = True
+        self.loop = loop
+
+    def hit(self, damage: int, source):
+        if damage == 0:
+            self.alive = False
+
+    def tick(self):
+        self.freeze_x(False)
+        self.x -= 10
+        if self.x < -game_states.WIDTH // 2 - 32:
+            if self.loop:
+                self.x = game_states.WIDTH // 2 + 32
+            else:
+                game_structures.deal_damage(1, self)
+                game_structures.begin_shake(60, (20, 20), (5, 3))
+                self.alive = False
+        self.freeze_x(True)
+        return self.alive
+
+
 class Bomb(Glides):
 
     def __init__(self, pos, rotation, img, speed, taper, glide_duration, delay, size, damage, from_player=False):
@@ -1444,7 +1540,7 @@ class Bomb(Glides):
         return speed * glide_duration + remainder * (2 * speed - taper * remainder) // 2
 
 
-class DelayedDeploy(Entity):
+class DelayedDeploy(InvulnerableEntity):
 
     def __init__(self, delay, area, entity: type(Entity), args):
         super().__init__(images.EMPTY, 0, (3000, area.start_coordinate))
@@ -1457,6 +1553,22 @@ class DelayedDeploy(Entity):
         self.delay -= 1
         if self.delay <= 0:
             self.area.entity_list.append(self.entity(*self.args))
+            # print("delayed deploy initiated")
+        return self.delay > 0
+
+
+class MassDelayedDeploy(InvulnerableEntity):
+
+    def __init__(self, delay, area, entities: list[tuple[Type[Entity], Iterable]]):
+        super().__init__(images.EMPTY, 0, (3000, area.start_coordinate))
+        self.delay = delay
+        self.area = area
+        self.entities = entities
+
+    def tick(self):
+        self.delay -= 1
+        if self.delay <= 0:
+            self.area.entity_list.extend(entity(*args) for entity, args in self.entities)
             # print("delayed deploy initiated")
         return self.delay > 0
 

@@ -29,7 +29,7 @@ import items
 import images
 import math
 from collections import deque
-
+from typing import Type, Iterable
 
 
 class GameArea:
@@ -40,10 +40,21 @@ class GameArea:
     """
 
     @property
+    def enforce_center(self) -> int | None:
+        if self.start_coordinate < game_states.DISTANCE < self.end_coordinate:
+            return self.__enforce_center
+        return None
+
+    @enforce_center.setter
+    def enforce_center(self, val: int):
+        self.__enforce_center = val
+
+    @property
     def end_coordinate(self):
         return self.start_coordinate + self.length
 
     def __init__(self, length: int = 0, seed: int = None):
+        self.enforce_center = None
         self.start_coordinate = max(game_states.RECORD_DISTANCE + game_states.HEIGHT, game_states.LAST_AREA_END)
         self.length = length
         self.initialized = False
@@ -244,7 +255,7 @@ class GiftArea(GameArea):
         self.length += experiment_area
         self.entity_list.append(spawn)
         self.entity_list.append(entities.Obstacle(pos=(0, experiment_area), health=1))
-        self.entity_list.append(entities.Obstacle(pos=(0, 1000 + experiment_area), health=10))
+        self.entity_list.append(entities.Obstacle(pos=(0, self.length + experiment_area), health=10))
         self.entity_list.append(entities.ItemEntity(items.make_random_reusable(self.random, (0, experiment_area // 2))))
 
 
@@ -381,6 +392,112 @@ class EnslaughtArea(GameArea):
         # print(f"{self.current_difficulty}/{self.difficulty}")
 
 
+class MinigameArea(GameArea):
+
+    def __init__(self, determiner, count):
+        super().__init__(seed=determiner)
+        self.difficulty = count
+        self.state = 0
+        self.solved_entity_number = 2
+        self.type = self.random.randint(0, 2)
+        match self.type:
+            case 0:  # obligatory fishing minigame
+                self.length = game_states.HEIGHT * 2
+            case 1:  # notes
+                self.solved_entity_number = 4
+                self.length = game_states.HEIGHT
+                self.entity_list.append(entities.ItemEntity(items.simple_stab(
+                    10,
+                    35,
+                    images.SIMPLE_SPEAR.img,
+                    (5, self.length - 200),
+                    0
+                )))
+                self.entity_list.append(entities.ItemEntity(items.simple_stab(
+                    10,
+                    35,
+                    images.SIMPLE_SPEAR.img,
+                    (-5, self.length - 400),
+                    0
+                )))
+                start_note = entities.Note(self.length // 2, True)
+                start_note.freeze_y(False)
+                self.entity_list.append(start_note)
+                self.entity_list.append(entities.NoteSpawner(self, start_note))
+            case _:  # lazer dodge
+                self.length = game_states.HEIGHT
+        self.entity_list.append(entities.InvulnerableObstacle(pos=(0, self.length), health=1))
+
+    def tick(self):
+        ret = super(MinigameArea, self).tick()
+        match self.state:
+            case 0:
+                if game_states.DISTANCE > self.start_coordinate + self.length // 2:
+                    self.state = 1
+                    end_wall = entities.InvulnerableObstacle(pos=(0, self.start_coordinate), health=1)
+                    print(self.length, game_states.HEIGHT, self.start_coordinate)
+                    end_wall.final_load()
+                    self.entity_list.append(end_wall)
+                    match self.type:
+                        case 0:  # obligatory fishing minigame
+                            wave: list[tuple[Type[entities.Entity], Iterable]] = []
+                            for i in range(self.difficulty // 10):
+                                for i2 in range(10):
+                                    wave.append((entities.Fish, [self]))
+                                wave = [(entities.MassDelayedDeploy, (60 * 10, self, wave))]
+                            self.entity_list.append(wave[0][0](*wave[0][1]))
+                        case 1:  # notes
+                            self.enforce_center = self.start_coordinate + self.length // 2
+                        case _:  # lazer dodge
+                            self.enforce_center = self.start_coordinate + self.length // 2
+                            wave: list[tuple[Type[entities.Entity], Iterable]] = []
+                            ticks_to_cross = self.length // 10
+                            delay = 0
+                            for i in range(self.difficulty // 10):
+                                match self.random.randint(0, 1):
+                                    case 0:  # safety zone(s)
+                                        charge_bonus = 20
+                                        delay = ticks_to_cross + 2 * charge_bonus
+                                        pre_safe_creation = [
+                                            (entities.Lazer, (y, ticks_to_cross + charge_bonus, charge_bonus, self))
+                                            for y in range(self.start_coordinate + 64, self.end_coordinate, 64)
+                                        ]
+                                        del pre_safe_creation[self.random.randint(0, len(pre_safe_creation) - 1)]
+                                        wave.extend(pre_safe_creation)
+                                    case 1:  # a bunch of trackers
+                                        tracker_delay = 30
+                                        delay = self.random.randint(5, 8)
+                                        for tracker_count in range(delay):
+                                            wave.append((
+                                                entities.DelayedDeploy,
+                                                (tracker_delay * tracker_count,
+                                                 self, entities.TrackingLazer,
+                                                 (3 * tracker_delay, 15, self))
+                                            ))
+                                        delay *= tracker_delay
+                                    case 2:  # juggle 3 trackers
+                                        repeats = self.random.randint(3, 5)
+                                        tracker_delay = 30
+                                        for tracker_count in range(3):
+                                            wave.append((
+                                                entities.DelayedDeploy,
+                                                (tracker_delay * tracker_count,
+                                                 self, entities.TrackingLazer,
+                                                 (3 * tracker_delay, 15, self),
+                                                 repeats)
+                                            ))
+                                        delay = tracker_delay * (repeats + 1)
+                                wave = [(entities.MassDelayedDeploy, (delay, self, wave))]
+                            self.entity_list.append(wave[0][0](*wave[0][1]))
+            case 1:
+                if len(self.entity_list) == self.solved_entity_number:
+                    self.state = 2
+                    self.enforce_center = None
+                    del self.entity_list[0]
+
+        return ret
+
+
 @make_async(with_lock=True)
 def add_game_area():
     # print(game_states.LAST_AREA)
@@ -451,3 +568,55 @@ def add_game_area():
     # print(game_states.LAST_AREA_END)
     game_structures.AREA_QUEUE.append(area)
     game_structures.make_save()
+
+
+if __name__ == "__main__":
+    import utility
+    import main
+    import ingame
+
+    game_states.PLACE = game_structures.PLACES.in_game
+
+    game_structures.CUSTOM_EVENT_CATCHERS.append(ingame.event_catcher)
+    game_states.PLACE = game_structures.PLACES.in_game
+
+    game_states.DISTANCE = 100
+    game_states.BOTTOM = 0
+    game_states.RECORD_DISTANCE = 0
+    game_states.LAST_AREA_END = 0
+    # player state management
+    game_states.HEALTH = 5
+    game_states.LAST_DIRECTION = 1
+    game_states.GLIDE_SPEED = 0
+    game_states.GLIDE_DIRECTION = 0
+    game_states.GLIDE_DURATION = 0
+    game_states.TAPER_AMOUNT = 0
+    # screen shake management
+    game_states.X_DISPLACEMENT = 0
+    game_states.Y_DISPLACEMENT = 0
+    game_states.SHAKE_DURATION = 0
+    game_states.X_LIMIT = 0
+    game_states.Y_LIMIT = 0
+    game_states.X_CHANGE = 0
+    game_states.Y_CHANGE = 0
+    # screen
+    game_states.CAMERA_BOTTOM = 0
+    # area management
+    game_states.AREAS_PASSED = 0
+    game_states.LAST_AREA = 0
+    game_states.AREA_QUEUE_MAX_LENGTH = 3
+
+    game_structures.HANDS = [None, None]
+
+    add_game_area().join()
+    add_game_area()
+    add_game_area()
+    area = MinigameArea(783248948, 60)
+    area.finalize()
+    game_states.LAST_AREA_END = area.end_coordinate
+    game_structures.AREA_QUEUE.append(area)
+
+    while game_states.RUNNING:
+        game_structures.SCREEN.fill(main.backdrop)
+        game_states.PLACE()
+        utility.tick()
