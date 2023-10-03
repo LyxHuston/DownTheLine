@@ -493,7 +493,12 @@ class MinigameArea(GameArea):
                 if len(self.entity_list) == self.solved_entity_number:
                     self.state = 2
                     self.enforce_center = None
-                    del self.entity_list[0]
+                    if self.type == 1:
+                        wall = entities.Obstacle(pos=(0, self.end_coordinate))
+                        wall.hit(9, self)
+                        self.entity_list[0] = wall
+                    else:
+                        del self.entity_list[0]
 
         return ret
 
@@ -611,7 +616,7 @@ if __name__ == "__main__":
     add_game_area()
     add_game_area()
     add_game_area().join()
-    area = MinigameArea(54985673879, 60)
+    area = MinigameArea(178712847818, 60)
     area.finalize()
     game_states.LAST_AREA_END = area.end_coordinate
     game_structures.AREA_QUEUE.append(area)
