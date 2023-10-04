@@ -25,6 +25,7 @@ import game_structures
 import game_states
 from utility import make_async
 import entities
+import bosses
 import items
 import images
 import math
@@ -313,7 +314,7 @@ class EnslaughtArea(GameArea):
                 if self.cooldown_ticks <= 0:
                     self.cooldown_ticks = 30
                     for entity in self.entity_list:
-                        entity.health -= 1
+                        entity.hit(1, self)
                 self.cooldown_ticks -= 1
         return ret
 
@@ -400,6 +401,7 @@ class MinigameArea(GameArea):
         self.state = 0
         self.solved_entity_number = 2
         self.type = self.random.randint(0, 2)
+        self.entity_list.append(entities.InvulnerableObstacle(pos=(0, self.length), health=1))
         match self.type:
             case 0:  # obligatory fishing minigame
                 self.length = game_states.HEIGHT * 2
@@ -426,7 +428,6 @@ class MinigameArea(GameArea):
                 self.entity_list.append(entities.NoteSpawner(self, start_note))
             case _:  # lazer dodge
                 self.length = game_states.HEIGHT
-        self.entity_list.append(entities.InvulnerableObstacle(pos=(0, self.length), health=1))
 
     def tick(self):
         ret = super(MinigameArea, self).tick()
@@ -500,6 +501,39 @@ class MinigameArea(GameArea):
                     else:
                         del self.entity_list[0]
 
+        return ret
+
+
+class BossArea(GameArea):
+    """
+    fight a boss!
+    """
+
+    def __init__(self, determiner, count):
+        super(BossArea, self).__init__(game_states.HEIGHT * 4, seed=determiner)
+        self.difficulty = count
+        self.boss: bosses.Boss = None  # TODO make boss options
+        self.state = 0
+        self.entity_list.append(entities.InvulnerableObstacle(pos=(0, self.length), health=1))
+        self.entity_list.append(self.boss)
+        self.cooldown_ticks = 0
+
+    def tick(self):
+        ret = super().tick()
+        match self.state:
+            case 0:
+                if game_states.DISTANCE > self.start_coordinate + self.length // 2:
+                    self.entity_list.append(entities.InvulnerableObstacle(pos=(0, self.start_coordinate), health=1))
+            case 1:
+                if not self.boss.alive:
+                    del self.entity_list[0]
+                    self.state = 2
+            case 2:
+                if self.cooldown_ticks <= 0:
+                    self.cooldown_ticks = 30
+                    for entity in self.entity_list:
+                        entity.hit(1, self)
+                self.cooldown_ticks -= 1
         return ret
 
 
