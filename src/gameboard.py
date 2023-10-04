@@ -21,6 +21,7 @@ draws, loads, and unloads the game scene.
 
 import game_states
 import game_structures
+import tutorials
 from game_areas import add_game_area
 import pygame
 import abilities
@@ -145,3 +146,4 @@ def tick(do_tick: bool = True):
     if enforce_goal is not None and camera_move < 1 and goal != game_states.CAMERA_BOTTOM:
         game_states.CAMERA_BOTTOM += goal - game_states.CAMERA_BOTTOM > 0
     game_states.CAMERA_BOTTOM += camera_move
+    tutorials.tick()
