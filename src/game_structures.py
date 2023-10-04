@@ -236,7 +236,7 @@ class ButtonHolderTemplate(ABC):
     @staticmethod
     def draw_text(
             text: str,
-            font: int,
+            font: int | pygame.font.Font,
             background_color: Union[tuple[int, int, int], tuple[int, int, int, int], None] = (255, 255, 255, 255),
             outline_color: tuple[int, int, int] = (0, 0, 0),
             max_line_pixels: int = 0,
@@ -265,7 +265,10 @@ class ButtonHolderTemplate(ABC):
         lines = [""]
         word = ""
         words = 0
-        draw_font = ButtonHolder.fonts[font]
+        if isinstance(font, int):
+            draw_font = ButtonHolder.fonts[font]
+        else:
+            draw_font = font
         for char in text + " ":
             if char == "\n":
                 if word != "":
