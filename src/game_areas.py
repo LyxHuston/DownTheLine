@@ -401,7 +401,6 @@ class MinigameArea(GameArea):
         self.state = 0
         self.solved_entity_number = 2
         self.type = self.random.randint(0, 2)
-        self.entity_list.append(entities.InvulnerableObstacle(pos=(0, self.length), health=1))
         match self.type:
             case 0:  # obligatory fishing minigame
                 self.length = game_states.HEIGHT * 2
@@ -428,6 +427,7 @@ class MinigameArea(GameArea):
                 self.entity_list.append(entities.NoteSpawner(self, start_note))
             case _:  # lazer dodge
                 self.length = game_states.HEIGHT
+        self.entity_list.append(entities.InvulnerableObstacle(pos=(0, self.length), health=1))
 
     def tick(self):
         ret = super(MinigameArea, self).tick()
