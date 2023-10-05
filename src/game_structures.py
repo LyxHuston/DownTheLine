@@ -1451,8 +1451,10 @@ def init(start_call) -> None:
     import utility
     import ingame
     import other_screens
+    import tutorials
 
     VOICE_CHANNEL = utility.make_reserved_audio_channel()
+    tutorials.TUTORIAL_VOICE_CHANNEL = utility.make_reserved_audio_channel()
     ALERTS = AlertHolder(
         width=512,
         size=20,

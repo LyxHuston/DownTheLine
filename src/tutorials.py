@@ -20,7 +20,6 @@ handles the tutorial
 
 import game_states
 import game_structures
-import utility
 from collections import deque
 from dataclasses import dataclass
 import pygame
@@ -36,7 +35,7 @@ class TutorialText:
     sound: pygame.mixer.Sound
 
 
-TUTORIAL_VOICE_CHANNEL = utility.make_reserved_audio_channel()
+TUTORIAL_VOICE_CHANNEL = None
 
 
 TUTORIAL_TEXTS: deque[TutorialText] = deque()
