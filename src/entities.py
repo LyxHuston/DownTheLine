@@ -50,6 +50,8 @@ class Entity(game_structures.Body):
 
     cost = 2
 
+    tutorial_text = ""
+
     @property
     def health(self):
         return self.__health
@@ -495,6 +497,8 @@ class Crawler(Glides):
 
     imgs = []
 
+    tutorial_text = "Beware of the crawler.  As soon as they see you they are relentless at hunting you down."
+
     def __init__(self, pos: tuple[int, int], speed: int, area):
         super().__init__(images.CRAWLER_1.img, 0, pos)
         self.speed = speed * 2
@@ -569,6 +573,8 @@ class Fencer(Glides):
     imgs = [images.FENCER_1, images.FENCER_2, images.FENCER_3]
     frame_change_frequency = 5
     cost = 10
+
+    tutorial_text = "The fencer.  His lunge is dangerous."
 
     def __init__(self, pos: tuple[int, int], difficulty: int):
         super().__init__(images.FENCER_1.img, 0, pos)
@@ -676,6 +682,8 @@ class Archer(Glides):
 
     imgs = [images.ARCHER_DRAWN, images.ARCHER_DRAWING, images.ARCHER_RELAXED]
 
+    tutorial_text = "Ah, the archer.  Not much on their own, just hit down their arrows and chase them down."
+
     def __init__(self, pos: tuple[int, int], difficulty: int, area):
         super().__init__(images.ARCHER_RELAXED.img, 0, pos)
         self.max_health = 4
@@ -731,6 +739,8 @@ class Knight(Glides):
     top = images.KNIGHT_TOP
     stabbing = images.KNIGHT_STABBING
     shielding = images.KNIGHT_SHIELDING
+
+    tutorial_text = "The knights are very resilient and use weapons similar to yours.  This is the last of this sort of opponent they will send you."
 
     def __init__(self, rotation: int, pos: tuple[int, int], hands):
         super().__init__(self.top.img, rotation, pos)

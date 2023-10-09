@@ -137,6 +137,23 @@ def start():
             if issubclass(attr_value, game_areas.GameArea):
                 attr_value.seen = False
 
+    tutorials.add_text(
+        "Oh, you're awake.  Good.",
+        game_structures.FONTS[100]
+    )
+    tutorials.add_text(
+        "You need to be able to defend yourself.  They won't let you live in peace.",
+        game_structures.FONTS[100]
+    )
+    tutorials.add_text(
+        "Can you go up?",
+        game_structures.FONTS[100]
+    )
+    tutorials.add_text(
+        "Use the w and s keys to move up and down.",
+        game_structures.TUTORIAL_FONTS[90]
+    )
+
     game_structures.AREA_QUEUE.clear()
     add_game_area().join()
     for i in range(game_states.AREA_QUEUE_MAX_LENGTH - 1):

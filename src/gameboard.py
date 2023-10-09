@@ -27,6 +27,7 @@ import pygame
 import abilities
 import ingame
 import draw_constants
+import tutorials
 
 
 player_img = pygame.image.load("resources/player/player.png")
@@ -142,6 +143,11 @@ def tick(do_tick: bool = True):
     else:
         goal = game_states.DISTANCE + game_states.HEIGHT * game_states.LAST_DIRECTION
     goal -= game_states.HEIGHT // 2
+
+    if tutorials.display is not None:
+        goal -= tutorials.display.get_height()
+        total *= 3
+
     camera_move += (min(total, 2) + 2) / 324 * (goal - game_states.CAMERA_BOTTOM)
     if enforce_goal is not None and camera_move < 1 and goal != game_states.CAMERA_BOTTOM:
         game_states.CAMERA_BOTTOM += goal - game_states.CAMERA_BOTTOM > 0

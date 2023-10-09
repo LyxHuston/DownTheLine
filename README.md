@@ -20,4 +20,5 @@ ______________________________________________________________________
 Other resources I'm using!
 ______________________________________________________________________
 [![OldEnglishGothic](<https://img.shields.io/badge/Font-Old_English_Gothic_Pixel_Regular-brightgreen.svg>)](https://www.fontspace.com/old-english-gothic-pixel-font-f83405)
+[![PixgamerRegular](<https://img.shields.io/badge/Font-PixgamerRegular-brightgreen.svg>)](https://www.fontspace.com/pixgamer-font-f85447)
 ______________________________________________________________________

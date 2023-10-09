@@ -32,7 +32,7 @@ class TutorialText:
     """
     text: str
     font: pygame.font.Font
-    sound: pygame.mixer.Sound
+    sound: pygame.mixer.Sound = None
 
 
 TUTORIAL_VOICE_CHANNEL = None
@@ -40,11 +40,11 @@ TUTORIAL_VOICE_CHANNEL = None
 
 TUTORIAL_TEXTS: deque[TutorialText] = deque()
 on: TutorialText = None
-current_text: str = None
+current_text: str = ""
 
 typing = False
 typing_delay = 1
-typing_cooldown = 0
+typing_cooldown = 1
 
 
 up_duration = 120
@@ -54,6 +54,22 @@ up_current = 0
 display: [pygame.Surface] = None
 
 
+def clear_tutorial_text():
+    """
+    clears the tutorial texts to let users print atop them
+    :return:
+    """
+    global display, on, typing
+    TUTORIAL_TEXTS.clear()
+    display = None
+    typing = False
+    on = None
+
+
+def add_text(text: str, font: pygame.font.Font, sound: pygame.mixer.Sound = None):
+    TUTORIAL_TEXTS.append(TutorialText(text, font, sound))
+
+
 def tick():
     """
     tutorial tick.
@@ -61,29 +77,38 @@ def tick():
     """
     global display, typing, typing_cooldown, current_text, up_current, on
     if display is not None:
-        game_structures.SCREEN.blit(display, (0, game_states.HEIGHT - display.get_height))
-        pygame.draw.line(game_structures.SCREEN, (255, 255, 255), (0, game_states.HEIGHT - display.get_height),
-                         (game_states.WIDTH, game_states.HEIGHT - display.get_height), 10)
+        game_structures.SCREEN.blit(display, (0, game_states.HEIGHT - display.get_height()))
+        pygame.draw.line(game_structures.SCREEN, (255, 255, 255), (0, game_states.HEIGHT - display.get_height()),
+                         (game_states.WIDTH, game_states.HEIGHT - display.get_height()), 10)
     if typing:
-        if typing_cooldown >= typing_delay:
-            current_text = on.text[0:len(current_text)]
+        if typing_cooldown <= 0:
+            current_text = on.text[0:len(current_text) + 1]
             display = game_structures.BUTTONS.draw_text(
                 current_text,
                 on.font,
-                (0, 0, 0),
+                (0, 0, 0, 255),
                 (255, 255, 255),
-                max_line_pixels=game_states.WIDTH
+                max_line_pixels=game_states.WIDTH,
+                enforce_width=game_states.WIDTH
             )
+            match current_text[-1]:
+                case ".":
+                    typing_cooldown = 3 * typing_delay
+                case _:
+                    typing_cooldown = typing_delay
             if len(current_text) == len(on.text):
                 typing = False
                 up_current = 0
         else:
-            typing_cooldown += 1
+            typing_cooldown -= 1
     else:
         if up_current >= up_duration:
-            display = None
             if len(TUTORIAL_TEXTS) > 0:
-                on = TUTORIAL_TEXTS.pop()
+                on = TUTORIAL_TEXTS.popleft()
+                game_structures.speak(on.text)
+                current_text = ""
                 typing = True
+            else:
+                display = None
         else:
             up_current += 1

@@ -23,6 +23,7 @@ import pygame
 
 import game_structures
 import game_states
+import tutorials
 from utility import make_async
 import entities
 import bosses
@@ -56,7 +57,7 @@ class GameArea:
 
     def __init__(self, length: int = 0, seed: int = None):
         self.enforce_center = None
-        self.start_coordinate = max(game_states.RECORD_DISTANCE + game_states.HEIGHT, game_states.LAST_AREA_END)
+        self.start_coordinate = 0
         self.length = length
         self.initialized = False
         self.boundary_crossed = False
@@ -203,6 +204,13 @@ class BasicArea(GameArea):
                 add.y = self.length // 2
                 self.entity_list.append(add)
                 self.entity_list.append(entities.Obstacle(pos=(0, self.length), health=5))
+
+                def first_see_of_entity():
+                    tutorials.clear_tutorial_text()
+                    tutorials.add_text(entity.tutorial_text, game_structures.FONTS[100])
+
+                self.cross_boundary = first_see_of_entity
+
                 break
 
 
@@ -211,6 +219,8 @@ class BreakThroughArea(GameArea):
     area that continually spawns monsters, objective to break through them and
     destroy the wall at the end
     """
+
+    tutorial_given = False
 
     def __init__(self, determiner, count):
         super().__init__(seed=determiner)
@@ -240,11 +250,30 @@ class BreakThroughArea(GameArea):
             self.entity_list.append(entity.make(determiner, self))
         self.entity_list.append(entities.Obstacle(pos=(0, self.length)))
 
+    def cross_boundary(self):
+        if not BreakThroughArea.tutorial_given:
+            BreakThroughArea.tutorial_given = True
+            tutorials.clear_tutorial_text()
+            tutorials.add_text(
+                "Oh, they left their spawners active.",
+                game_structures.FONTS[100]
+            )
+            tutorials.add_text(
+                "Irresponsible for the fabric of reality, but oh well.",
+                game_structures.FONTS[100]
+            )
+            tutorials.add_text(
+                "You'll need to kill them quick enough to break through.",
+                game_structures.FONTS[100]
+            )
+
 
 class GiftArea(GameArea):
     """
     gives player a new item and area to practice it with.
     """
+
+    tutorial_given = False
 
     def __init__(self, determiner, count):
         super().__init__(seed=determiner)
@@ -256,14 +285,29 @@ class GiftArea(GameArea):
         self.length += experiment_area
         self.entity_list.append(spawn)
         self.entity_list.append(entities.Obstacle(pos=(0, experiment_area), health=1))
-        self.entity_list.append(entities.Obstacle(pos=(0, self.length + experiment_area), health=10))
+        self.entity_list.append(entities.Obstacle(pos=(0, self.length), health=10))
         self.entity_list.append(entities.ItemEntity(items.make_random_reusable(self.random, (0, experiment_area // 2))))
+
+    def cross_boundary(self):
+        if not GiftArea.tutorial_given:
+            GiftArea.tutorial_given = True
+            tutorials.clear_tutorial_text()
+            tutorials.add_text(
+                "A new item for you!",
+                game_structures.FONTS[100]
+            )
+            tutorials.add_text(
+                "I'm not certain if it will be more powerful than your current ones.",
+                game_structures.FONTS[100]
+            )
 
 
 class EnslaughtArea(GameArea):
     """
     game area that is just surviving a bunch of enemies
     """
+
+    tutorial_given = False
 
     def __init__(self, determiner, count):
         super().__init__(seed=determiner)
@@ -392,8 +436,22 @@ class EnslaughtArea(GameArea):
                 self.entity_list.append(spawner)
         # print(f"{self.current_difficulty}/{self.difficulty}")
 
+    def cross_boundary(self):
+        if not EnslaughtArea.tutorial_given:
+            EnslaughtArea.tutorial_given = True
+            tutorials.clear_tutorial_text()
+            tutorials.add_text(
+                "Oh, it's one of these places.",
+                game_structures.FONTS[100]
+            )
+            tutorials.add_text(
+                "Challenges will come in waves.  You won't get time to rest.  Good luck.",
+                game_structures.FONTS[100]
+            )
+
 
 class MinigameArea(GameArea):
+    tutorial_given = False
 
     def __init__(self, determiner, count):
         super().__init__(seed=determiner)
@@ -503,11 +561,30 @@ class MinigameArea(GameArea):
 
         return ret
 
+    def cross_boundary(self):
+        if not MinigameArea.tutorial_given:
+            MinigameArea.tutorial_given = True
+            tutorials.clear_tutorial_text()
+            tutorials.add_text(
+                "Ah, one of their sports.",
+                game_structures.FONTS[100]
+            )
+            tutorials.add_text(
+                "I don't know much about these, but there's some sort of goal.",
+                game_structures.FONTS[100]
+            )
+            tutorials.add_text(
+                "Try to figure out the game quick, before it kills you.",
+                game_structures.FONTS[100]
+            )
+
 
 class BossArea(GameArea):
     """
     fight a boss!
     """
+
+    tutorial_given = False
 
     def __init__(self, determiner, count):
         super(BossArea, self).__init__(game_states.HEIGHT * 4, seed=determiner)
@@ -536,6 +613,27 @@ class BossArea(GameArea):
                 self.cooldown_ticks -= 1
         return ret
 
+    def cross_boundary(self):
+        if not BossArea.tutorial_given:
+            BossArea.tutorial_given = True
+            tutorials.clear_tutorial_text()
+            tutorials.add_text(
+                "You stumbled across one of their generals.",
+                game_structures.FONTS[100]
+            )
+            tutorials.add_text(
+                "I suppose it was inevitable.  Only one way to go, after all.",
+                game_structures.FONTS[100]
+            )
+            tutorials.add_text(
+                "Any of their generals are more powerful than any creature you've seen so far,",
+                game_structures.FONTS[100]
+            )
+            tutorials.add_text(
+                "and they don't follow the same rules as you, I, or the others.",
+                game_structures.FONTS[100]
+            )
+
 
 @make_async(with_lock=True)
 def add_game_area():
@@ -543,7 +641,27 @@ def add_game_area():
     determinator = hash(str(game_states.SEED + game_states.LAST_AREA))
     match game_states.LAST_AREA:
         case 0:
+            def first_area_tutorial():
+                tutorials.clear_tutorial_text()
+                tutorials.add_text(
+                    "Pick up the weapon and use it to destroy the wall.",
+                    game_structures.FONTS[100],
+                )
+                tutorials.add_text(
+                    "Hurry, you don't have much time.",
+                    game_structures.FONTS[100],
+                )
+                tutorials.add_text(
+                    "Stand on top of the item and use right or left mouse button to pick it up and use it.",
+                    game_structures.TUTORIAL_FONTS[90],
+                )
+                tutorials.add_text(
+                    "You'll need to use the weapon to kill the slime.  Beware, they move entirely randomly.",
+                    game_structures.FONTS[100],
+                )
+
             area = GameArea(300, determinator)
+            area.cross_boundary = first_area_tutorial
             area.entity_list.append(entities.Obstacle(pos=(0, 170)))
             area.entity_list.append(entities.ItemEntity(items.simple_stab(
                 50,
@@ -556,7 +674,20 @@ def add_game_area():
             area.entity_list.append(entities.Obstacle(pos=(0, area.length), health=5))
             area.entity_list.append(entities.Slime((0, area.length // 2), area.random.randint(0, 2 ** 32 - 1)))
         case 2:
+
+            def last_tutorial_area():
+                tutorials.clear_tutorial_text()
+                tutorials.add_text(
+                    "There's another weapon here for you, but unfortunately I can't help you much.",
+                    game_structures.FONTS[100],
+                )
+                tutorials.add_text(
+                    "Good luck.  Maybe if you go far enough you'll be able to find something that will let you escape from this.",
+                    game_structures.FONTS[100],
+                )
+
             area = GameArea(750, determinator)
+            area.cross_boundary = last_tutorial_area
             area.entity_list.append(entities.Obstacle(pos=(0, + area.length), health=5))
             area.entity_list.append(entities.Slime((0, area.length // 3), area.random.randint(0, 2 ** 32 - 1)))
             area.entity_list.append(entities.Slime((0, 2 * area.length // 2), area.random.randint(0, 2 ** 32 - 1)))

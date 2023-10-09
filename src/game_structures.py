@@ -157,6 +157,7 @@ class FontHolder:
 
 
 FONTS = FontHolder(name="resources/fonts/OldEnglishGothicPixelRegular-gx1jp.otf", fonttype=Font)
+TUTORIAL_FONTS = FontHolder(name="resources/fonts/PixgamerRegular-OVD6A.ttf", fonttype=Font)
 
 
 def get_special_click(indicator: str | int):
