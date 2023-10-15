@@ -93,6 +93,13 @@ FISH = Image("resources/entities/fish/fish_flight.png")
 
 TARGET = Image("resources/entities/target/target.png")
 
+#bosses
+SERPENT_HEAD = Image("resources/entities/serpent/serpent_head.png")
+SERPENT_BODY = [Image("resources/entities/serpent/serpent_body_1.png"),
+                Image("resources/entities/serpent/serpent_body_2.png"),
+                Image("resources/entities/serpent/serpent_body_3.png"),
+                Image("resources/entities/serpent/serpent_body_4.png")]
+
 # items
 SIMPLE_SWORD = Image("resources/items/simple_sword.png")
 SIMPLE_SPEAR = Image("resources/items/simple_spear.png")
@@ -123,8 +130,11 @@ STEAM_PARTICLES = [Image("resources/particles/steam/steam_1.png"),
 EMPTY = pygame.Surface((0, 0))
 
 if __name__ == "__main__":
+
+    import copy
+
     img = name = val = None
-    for name, val in globals().items():
+    for name, val in copy.copy(globals()).items():
         if isinstance(val, Image):
             try:
                 img = val.img
