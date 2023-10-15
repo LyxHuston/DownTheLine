@@ -42,6 +42,8 @@ class Entity(game_structures.Body):
     """
 
     seen = False
+    tutorial_given = False
+    tutorial_text = ""
 
     is_item_entity = False
     is_holder = False
@@ -49,8 +51,6 @@ class Entity(game_structures.Body):
     allied_with_player = False
 
     cost = 2
-
-    tutorial_text = ""
 
     @property
     def health(self):

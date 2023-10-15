@@ -206,8 +206,10 @@ class BasicArea(GameArea):
                 self.entity_list.append(entities.Obstacle(pos=(0, self.length), health=5))
 
                 def first_see_of_entity():
-                    tutorials.clear_tutorial_text()
-                    tutorials.add_text(entity.tutorial_text, game_structures.FONTS[100])
+                    if not entity.tutorial_given:
+                        entity.tutorial_given = True
+                        tutorials.clear_tutorial_text()
+                        tutorials.add_text(entity.tutorial_text, game_structures.FONTS[100])
 
                 self.cross_boundary = first_see_of_entity
 
