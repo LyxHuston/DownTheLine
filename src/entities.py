@@ -416,7 +416,7 @@ class Slime(Glides):
     imgs = [images.SLIME_1, images.SLIME_2, images.SLIME_3, images.SLIME_4]
     seen = True
 
-    def __init__(self, pos: tuple[int, int] = (0, 0), seed: int = 0):
+    def __init__(self, pos: tuple[int, int] = (0, 0), seed: int = 0, difficulty: int = 0):
         if isinstance(self.imgs[0], images.Image):
             self.imgs[0] = self.imgs[0].img
         super().__init__(self.imgs[0], 0, pos)
@@ -425,6 +425,7 @@ class Slime(Glides):
         self.health = 7
         self.random = random.Random(seed)
         self.wait = 36
+        self.max_speed = min(difficulty // 5 + 1, 6)
 
     def hit(self, damage: int, source):
         self.health -= damage
@@ -442,8 +443,13 @@ class Slime(Glides):
             else:
                 self.img = self.alert
             if self.wait == 0:
+                speed = self.random.randint(1, (self.max_speed + 1) // 2)
+                if speed == self.max_speed // 2 + 1:
+                    speed = speed * 4 - 2
+                else:
+                    speed = speed * 4
                 self.start_glide(
-                    self.random.randint(1, 3) * 4,
+                    speed,
                     self.random.randint(4, 6) * 60,
                     15,
                     self.random.randint(-1, 1)
@@ -481,7 +487,7 @@ class Slime(Glides):
 
     @classmethod
     def make(cls, determiner: int, area):
-        new_slime = cls((0, area.random.randint(area.length // 3, area.length)))
+        new_slime = cls((0, area.random.randint(area.length // 3, area.length)), area.difficulty)
         new_slime.random.seed(area.random.randint(0, 2 ** 32 - 1))
         return new_slime
 
