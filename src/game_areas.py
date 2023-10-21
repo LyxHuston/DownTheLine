@@ -360,7 +360,7 @@ class EnslaughtArea(GameArea):
                 if self.cooldown_ticks <= 0:
                     self.cooldown_ticks = 30
                     for entity in self.entity_list:
-                        entity.hit(1, self)
+                        entity.health -= 1
                 self.cooldown_ticks -= 1
         return ret
 
@@ -611,7 +611,7 @@ class BossArea(GameArea):
                 if self.cooldown_ticks <= 0:
                     self.cooldown_ticks = 30
                     for entity in self.entity_list:
-                        entity.hit(1, self)
+                        entity.health -= 1
                 self.cooldown_ticks -= 1
         return ret
 
