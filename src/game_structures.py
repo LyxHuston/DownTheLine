@@ -36,6 +36,8 @@ from gtts import gTTS
 from io import BytesIO
 import images
 
+import math
+import numpy
 
 SCREEN: pygame.Surface = None
 TRUE_SCREEN: pygame.Surface = None
@@ -1574,17 +1576,112 @@ class Body:
             self._rotated_img = pygame.transform.rotate(self.__original_img, self.rotation)
         return self._rotated_img.get_rect(center=self.pos)
 
+    def __corners_helper(self, x_width_offset, x_height_offset, y_width_offset, y_height_offset, width_factor, height_factor):
+        """
+        a helper to find a corner
+        :return: corner
+        """
+        return (
+            self.x + x_width_offset * width_factor + x_height_offset * height_factor,
+            self.y + y_height_offset * height_factor - y_width_offset * width_factor
+        )
+
+    @property
+    def corners(self) -> tuple[tuple[int, int], tuple[int, int], tuple[int, int], tuple[int, int]]:
+        theta = math.radians(-self.rotation)
+        # affecting _
+        x_width_offset = (self.width * math.cos(theta)) // 2
+        x_height_offset = (self.height * math.sin(theta)) // 2
+        y_width_offset = (self.width * math.sin(theta)) // 2
+        y_height_offset = (self.height * math.cos(theta)) // 2
+        # noinspection PyTypeChecker
+        return tuple(
+            self.__corners_helper(x_width_offset, x_height_offset, y_width_offset, y_height_offset,
+                2 - 2 * abs(i - 1.5), abs(4 - 2 * abs(i - 0.5)) - 2)
+            for i in range(4)
+        )
+
     def collide(self, other):
         """
-        tests if two objects collide.  The other object should be a Body.
-        only currently checks for rectangle collision.  Anything more should be
-        manually implemented.
+        tests if two objects collide.  The other object should be a Body, or subclass.
         :param other: needs to have a rect value that is a pygame Rect
         :return:
         """
         if not self.rect.colliderect(other.rect):
             return False
-        return True
+        this_corners = self.corners
+        other_corners = other.corners
+        if self.sides_intersect(this_corners, other_corners):
+            return True
+        # if self.point_inside_points(this_corners[0], other_corners):
+        #     return True
+        # if self.point_inside_points(other_corners[0], this_corners):
+        #     return True
+        return False
+
+    def colliderect(self, other: pygame.Rect):
+        """
+        check if a body collides with a rect from pygame
+        :param other:
+        :return:
+        """
+        if not self.rect.colliderect(other):
+            return False
+        this_corners = self.corners
+        other_corners = (other.topleft, other.topright, other.bottomright, other.bottomleft)
+        if self.sides_intersect(this_corners, other_corners):
+            return True
+        if other.collidepoint(this_corners[0][0], this_corners[0][1]):
+            return True
+        return self.point_inside_points(other_corners[0], this_corners)
+
+    @staticmethod
+    def __counter_clockwise(a: tuple[int, int], b: tuple[int, int], c: tuple[int, int]):
+        return (c[1] - a[1]) * (b[0] - a[0]) > (b[1] - a[1]) * (c[0] - a[0])
+
+    @staticmethod
+    def intersect(a: tuple[int, int], b: tuple[int, int], c: tuple[int, int], d: tuple[int, int]):
+        """
+        checks if line segment AB intersects CD
+        :return:
+        """
+        return Body.__counter_clockwise(a, c, d) != Body.__counter_clockwise(b, c, d) and Body.__counter_clockwise(a, b, c) != Body.__counter_clockwise(a, b, d)
+
+    @staticmethod
+    def sides_intersect(
+            this_points: tuple[tuple[int, int], tuple[int, int], tuple[int, int], tuple[int, int]],
+            other_points: tuple[tuple[int, int], tuple[int, int], tuple[int, int], tuple[int, int]]
+    ) -> bool:
+        for other_i in range(4):
+            for this_i in range(4):
+                if Body.intersect(
+                        other_points[other_i - 1], other_points[other_i],
+                        this_points[this_i], this_points[this_i - 1]
+                ):
+                    return True
+        return False
+
+    @staticmethod
+    def point_inside_points(
+            point: tuple[int, int],
+            points: tuple[tuple[int, int], tuple[int, int], tuple[int, int],
+                          tuple[int, int]]
+    ) -> bool:
+        """
+        checks if a point is within a polygon defined by other points
+        :param point:
+        :param points:
+        """
+        passed_through = 0
+        x = point[0]
+        y = point[1]
+        for i in range(len(points)):
+            point_1 = points[i]
+            point_2 = points[i - 1]
+            if abs(point_1[0] - point_2[0]) // 2 > abs(x - (point_1[0] + point_2[0]) // 2):
+                if point_1[1] + (x - point_1[0]) * (point_2[1] - point_1[1]) / (point_2[0] - point_1[0]) > y:
+                    passed_through += 1
+        return bool(passed_through % 2)
 
 
 CUSTOM_EVENT_CATCHERS: list[Callable] = []
@@ -1623,6 +1720,7 @@ def all_entities():
         res.extend(area.entity_list)
     return res
 
+
 import entities
 import items
 
@@ -1648,3 +1746,74 @@ def make_save():
 
 
 import ingame
+
+
+if __name__ == "__main__":
+    import main
+
+    SCREEN = entities.game_structures.SCREEN
+
+    body_img = pygame.Surface((200, 400), pygame.SRCALPHA)
+    body_img.fill((0, 0, 0))
+    body = entities.Entity(body_img, 0, (0, game_states.HEIGHT // 2))
+
+    cursor_img = pygame.Surface((50, 50))
+    cursor_img.fill((128, 128, 128))
+    cursor = entities.Entity(cursor_img, 0, (0, 0))
+
+
+    def click_catcher(event: pygame.event.Event):
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            body.rotation += 30
+
+
+    entities.game_structures.CUSTOM_EVENT_CATCHERS.append(click_catcher)
+
+
+    def to_screen_points(points: tuple[tuple[int, int], ...]):
+        return tuple(to_screen_pos(point) for point in points)
+
+
+    while game_states.RUNNING:
+        SCREEN.fill((255, 255, 255))
+        cursor.pos = (2 * pygame.mouse.get_pos()[0] - game_states.WIDTH // 2, game_states.HEIGHT - 2 * pygame.mouse.get_pos()[1])
+        body.draw()
+        cursor.draw()
+        pygame.draw.polygon(
+            SCREEN,
+            (0, 255, 0),
+            to_screen_points(body.corners),
+            3
+        )
+        pygame.draw.circle(
+            SCREEN,
+            (0, 255, 0),
+            to_screen_pos(body.corners[0]),
+            15,
+            3
+        )
+        pygame.draw.polygon(
+            SCREEN,
+            (0, 255, 0),
+            to_screen_points(cursor.corners),
+            3
+        )
+        pygame.draw.circle(
+            SCREEN,
+            (0, 255, 0),
+            to_screen_pos(cursor.corners[0]),
+            15,
+            3
+        )
+        if body.collide(cursor):
+            pygame.draw.rect(
+                SCREEN,
+                (0, 255, 0),
+                pygame.Rect(
+                    0,
+                    0,
+                    50,
+                    50
+                )
+            )
+        utility.tick()
