@@ -122,6 +122,8 @@ def start():
 
     game_structures.HANDS = [None, None]
 
+    tutorials.clear_tutorial_text()
+
     # print(sys.int_info)
     # print(game_states.SEED)
 
