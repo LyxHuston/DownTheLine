@@ -37,7 +37,6 @@ from io import BytesIO
 import images
 
 import math
-import numpy
 
 SCREEN: pygame.Surface = None
 TRUE_SCREEN: pygame.Surface = None
