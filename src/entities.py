@@ -510,6 +510,7 @@ class Crawler(Glides):
         self.speed = speed * 2
         self.switch_ticks = max(9 // speed, 1)
         self.frame = 0
+        self.area = area
         self.threshhold = area.start_coordinate
         self.max_health = 6
         self.health = 6
@@ -567,6 +568,10 @@ class Crawler(Glides):
     @classmethod
     def make(cls, determiner: int, area):
         return cls((0, area.random.randint(area.length // 3, area.length)), area.random.randint(1, min(area.difficulty // 4, 5)), area)
+
+    def final_load(self):
+        super().final_load()
+        self.threshhold = self.area.start_coordinate
 
 
 class Fencer(Glides):
