@@ -1537,7 +1537,7 @@ class Body:
     @x.setter
     def x(self, val: int):
         if not self.__x_frozen:
-            self._x = val
+            self._x = round(val)
 
     def freeze_x(self, val: bool = None):
         if val is not None:
@@ -1551,7 +1551,7 @@ class Body:
     @y.setter
     def y(self, val: int):
         if not self.__y_frozen:
-            self._y = val
+            self._y = round(val)
 
     def freeze_y(self, val: bool = None):
         if val is not None:
