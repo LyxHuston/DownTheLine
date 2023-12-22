@@ -1447,7 +1447,7 @@ def get_first_match(substring: str, strings: list[str]) -> Union[str, None]:
     return None
 
 
-def init(start_call) -> None:
+def init() -> None:
     global VOICE_CHANNEL, ALERTS, PLACES
 
     import utility
@@ -1472,7 +1472,6 @@ def init(start_call) -> None:
 
     class PLACES(enum.Enum):
         in_game = ingame.tick
-        start = start_call
         lost = other_screens.lost
         won = other_screens.won
 

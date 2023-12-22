@@ -52,26 +52,39 @@ class ThreadWithResult(threading.Thread):
         return self.__result
 
 
-def make_async(*args, with_lock: Union[threading.Lock, bool] = None) -> Callable:
+def make_async(*args, with_lock: Union[threading.Lock, bool] = None, singular: bool = False) -> Callable:
     """
     makes a function asynchronous
-    :param with_lock:
+    :param with_lock: if multiple calls of the function can't overlap
+    :param singular: if there can only be one call of the function active at a time
     :return:
     """
+
+    if with_lock and singular:
+        raise ValueError("An asynchronous function cannot both have a lock and be singular")
 
     def inner_make_async(func: Callable):
         nonlocal with_lock
 
-        if with_lock is None:
+        if singular:
+
+            lock = threading.Lock()
+
+            def res_func(*args, **kwargs):
+                if lock.locked():
+                    return
+                with lock:
+                    func(*args, **kwargs)
+
+        elif not with_lock:
             res_func = func
         else:
             if with_lock is True:
                 with_lock = threading.Lock()
 
             def res_func(*args, **kwargs):
-                with_lock.acquire()
-                func(*args, **kwargs)
-                with_lock.release()
+                with with_lock:
+                    func(*args, **kwargs)
 
         def async_func(*args, **kwargs) -> threading.Thread:
             thread = ThreadWithResult(target=res_func, args=args, kwargs=kwargs)

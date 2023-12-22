@@ -22,6 +22,7 @@ import pygame
 import game_structures
 import game_states
 import ingame
+import game_start
 
 
 fade_counter = 0
@@ -107,7 +108,7 @@ def lost():
         game_structures.BUTTONS.add_button(game_structures.Button.make_text_button(
             "Play Again",
             100,
-            main.start,
+            game_start.start,
             (game_states.WIDTH // 2 - 400, game_states.HEIGHT - 200),
             background_color=(0, 0, 0),
             outline_color=(255, 255, 255),
