@@ -63,7 +63,7 @@ def start(with_seed: int = None):
     game_states.X_CHANGE = 0
     game_states.Y_CHANGE = 0
     # screen
-    game_states.CAMERA_BOTTOM = 0
+    game_states.CAMERA_BOTTOM = game_states.DISTANCE - game_states.CAMERA_THRESHOLDS[0]
     # area management
     game_states.AREAS_PASSED = 0
     game_states.LAST_AREA = 0
