@@ -83,9 +83,11 @@ game_structures.init()
 
 if __name__ == "__main__":
 
-    import game_start
+    import main_screen
 
-    game_start.start().join()
+    main_screen.setup_main_screen()
+
+    game_states.PLACE = main_screen.main_screen
 
     while game_states.RUNNING:
         game_structures.SCREEN.fill(backdrop)

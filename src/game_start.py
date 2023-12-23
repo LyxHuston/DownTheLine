@@ -42,7 +42,6 @@ def start(with_seed: int = None):
 
     # game_structures.CUSTOM_EVENT_CATCHERS.append(game_structures.ALERTS.catch_event)  # (commented out because this one should never be removed)
     game_structures.CUSTOM_EVENT_CATCHERS.append(ingame.event_catcher)
-    game_states.PLACE = game_structures.PLACES.in_game
 
     game_states.DISTANCE = 100
     game_states.BOTTOM = 0
@@ -107,7 +106,7 @@ def start(with_seed: int = None):
 
     game_structures.AREA_QUEUE.clear()
     add_game_area().join()
-    game_states.PLACE = ingame.tick
+    game_states.PLACE = game_structures.PLACES.in_game
     for i in range(game_states.AREA_QUEUE_MAX_LENGTH - 1):
         add_game_area()
 

@@ -37,7 +37,7 @@ heart_img = pygame.image.load("resources/player/hearts.png")
 camera_move = 0
 
 
-def tick(do_tick: bool = True):
+def tick(do_tick: bool = True, draw_gui: bool = True):
     """
     draws the gameboard and handles checking if we need to unload and load a new
     area.  If so, dispatches a thread.
@@ -82,13 +82,14 @@ def tick(do_tick: bool = True):
         (game_states.WIDTH / 2 + game_states.X_DISPLACEMENT, 0),
         3
     )
-    if game_states.DISTANCE < game_states.CAMERA_BOTTOM + game_states.CAMERA_THRESHOLDS[0]:
-        game_states.CAMERA_BOTTOM = game_states.DISTANCE - game_states.CAMERA_THRESHOLDS[0]
-    if game_states.DISTANCE > game_states.CAMERA_BOTTOM + game_states.HEIGHT - game_states.CAMERA_THRESHOLDS[1]:
-        game_states.CAMERA_BOTTOM = game_states.DISTANCE + game_states.CAMERA_THRESHOLDS[1] - game_states.HEIGHT
-    enforce_goal = None
-    mass = 0
-    total = 0
+    if do_tick:
+        if game_states.DISTANCE < game_states.CAMERA_BOTTOM + game_states.CAMERA_THRESHOLDS[0]:
+            game_states.CAMERA_BOTTOM = game_states.DISTANCE - game_states.CAMERA_THRESHOLDS[0]
+        if game_states.DISTANCE > game_states.CAMERA_BOTTOM + game_states.HEIGHT - game_states.CAMERA_THRESHOLDS[1]:
+            game_states.CAMERA_BOTTOM = game_states.DISTANCE + game_states.CAMERA_THRESHOLDS[1] - game_states.HEIGHT
+        enforce_goal = None
+        mass = 0
+        total = 0
     for i in range(len(game_structures.AREA_QUEUE)):
         area = game_structures.AREA_QUEUE[i]
         if not area.initialized:
@@ -100,20 +101,21 @@ def tick(do_tick: bool = True):
             if enforce_goal is None:
                 enforce_goal = area.enforce_center
         area.draw()
-    game_structures.SCREEN.blit(
-        game_structures.FONTS[128].render(
-            str(game_states.RECORD_DISTANCE),
-            False,
-            (255, 255, 255)
-        ),
-        (0, 0)
-    )
-    for i in range(game_states.HEALTH):
+    if draw_gui:
         game_structures.SCREEN.blit(
-            heart_img,
-            (i * (draw_constants.icon_size + 4), draw_constants.row_separation)
+            game_structures.FONTS[128].render(
+                str(game_states.RECORD_DISTANCE),
+                False,
+                (255, 255, 255)
+            ),
+            (0, 0)
         )
-    abilities.draw_dash_icon(ingame.tick_counter)
+        for i in range(game_states.HEALTH):
+            game_structures.SCREEN.blit(
+                heart_img,
+                (i * (draw_constants.icon_size + 4), draw_constants.row_separation)
+            )
+        abilities.draw_dash_icon(ingame.tick_counter)
     # pygame.draw.circle(
     #     game_structures.SCREEN,
     #     (255, 255, 255),
@@ -125,7 +127,8 @@ def tick(do_tick: bool = True):
             continue
         if do_tick:
             item.tick(item)
-        item.draw(item)
+        if draw_gui:
+            item.draw(item)
     game_structures.SCREEN.blit(
         pygame.transform.flip(
             player_img,
@@ -134,22 +137,23 @@ def tick(do_tick: bool = True):
         ),
         (game_structures.to_screen_x(-32), game_structures.to_screen_y(game_states.DISTANCE + 32))
     )
-    camera_move = camera_move // 2
-    if enforce_goal is not None:
-        goal = enforce_goal
-        total = 2
-    elif total > 0:
-        goal = game_states.DISTANCE + game_states.HEIGHT / 2 * (abs(mass) * mass / total ** 2)
-    else:
-        goal = game_states.DISTANCE + game_states.HEIGHT * game_states.LAST_DIRECTION
-    goal -= game_states.HEIGHT // 2
+    if do_tick:
+        camera_move = camera_move // 2
+        if enforce_goal is not None:
+            goal = enforce_goal
+            total = 2
+        elif total > 0:
+            goal = game_states.DISTANCE + game_states.HEIGHT / 2 * (abs(mass) * mass / total ** 2)
+        else:
+            goal = game_states.DISTANCE + game_states.HEIGHT * game_states.LAST_DIRECTION
+        goal -= game_states.HEIGHT // 2
 
-    if tutorials.display is not None:
-        goal -= tutorials.display.get_height()
-        total *= 3
+        if tutorials.display is not None:
+            goal -= tutorials.display.get_height()
+            total *= 3
 
-    camera_move += (min(total, 2) + 2) / 324 * (goal - game_states.CAMERA_BOTTOM)
-    if enforce_goal is not None and camera_move < 1 and goal != game_states.CAMERA_BOTTOM:
-        game_states.CAMERA_BOTTOM += goal - game_states.CAMERA_BOTTOM > 0
-    game_states.CAMERA_BOTTOM += camera_move
-    tutorials.tick()
+        camera_move += (min(total, 2) + 2) / 324 * (goal - game_states.CAMERA_BOTTOM)
+        if enforce_goal is not None and camera_move < 1 and goal != game_states.CAMERA_BOTTOM:
+            game_states.CAMERA_BOTTOM += goal - game_states.CAMERA_BOTTOM > 0
+        game_states.CAMERA_BOTTOM += camera_move
+        tutorials.tick()
