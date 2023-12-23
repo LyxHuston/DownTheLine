@@ -76,15 +76,15 @@ def make_async(*args, with_lock: Union[threading.Lock, bool] = None, singular: b
                 with lock:
                     func(*args, **kwargs)
 
-        elif not with_lock:
-            res_func = func
-        else:
+        elif with_lock:
             if with_lock is True:
                 with_lock = threading.Lock()
 
             def res_func(*args, **kwargs):
                 with with_lock:
                     func(*args, **kwargs)
+        else:
+            res_func = func
 
         def async_func(*args, **kwargs) -> threading.Thread:
             thread = ThreadWithResult(target=res_func, args=args, kwargs=kwargs)
