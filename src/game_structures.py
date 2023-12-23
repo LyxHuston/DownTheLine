@@ -535,7 +535,7 @@ class Button(ButtonHolderTemplate):
             enforce_width: int = 0
     ) -> Button:
         """
-        creates a button object and adds it to handled list
+        creates a button object
         :param text: string
         :param font: size of the font object
         :param click: function called when the button is clicked
