@@ -23,6 +23,7 @@ import game_structures
 import game_states
 import ingame
 import utility
+import run_start_end
 
 fade_counter = 0
 tick_counter = 0
@@ -31,8 +32,10 @@ next_tick_max = 0
 overlay = pygame.Surface(game_structures.SCREEN.get_size(), pygame.SRCALPHA)
 
 
-def lose():
+def die():
     global fade_counter, tick_counter, next_tick_max
+
+    run_start_end.log_run(run_start_end.RunEndReasons.die)
 
     game_structures.BUTTONS.add_button(game_structures.Button.make_text_button(
         "Press Space or click to skip",
@@ -57,7 +60,7 @@ def skip_wait():
     fade_counter = 255
 
 
-def lost():
+def dead():
     global fade_counter, tick_counter, next_tick_max
 
     if fade_counter < 255:
@@ -137,9 +140,9 @@ def exit():
     game_states.RUNNING = False
 
 
-lost_screen = game_structures.Place(
-    tick=lost,
-    enter=lose
+dead_screen = game_structures.Place(
+    tick=dead,
+    enter=die
 )
 
 won_screen = game_structures.Place(

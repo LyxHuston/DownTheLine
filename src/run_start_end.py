@@ -147,5 +147,5 @@ def log_run(reason: RunEndReasons):
         "progress": game_states.AREAS_PASSED,
         "room_record": GameAreaLog.get_result_string()
     })
-    with open("run_log", "a") as file:
+    with open("run_log.txt", "a") as file:
         file.write(log_string + "\n")

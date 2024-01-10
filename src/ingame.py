@@ -46,7 +46,7 @@ def tick(do_tick: bool = None):
         if game_states.INVULNERABILITY_LEFT > 0:
             game_states.INVULNERABILITY_LEFT -= 1
         if game_states.HEALTH <= 0 and game_states.PLACE is screen:
-            game_structures.switch_to_place(game_structures.PLACES.lost)
+            game_structures.switch_to_place(game_structures.PLACES.dead)
         global tick_counter
         tick_counter = tick_counter + 1
         if tick_counter >= loop_counter:
@@ -130,5 +130,7 @@ def item_input_catch(num: int) -> None:
 screen = game_structures.Place(
     tick=tick,
     enter=run_start_end.start,
-    catcher=event_catcher
+    catcher=event_catcher,
+    exit_on=lambda: run_start_end.log_run(run_start_end.RunEndReasons.close),
+    crash_on=lambda: run_start_end.log_run(run_start_end.RunEndReasons.error)
 )

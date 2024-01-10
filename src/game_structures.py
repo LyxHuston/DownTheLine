@@ -1505,7 +1505,7 @@ def init() -> None:
 
     class PLACES(enum.Enum):
         in_game = ingame.screen
-        lost = other_screens.lost_screen
+        lost = other_screens.dead_screen
         won = other_screens.won_screen
         main = main_screen.main_screen_place
 
