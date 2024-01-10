@@ -48,7 +48,7 @@ def setup_main_screen():
     game_structures.BUTTONS.add_button(game_structures.Button.make_text_button(
         "Play",
         100,
-        run_start_end.start,
+        game_structures.PLACES.in_game.value.start,
         (game_states.WIDTH // 2, game_states.HEIGHT - 1.5 * (game_states.DISTANCE - game_states.CAMERA_BOTTOM)),
         (0, 0, 0, 0),
         (255, 255, 255),
@@ -72,9 +72,16 @@ def setup_main_screen():
         max_line_words=2
     ))
 
+
 def main_screen():
     """
     draws main screen.  Actually, just draws what's behind it.
     :return:
     """
     gameboard.tick(False, False)
+
+
+main_screen_place = game_structures.Place(
+    tick=main_screen,
+    enter=setup_main_screen
+)

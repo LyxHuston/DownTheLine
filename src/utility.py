@@ -23,6 +23,23 @@ import logging
 from sys import argv, stderr
 
 
+def make_simple_always(result: Any) -> Callable:
+    """
+    makes a simple function that regardless of input produces the same output
+    :param result: what output it makes
+    :return: lambda function
+    """
+    return lambda *args, **kwargs: result
+
+
+"""
+simple to put for anything, does nothing.  Use for objects without a tick effect
+also now used for just anything that needs to provide a useless function
+:return: True, for use in the tick function
+"""
+passing = make_simple_always(True)
+
+
 class ThreadWithResult(threading.Thread):
 
     @property

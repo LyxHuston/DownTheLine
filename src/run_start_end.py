@@ -31,10 +31,7 @@ import sys
 import utility
 
 
-@utility.make_async(singular=True)
 def start(with_seed: int = None):
-    if game_states.PLACE == ingame.tick:
-        return
     game_structures.BUTTONS.clear()
     if not game_states.CUSTOM_SEED:
         if with_seed is None:
@@ -43,9 +40,6 @@ def start(with_seed: int = None):
             game_states.SEED = with_seed
     if game_states.PRINT_SEED:
         print("The seed is:", game_states.SEED)
-
-    # game_structures.CUSTOM_EVENT_CATCHERS.append(game_structures.ALERTS.catch_event)  # (commented out because this one should never be removed)
-    game_structures.CUSTOM_EVENT_CATCHERS.append(ingame.event_catcher)
 
     game_states.DISTANCE = 100
     game_states.BOTTOM = 0
@@ -108,7 +102,6 @@ def start(with_seed: int = None):
 
     game_structures.AREA_QUEUE.clear()
     game_areas.add_game_area().join()
-    game_states.PLACE = game_structures.PLACES.in_game
     for i in range(game_states.AREA_QUEUE_MAX_LENGTH - 1):
         game_areas.add_game_area()
 

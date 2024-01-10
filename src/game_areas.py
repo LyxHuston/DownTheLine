@@ -744,11 +744,7 @@ def add_game_area():
 if __name__ == "__main__":
     import utility
     import main
-    import ingame
 
-    game_states.PLACE = game_structures.PLACES.in_game
-
-    game_structures.CUSTOM_EVENT_CATCHERS.append(ingame.event_catcher)
     game_states.PLACE = game_structures.PLACES.in_game
 
     game_states.DISTANCE = 100
@@ -789,5 +785,5 @@ if __name__ == "__main__":
 
     while game_states.RUNNING:
         game_structures.SCREEN.fill(main.backdrop)
-        game_states.PLACE()
+        game_states.PLACE.tick()
         utility.tick()

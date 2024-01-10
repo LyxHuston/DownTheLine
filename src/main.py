@@ -81,15 +81,19 @@ game_states.CAMERA_THRESHOLDS = (min(200, round(game_states.HEIGHT // 6)), min(2
 pygame.init()
 game_structures.init()
 
+
+def do_custom_catchers(catch):
+    game_states.PLACE.catcher(catch)
+
+
+game_structures.CUSTOM_EVENT_CATCHERS.append(do_custom_catchers)
+
+
 if __name__ == "__main__":
 
-    import main_screen
-
-    main_screen.setup_main_screen()
-
-    game_states.PLACE = main_screen.main_screen
+    game_structures.switch_to_place(game_structures.PLACES.main)
 
     while game_states.RUNNING:
         game_structures.SCREEN.fill(backdrop)
-        game_states.PLACE()
+        game_states.PLACE.tick()
         utility.tick()

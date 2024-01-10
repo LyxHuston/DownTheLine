@@ -25,6 +25,7 @@ import game_structures
 import items
 import entities
 import abilities
+import run_start_end
 
 
 class Inputs:
@@ -44,10 +45,8 @@ def tick(do_tick: bool = None):
     if do_tick is None or do_tick:
         if game_states.INVULNERABILITY_LEFT > 0:
             game_states.INVULNERABILITY_LEFT -= 1
-        if game_states.HEALTH <= 0 and game_states.PLACE is tick:
-            import other_screens
-            other_screens.lose()
-            game_states.PLACE = game_structures.PLACES.lost
+        if game_states.HEALTH <= 0 and game_states.PLACE is screen:
+            game_structures.switch_to_place(game_structures.PLACES.lost)
         global tick_counter
         tick_counter = tick_counter + 1
         if tick_counter >= loop_counter:
@@ -126,3 +125,10 @@ def item_input_catch(num: int) -> None:
     if game_structures.HANDS[num] is None:
         return
     game_structures.HANDS[num].action(game_structures.HANDS[num])
+
+
+screen = game_structures.Place(
+    tick=tick,
+    enter=run_start_end.start,
+    catcher=event_catcher
+)

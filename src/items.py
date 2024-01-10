@@ -30,6 +30,7 @@ import images
 import math
 import enum
 import draw_constants
+import utility
 
 
 class ItemTypes(enum.IntEnum):
@@ -305,12 +306,7 @@ def draw_on_ground(item):
     )
 
 
-def passing(*args):
-    """
-    simple to put for anything, does nothing.  Use for objects without a tick effect
-    :return: True, for use in the tick function
-    """
-    return True
+passing = utility.passing
 
 
 @draw_on_ground_if_not_held

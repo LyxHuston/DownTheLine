@@ -1646,10 +1646,7 @@ if __name__ == "__main__":
     import main
     import ingame
 
-    game_states.PLACE = game_structures.PLACES.in_game
-
-    game_structures.CUSTOM_EVENT_CATCHERS.append(ingame.event_catcher)
-    game_states.PLACE = game_structures.PLACES.in_game
+    game_states.PLACE = ingame.screen
 
     game_states.DISTANCE = 100
     game_states.BOTTOM = 0
@@ -1725,5 +1722,5 @@ if __name__ == "__main__":
 
     while game_states.RUNNING:
         game_structures.SCREEN.fill(main.backdrop)
-        game_states.PLACE()
+        game_states.PLACE.tick()
         utility.tick()

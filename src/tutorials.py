@@ -70,7 +70,7 @@ def add_text(text: str, font: pygame.font.Font, sound: pygame.mixer.Sound = None
     TUTORIAL_TEXTS.append(TutorialText(text, font, sound))
 
 
-def tick():
+def tick(do_tick):
     """
     tutorial tick.
     :return:
@@ -80,6 +80,8 @@ def tick():
         game_structures.SCREEN.blit(display, (0, game_states.HEIGHT - display.get_height()))
         pygame.draw.line(game_structures.SCREEN, (255, 255, 255), (0, game_states.HEIGHT - display.get_height()),
                          (game_states.WIDTH, game_states.HEIGHT - display.get_height()), 10)
+    if not do_tick:
+        return
     if typing:
         if typing_cooldown <= 0:
             current_text = on.text[0:len(current_text) + 1]

@@ -44,6 +44,34 @@ TRUE_HEIGHT: int = 0
 TRUE_WIDTH: int = 0
 
 
+class Place:
+
+    def __init__(
+            self,
+            tick: Callable,
+            enter: Callable = utility.passing,
+            end: Callable = utility.passing,
+            catcher: Callable = utility.make_simple_always(False)
+    ):
+        self.tick = tick
+        self.enter = enter
+        self.end = end
+        self.catcher = catcher
+
+    def start(self):
+        switch_to_place(self)
+
+
+def switch_to_place(place: Place):
+    if not isinstance(place, Place):
+        switch_to_place(place.value)
+        return
+    if game_states.PLACE:
+        game_states.PLACE.end()
+    game_states.PLACE = place
+    game_states.PLACE.enter()
+
+
 def display_screen():
     if TRUE_HEIGHT > 0:
         pygame.transform.scale(SCREEN, (TRUE_WIDTH, TRUE_HEIGHT), TRUE_SCREEN)
@@ -1452,6 +1480,7 @@ def init() -> None:
 
     import utility
     import ingame
+    import main_screen
     import other_screens
     import tutorials
 
@@ -1471,9 +1500,10 @@ def init() -> None:
     CUSTOM_EVENT_CATCHERS.append(ALERTS.catch_event)
 
     class PLACES(enum.Enum):
-        in_game = ingame.tick
-        lost = other_screens.lost
-        won = other_screens.won
+        in_game = ingame.screen
+        lost = other_screens.lost_screen
+        won = other_screens.won_screen
+        main = main_screen.main_screen_place
 
 
 class Body:

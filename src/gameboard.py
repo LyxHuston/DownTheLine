@@ -156,4 +156,4 @@ def tick(do_tick: bool = True, draw_gui: bool = True):
         if enforce_goal is not None and camera_move < 1 and goal != game_states.CAMERA_BOTTOM:
             game_states.CAMERA_BOTTOM += goal - game_states.CAMERA_BOTTOM > 0
         game_states.CAMERA_BOTTOM += camera_move
-        tutorials.tick()
+    tutorials.tick(do_tick)
