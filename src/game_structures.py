@@ -51,12 +51,16 @@ class Place:
             tick: Callable,
             enter: Callable = utility.passing,
             end: Callable = utility.passing,
-            catcher: Callable = utility.make_simple_always(False)
+            catcher: Callable = utility.make_simple_always(False),
+            crash_on: Callable = utility.make_simple_always(False),
+            exit_on: Callable = utility.passing,
     ):
         self.tick = tick
         self.enter = enter
         self.end = end
         self.catcher = catcher
+        self.crash = crash_on
+        self.exit = exit_on
 
     def start(self):
         switch_to_place(self)

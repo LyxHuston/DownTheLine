@@ -93,7 +93,14 @@ if __name__ == "__main__":
 
     game_structures.switch_to_place(game_structures.PLACES.main)
 
-    while game_states.RUNNING:
-        game_structures.SCREEN.fill(backdrop)
-        game_states.PLACE.tick()
-        utility.tick()
+    while game_states.RUNNING:  # outer loop only for when the try except successfully handles it
+        try:  # try catch to see if the area knows how to handle the error
+            while game_states.RUNNING:  # main loop
+                game_structures.SCREEN.fill(backdrop)
+                game_states.PLACE.tick()
+                utility.tick()
+            game_states.PLACE.exit()
+        except RuntimeError as E:
+            if not game_states.PLACE.crash(E):
+                utility.log_error(E)
+                game_states.RUNNING = False
