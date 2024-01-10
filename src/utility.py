@@ -17,12 +17,40 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
 import threading
-from typing import Callable, Any, Union
+from typing import Callable, Any, Union, Hashable
 import traceback
 import logging
 from sys import argv, stderr
 
 
+memoize_not_have = object()
+
+
+def memoize(func: Callable):
+    """
+    if the function has previously been invoked with the same (hashable) arguments, make it work
+    :param func:
+    :return:
+    """
+
+    cache = dict()
+
+    def internal(*args, **kwargs):
+
+        key = (args, tuple(sorted(kwargs.items())))
+        if isinstance(key, Hashable):
+            res = cache.get(key, memoize_not_have)
+            if res is memoize_not_have:
+                res = func(*args, **kwargs)
+                cache[key] = res
+        else:
+            res = func(*args, **kwargs)
+        return res
+
+    return internal
+
+
+@memoize
 def make_simple_always(result: Any) -> Callable:
     """
     makes a simple function that regardless of input produces the same output
