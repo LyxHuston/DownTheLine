@@ -65,3 +65,5 @@ QUEUE_SAVE = None
 INVULNERABLE = False
 CUSTOM_SEED = False
 PRINT_SEED = False
+# times
+RUN_START = None

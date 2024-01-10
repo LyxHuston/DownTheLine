@@ -17,10 +17,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 starts up a game instance
 """
+import datetime
+import enum
+from typing import Type
+
 import tutorials
 import game_structures
 import game_states
-from game_areas import add_game_area
+import game_areas
 import ingame
 import random
 import sys
@@ -67,6 +71,8 @@ def start(with_seed: int = None):
     # area management
     game_states.AREAS_PASSED = 0
     game_states.LAST_AREA = 0
+    # times
+    game_states.RUN_START = datetime.datetime.now()
 
     game_structures.HANDS = [None, None]
 
@@ -76,16 +82,12 @@ def start(with_seed: int = None):
     # print(game_states.SEED)
 
     import entities
-    for attr_value in entities.__dict__.values():
-        if isinstance(attr_value, type):
-            if issubclass(attr_value, entities.Entity):
-                attr_value.seen = False
+    for attr_value in entities.Entity.__subclasses__():
+        attr_value.seen = False
     entities.Slime.seen = True
-    import game_areas
-    for attr_value in game_areas.__dict__.values():
-        if isinstance(attr_value, type):
-            if issubclass(attr_value, game_areas.GameArea):
-                attr_value.seen = False
+    for attr_value in game_areas.GameArea.__subclasses__():
+        attr_value.seen = False
+    GameAreaLog.refresh()
 
     tutorials.add_text(
         "Oh, you're awake.  Good.",
@@ -105,8 +107,52 @@ def start(with_seed: int = None):
     )
 
     game_structures.AREA_QUEUE.clear()
-    add_game_area().join()
+    game_areas.add_game_area().join()
     game_states.PLACE = game_structures.PLACES.in_game
     for i in range(game_states.AREA_QUEUE_MAX_LENGTH - 1):
-        add_game_area()
+        game_areas.add_game_area()
 
+
+class GameAreaLog:
+
+    areas_dict: dict[str, int] = dict()
+
+    @staticmethod
+    def refresh():
+        for sub in game_areas.GameArea.__subclasses__():
+            GameAreaLog.areas_dict[sub.__name__] = 0
+
+    @staticmethod
+    def get_result_string():
+        return str({area_name: count for area_name, count in GameAreaLog.areas_dict.items() if count > 0})
+
+
+class RunEndReasons(enum.Enum):
+    die = "death"
+    lose = "loss"
+    win = "victory"
+    close = "game closed"
+    error = "game crashed"
+    quit = "quit"
+
+
+def log_run(reason: RunEndReasons):
+    """
+    logs the results of a run, including why it ended
+    :return:
+    """
+    now = datetime.datetime.now()
+    duration: datetime.timedelta = now - game_states.RUN_START
+    log_string = str({
+        "reason": reason.value,
+        "date": now.date().strftime("%y/%m/%d"),
+        "start_time": game_states.RUN_START.strftime("%H:%M:%S"),
+        "end_time": now.strftime("%H:%M:%S"),
+        "duration": str(duration),
+        "seed": game_states.SEED,
+        "furthest": game_states.RECORD_DISTANCE,
+        "progress": game_states.AREAS_PASSED,
+        "room_record": GameAreaLog.get_result_string()
+    })
+    with open("run_log", "a") as file:
+        file.write(log_string + "\n")

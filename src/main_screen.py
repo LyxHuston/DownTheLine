@@ -21,7 +21,7 @@ import game_states
 import game_structures
 import gameboard
 import other_screens
-import game_start
+import run_start_end
 
 
 def setup_main_screen():
@@ -48,7 +48,7 @@ def setup_main_screen():
     game_structures.BUTTONS.add_button(game_structures.Button.make_text_button(
         "Play",
         100,
-        game_start.start,
+        run_start_end.start,
         (game_states.WIDTH // 2, game_states.HEIGHT - 1.5 * (game_states.DISTANCE - game_states.CAMERA_BOTTOM)),
         (0, 0, 0, 0),
         (255, 255, 255),
