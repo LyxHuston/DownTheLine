@@ -151,10 +151,11 @@ class FontHolder:
     class to hold required fonts dynamically
     """
 
-    def __init__(self, name: str = None, fonttype=None) -> None:
+    def __init__(self, name: str = None, fonttype=None, _scale: float = 1) -> None:
         self.fonts = dict()
         self.font_name = name
         self.font_type = fonttype
+        self.scale = _scale
 
     def new_sysfonts(self, name) -> None:
         """
@@ -182,12 +183,14 @@ class FontHolder:
         :param key: size to look for
         :return: Font object
         """
+        key = int(key * self.scale)
         if key not in self.fonts.keys():
-            self.fonts[key] = self.font_type(self.font_name, int(key))
+            self.fonts[key] = self.font_type(self.font_name, key)
         return self.fonts[key]
 
 
-FONTS = FontHolder(name="resources/fonts/OldEnglishGothicPixelRegular-gx1jp.otf", fonttype=Font)
+FONTS = FontHolder(name="resources/fonts/Old-English-Gothic-Pixel.ttf", fonttype=Font, _scale=0.5)
+# FONTS = FontHolder(name="resources/fonts/OldEnglishGothicPixelRegular-gx1jp.otf", fonttype=Font)
 TUTORIAL_FONTS = FontHolder(name="resources/fonts/PixgamerRegular-OVD6A.ttf", fonttype=Font)
 
 
