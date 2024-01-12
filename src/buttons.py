@@ -804,7 +804,10 @@ class ButtonHolder(ButtonHolderTemplate):
         if self.list is None:
             self.list = list()
         self.background = background
-        self.rect = _rect
+        if _rect is None and self.background is not None:
+            self.rect = self.background.get_rect()
+        else:
+            self.rect = _rect
         self.fill_color = fill_color
         self.outline_color = outline_color
         self.outline_width = outline_width
@@ -959,6 +962,14 @@ class ButtonHolder(ButtonHolderTemplate):
         """
         self.list.clear()
 
+    def remove(self, value):
+        """
+        remove a value from the list
+        :param value: button
+        :return:
+        """
+        self.list.remove(value)
+
     def __len__(self):
         return len(self.list)
 
@@ -974,3 +985,99 @@ class ButtonHolder(ButtonHolderTemplate):
 
     def __iter__(self):
         return self.list.__iter__()
+
+
+class ScrollableButtonHolder(ButtonHolder):
+    """
+    holds a list of buttons or button holders
+    """
+
+    def __init__(
+            self,
+            window_rect: Rect,
+            background: Surface,
+            scrollable_x: bool = True,
+            scrollable_y: bool = True,
+            start_x: int = 0,
+            start_y: int = 0,
+            step: int = 1,
+            init_list: list[ButtonHolderTemplate] = None,
+            base_rect: Rect = None,
+            fill_color: Union[tuple[int, int, int], tuple[int, int, int, int], None] = None,
+            outline_color: Union[tuple[int, int, int], None] = None,
+            outline_width: int = 0,
+    ):
+        """
+        initializes
+        """
+        super().__init__(init_list, background, base_rect, fill_color, outline_color, outline_width)
+        self.window = window_rect
+
+        self.clip_rect = self.window.copy()
+
+        self.x_scroll = scrollable_x
+        self.y_scroll = scrollable_y
+
+        self.step = step
+
+        self.x = start_x
+        self.y = start_y
+
+    @property
+    def x(self):
+        return self.clip_rect.x
+
+    @x.setter
+    def x(self, value):
+        if self.rect is not None:
+            if value < 0:
+                self.clip_rect.x = 0
+            if value > self.rect.width - self.window.width:
+                self.clip_rect.x = self.rect.width - self.window.width
+        self.clip_rect.x = value
+
+    @property
+    def y(self):
+        return self.clip_rect.y
+
+    @y.setter
+    def y(self, value):
+        if self.rect is not None:
+            if value < 0:
+                self.clip_rect.y = 0
+            if value > self.rect.height - self.window.height:
+                self.clip_rect.y = self.rect.height - self.window.height
+        self.clip_rect.y = value
+
+    def adjust_mouse_pos(self, mouse_pos: tuple[int, int]) -> tuple[int, int]:
+        """
+        adjust mouse position passed based on the holder's rect
+        :param mouse_pos:
+        :return:
+        """
+        return mouse_pos[0] - self.window.x + self.x, mouse_pos[1] - self.window.y + self.y
+
+    def render_onto(self, onto: Surface, mouse_pos: tuple[int, int]) -> None:
+        """
+        draws onto a surface
+        :param onto:
+        :param mouse_pos:
+        :return:
+        """
+        mouse_pos = self.adjust_mouse_pos(mouse_pos)
+        if self.fill_color is None:
+            self.background.fill((0, 0, 0, 0))
+        else:
+            self.background.fill(self.fill_color)
+        for button in self.list:
+            if button is None:
+                continue
+            button.render_onto(self.background, mouse_pos)
+        onto.blit(self.background.subsurface(self.clip_rect), self.window)
+        if self.outline_width > 0:
+            rect(
+                onto,
+                self.outline_color,
+                self.window.inflate(2 * self.outline_width, 2 * self.outline_width),
+                width=self.outline_width
+            )
