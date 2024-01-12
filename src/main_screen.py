@@ -21,8 +21,6 @@ import game_states
 import game_structures
 import gameboard
 import other_screens
-import run_start_end
-
 
 def setup_main_screen():
     """
@@ -71,6 +69,19 @@ def setup_main_screen():
         y_align=1,
         max_line_words=2
     ))
+    game_structures.BUTTONS.add_button(game_structures.Button.make_text_button(
+        "Logs",
+        75,
+        log_screen.screen.start,
+        (game_states.WIDTH, game_states.HEIGHT),
+        (0, 0, 0, 0),
+        (255, 255, 255),
+        0,
+        text_align=0.5,
+        x_align=1,
+        y_align=1,
+        max_line_words=2
+    ))
 
 
 def main_screen():
@@ -81,7 +92,14 @@ def main_screen():
     gameboard.tick(False, False)
 
 
+def end():
+    game_structures.BUTTONS.clear()
+
+
 main_screen_place = game_structures.Place(
     tick=main_screen,
-    enter=setup_main_screen
+    enter=setup_main_screen,
+    end=end
 )
+
+import log_screen
