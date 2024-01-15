@@ -118,14 +118,14 @@ class RunRecord(game_structures.Place, game_structures.Button):
             f"progress: {self.progress} rooms",
             ""
         ]
-        room_record_lines = []
+        room_record_lines: list[tuple[str, int]] = []
         for item in ast.literal_eval(self.room_record).items():
             i = 0
             while i < len(room_record_lines) and room_record_lines[i][1] < item[1]:
                 i += 1
             room_record_lines.insert(i, item)
         for item in room_record_lines:
-            lines.append(f"{item[0]}: {item[1]}")
+            lines.append(f"{''.join([char if char.islower() else ' ' + char for char in item[0]])}: {item[1]}")
 
         self.buttons.add_button(
             game_structures.Button.make_text_button(
