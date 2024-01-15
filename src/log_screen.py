@@ -110,26 +110,22 @@ class RunRecord(game_structures.Place, game_structures.Button):
             )
         )
 
-        lines = [
-            f"time: {self.date}",
-            f"{self.start_time}-{self.end_time} ({self.duration} elapsed)",
-            "",
-            f"distance: {self.furthest}",
-            f"progress: {self.progress} rooms",
-            ""
-        ]
-        room_record_lines: list[tuple[str, int]] = []
-        for item in ast.literal_eval(self.room_record).items():
-            i = 0
-            while i < len(room_record_lines) and room_record_lines[i][1] < item[1]:
-                i += 1
-            room_record_lines.insert(i, item)
-        for item in room_record_lines:
-            lines.append(f"{''.join([char if char.islower() else ' ' + char for char in item[0]])}: {item[1]}")
-
         self.buttons.add_button(
             game_structures.Button.make_text_button(
-                "\n".join(lines),
+                "\n".join([
+                    f"time: {self.date}",
+                    f"{self.start_time}-{self.end_time} ({self.duration} elapsed)",
+                    "",
+                    f"distance: {self.furthest}",
+                    f"progress: {self.progress} rooms",
+                    ""
+                ] + [
+                    f"""{
+                        ''.join([char if char.islower() else ' ' + char for char in item[0]])[1:]
+                    }: {item[1]}""" for item in sorted(
+                        list(ast.literal_eval(self.room_record).items()), key=lambda tup: tup[1]
+                    )
+                ]),
                 80,
                 None,
                 (game_states.WIDTH // 4, 550),
