@@ -84,7 +84,7 @@ class ButtonHolderTemplate(ABC):
         """
 
     @abstractmethod
-    def set_keyed(self) -> bool:
+    def set_keyed(self, value: bool = True) -> bool:
         """
         checks if possible to key, and does so if possible
         :return: if it could set to key
@@ -289,12 +289,14 @@ class Button(ButtonHolderTemplate):
     def keyed(self, value):
         self._keyed = value
 
-    def set_keyed(self) -> bool:
+    def set_keyed(self, value: bool = True) -> bool:
         """
         sets the button as keyed
         :return:
         """
-        self.keyed = True
+        if not self.visible():
+            return False
+        self.keyed = value
         return True
 
     def __init__(
@@ -310,7 +312,8 @@ class Button(ButtonHolderTemplate):
             arguments: Union[None, dict[str, Any]] = None,
             scale_factor: float = 1.25,
             special_press: tuple = (),
-            typing_instance: int = None
+            typing_instance: int = None,
+            visible_check: Callable[[], bool] = utility.passing
     ):
         """
         initialize a button
@@ -340,6 +343,7 @@ class Button(ButtonHolderTemplate):
         self.special_press: tuple = special_press
         self.typing_instance: int = typing_instance
         self.keyed = False
+        self.visible = visible_check
 
     @staticmethod
     def make_img_button(
@@ -396,7 +400,8 @@ class Button(ButtonHolderTemplate):
             special_press: Union[tuple[str], str] = (),
             override_text: str = None,
             max_lines: int = 0,
-            enforce_width: int = 0
+            enforce_width: int = 0,
+            visible_check: Callable[[], bool] = utility.passing
     ) -> Button:
         """
         creates a button object
@@ -455,7 +460,8 @@ class Button(ButtonHolderTemplate):
             (x_align, y_align),
             border_width,
             arguments=arguments,
-            special_press=special
+            special_press=special,
+            visible_check=visible_check
         )
 
     def render_onto(self, onto: Surface, mouse_pos: tuple[int, int]) -> None:
@@ -466,6 +472,8 @@ class Button(ButtonHolderTemplate):
         if self.img is None:
             return
         if self.rect is None:
+            return
+        if not self.visible():
             return
         if self.click is not None and (self.rect.collidepoint(mouse_pos) or self.keyed):
             # mouse is over or keyed clicker is on
@@ -514,6 +522,8 @@ class Button(ButtonHolderTemplate):
         """
         if self.click is None:
             return False
+        if not self.visible():
+            return False
         if self.arguments is None:
             self.click()
         else:
@@ -526,6 +536,8 @@ class Button(ButtonHolderTemplate):
         :return:
         """
         if self.rect is None:
+            return False
+        if not self.visible():
             return False
         if self.rect.collidepoint(mouse_pos):
             return self.run_click()
@@ -545,6 +557,8 @@ class Button(ButtonHolderTemplate):
         ahhhh
         :return:
         """
+        if not self.visible():
+            return False
         if isinstance(self.special_press, int):
             special_pressed = key == self.special_press
         else:
@@ -561,6 +575,9 @@ class Button(ButtonHolderTemplate):
         1 = stop and push to next
         2 = stop without pushing
         """
+        if not self.visible():
+            self.keyed = False
+            return 0
         if self.keyed:
             self.keyed = False
             return 1
@@ -775,17 +792,19 @@ class ButtonHolder(ButtonHolderTemplate):
         """
         return self._keyed
 
-    def set_keyed(self, ) -> bool:
+    def set_keyed(self, value: bool = True) -> bool:
         """
         checks if can set as keyed based on children
         :return:
         """
+        if not self.visible():
+            return False
         if not self.list:
             return False
         for button in self.list:
-            if button.set_keyed():
-                self.keyed = True
-                return True
+            if button.set_keyed(value):
+                self.keyed = value
+                return value
         return False
 
     def __init__(
@@ -796,6 +815,7 @@ class ButtonHolder(ButtonHolderTemplate):
             fill_color: Union[tuple[int, int, int], tuple[int, int, int, int], None] = None,
             outline_color: Union[tuple[int, int, int], None] = None,
             outline_width: int = 0,
+            visible_check: Callable[[], bool] = utility.passing
     ):
         """
         initializes
@@ -812,6 +832,7 @@ class ButtonHolder(ButtonHolderTemplate):
         self.outline_color = outline_color
         self.outline_width = outline_width
         self.keyed = False
+        self.visible = visible_check
 
     def adjust_mouse_pos(self, mouse_pos: tuple[int, int]) -> tuple[int, int]:
         """
@@ -830,6 +851,8 @@ class ButtonHolder(ButtonHolderTemplate):
         :param mouse_pos:
         :return:
         """
+        if not self.visible():
+            return
         mouse_pos = self.adjust_mouse_pos(mouse_pos)
         if self.background is None:
             for button in self.list:
@@ -856,6 +879,8 @@ class ButtonHolder(ButtonHolderTemplate):
         checks if mouse is on the button when mouse button is pressed, and if so, recursively
         :return:
         """
+        if not self.visible():
+            return False
         mouse_pos = self.adjust_mouse_pos(mouse_pos)
         if self.rect is None:
             click = True
@@ -876,6 +901,8 @@ class ButtonHolder(ButtonHolderTemplate):
         presses special action key for keyed action selection (not special key press)
         :return:
         """
+        if not self.visible():
+            return False
         if not self.keyed:
             return False
         for button in self.list:
@@ -885,12 +912,14 @@ class ButtonHolder(ButtonHolderTemplate):
                 return True
         return True
 
-    def special_key_click(self, key) -> None:
+    def special_key_click(self, key) -> bool:
         """
         passes key press down the line
         :param key:
         :return:
         """
+        if not self.visible():
+            return False
         res = False
         for button in self.list:
             if button is None:
@@ -909,18 +938,27 @@ class ButtonHolder(ButtonHolderTemplate):
         if not self.keyed:
             return 0
         res = 0
-        for button in self.list:
-            if button is None:
-                continue
-            match res:
-                case 0:
-                    res = button.iter_key()
-                case 1:
-                    if button.set_keyed():
+        if self.visible():
+            for button in self.list:
+                if button is None:
+                    continue
+                match res:
+                    case 0:
+                        res = button.iter_key()
+                    case 1:
+                        if button.set_keyed():
+                            return 2
+                    case 2:
                         return 2
-                case 2:
-                    return 2
-        return res
+            return res
+        else:
+            for button in self.list:
+                if button is None:
+                    continue
+                if button.keyed:
+                    button.set_keyed(False)
+                return 0
+            return 0
 
     @keyed.setter
     def keyed(self, value):
@@ -1006,11 +1044,13 @@ class ScrollableButtonHolder(ButtonHolder):
             fill_color: Union[tuple[int, int, int], tuple[int, int, int, int], None] = None,
             outline_color: Union[tuple[int, int, int], None] = None,
             outline_width: int = 0,
+            visible_check: Callable[[], bool] = utility.passing
     ):
         """
         initializes
         """
-        super().__init__(init_list, background, base_rect, fill_color, outline_color, outline_width)
+        super().__init__(init_list, background, base_rect, fill_color, outline_color, outline_width,
+                         visible_check=visible_check)
         self.window = window_rect
 
         self.clip_rect = self.window.copy()
@@ -1064,6 +1104,8 @@ class ScrollableButtonHolder(ButtonHolder):
         :param mouse_pos:
         :return:
         """
+        if not self.visible():
+            return
         mouse_pos = self.adjust_mouse_pos(mouse_pos)
         if self.fill_color is None:
             self.background.fill((0, 0, 0, 0))
