@@ -21,12 +21,16 @@ import game_states
 import game_structures
 import gameboard
 import other_screens
+import run_start_end
+
 
 def setup_main_screen():
     """
     sets up the main screen with buttons and such
     :return:
     """
+
+    run_start_end.start()
 
     game_states.CAMERA_BOTTOM = game_states.DISTANCE - game_states.CAMERA_THRESHOLDS[0]
 

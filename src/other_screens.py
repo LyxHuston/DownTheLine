@@ -109,7 +109,18 @@ def dead():
             "Play Again",
             100,
             game_structures.PLACES.in_game.value.start,
-            (game_states.WIDTH // 2 - 400, game_states.HEIGHT - 200),
+            (game_states.WIDTH // 2 - 800, game_states.HEIGHT - 200),
+            background_color=(0, 0, 0),
+            outline_color=(255, 255, 255),
+            enforce_width=600,
+            border_width=5,
+            text_align=0.5
+        ))
+        game_structures.BUTTONS.add_button(game_structures.Button.make_text_button(
+            "Home",
+            100,
+            game_structures.PLACES.main.value.start,
+            (game_states.WIDTH // 2, game_states.HEIGHT - 200),
             background_color=(0, 0, 0),
             outline_color=(255, 255, 255),
             enforce_width=600,
@@ -120,7 +131,7 @@ def dead():
             "Quit",
             100,
             exit,
-            (game_states.WIDTH // 2 + 400, game_states.HEIGHT - 200),
+            (game_states.WIDTH // 2 + 800, game_states.HEIGHT - 200),
             background_color=(0, 0, 0),
             outline_color=(255, 255, 255),
             enforce_width=600,
@@ -142,10 +153,12 @@ def exit():
 
 dead_screen = game_structures.Place(
     tick=dead,
-    enter=die
+    enter=die,
+    end=game_structures.BUTTONS.clear
 )
 
 won_screen = game_structures.Place(
     tick=won,
-    enter=utility.passing
+    enter=utility.passing,
+    end=game_structures.BUTTONS.clear
 )
