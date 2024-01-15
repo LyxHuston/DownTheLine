@@ -205,7 +205,7 @@ def enter():
             "No runs logged.",
             80,
             None,
-            (game_states.WIDTH // 2, game_states.HEIGHT // 2),
+            (game_states.WIDTH // 4, game_states.HEIGHT // 2),
             background_color=(0, 0, 0),
             outline_color=(255, 255, 255),
             border_width=0,
