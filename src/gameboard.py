@@ -17,17 +17,16 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 draws, loads, and unloads the game scene.
 """
-
-
+import game_areas
 import game_states
 import game_structures
-import tutorials
 from game_areas import add_game_area
 import pygame
 import abilities
 import ingame
 import draw_constants
 import tutorials
+import run_start_end
 
 
 player_img = pygame.image.load("resources/player/player.png")
@@ -54,11 +53,14 @@ def tick(do_tick: bool = True, draw_gui: bool = True):
             if game_structures.AREA_QUEUE[i].start_coordinate > game_states.CAMERA_BOTTOM + game_states.HEIGHT:
                 break
         if game_structures.AREA_QUEUE[0].end_coordinate < game_states.CAMERA_BOTTOM:
-            for entity in game_structures.AREA_QUEUE[0].entity_list:
-                if entity.y > game_structures.AREA_QUEUE[0].end_coordinate:
+            removing: game_areas.GameArea = game_structures.AREA_QUEUE[0]
+            del game_structures.AREA_QUEUE[0]
+            for entity in removing.entity_list:
+                if entity.y > removing.end_coordinate:
                     entity.transfer(game_structures.AREA_QUEUE[1])
                     game_structures.AREA_QUEUE[1].entity_list.append(entity)
-            del game_structures.AREA_QUEUE[0]
+            if removing.__class__.__name__ in run_start_end.GameAreaLog.areas_dict:
+                run_start_end.GameAreaLog.areas_dict[removing.__class__.__name__] += 1
             game_states.AREAS_PASSED += 1
             add_game_area()
         if game_states.SHAKE_DURATION > 0:
