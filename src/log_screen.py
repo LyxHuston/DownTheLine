@@ -27,6 +27,9 @@ import utility
 import pygame
 
 
+log_file_name: str = "run_log.txt"
+
+
 RECORDS = game_structures.ScrollableButtonHolder(
     pygame.rect.Rect(game_states.WIDTH // 4 - 20, 0, 3 * game_states.WIDTH // 4, game_states.HEIGHT),
     pygame.surface.Surface((3 * game_states.WIDTH // 4 + 20, game_states.HEIGHT))
@@ -41,6 +44,24 @@ BUTTONS.add_button(game_structures.Button.make_text_button(
     background_color=(0, 0, 0),
     outline_color=(255, 255, 255),
     x_align=1,
+    y_align=0
+))
+
+
+def clear_log():
+    with open(log_file_name, "w") as log_file:
+        log_file.write("")
+    screen.start()
+
+
+BUTTONS.add_button(game_structures.Button.make_text_button(
+    "Clear Log",
+    75,
+    clear_log,
+    (0, 0),
+    background_color=(0, 0, 0),
+    outline_color=(255, 255, 255),
+    x_align=0,
     y_align=0
 ))
 
@@ -177,7 +198,7 @@ def enter():
     """
     RECORDS.clear()
     game_structures.BUTTONS.add_button(BUTTONS)
-    with open("run_log.txt", "r") as log_file:
+    with open(log_file_name, "r") as log_file:
         line = log_file.readline()
         while line:
             make_record(ast.literal_eval(line))
