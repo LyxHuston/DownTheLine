@@ -22,7 +22,6 @@ from typing import Union, Callable, Any
 
 from pygame.font import Font, SysFont
 from pygame.transform import scale
-from pygame.draw import rect
 import pygame.mixer
 from pygame.event import custom_type
 import enum
