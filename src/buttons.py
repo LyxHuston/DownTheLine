@@ -17,8 +17,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 handle button system
 """
-
-
+import enum
 from abc import ABC, abstractmethod
 from typing import Union, Callable, Any
 
@@ -45,14 +44,14 @@ class ButtonHolderTemplate(ABC):
         """
 
     @abstractmethod
-    def do_click(self, mouse_pos: tuple[int, int]) -> bool:
+    def do_click(self, mouse_pos: tuple[int, int], click_type) -> bool:
         """
         checks if mouse is on the button, and if so, recursively
         :return: whether or not to stop the check
         """
 
     @abstractmethod
-    def do_key(self) -> bool:
+    def do_key(self, click_type) -> bool:
         """
         checks if the holder is keyed, and if so, checks children
         :return: whether or not to stop the check
@@ -268,6 +267,11 @@ class Button(ButtonHolderTemplate):
     dataclass containing information for a button
     """
 
+    class ClickTypes(enum.Enum):
+        down = 0
+        up = 1
+        hold = 2
+
     def get_hover_keyed_text(self) -> Union[str, None]:
         """
         if keyed, return text, else None
@@ -299,25 +303,16 @@ class Button(ButtonHolderTemplate):
         self.keyed = value
         return True
 
-    def __init__(
-            self,
-            click: Union[None, Callable],
-            img: Surface,
-            text: str,
-            _rect: Rect,
-            fill_color: Union[tuple[int, int, int], tuple[int, int, int, int], None] = None,
-            outline_color: Union[tuple[int, int, int], None] = None,
-            inflate_center: tuple[float, float] = (0.5, 0.5),
-            outline_width: int = 1,
-            arguments: Union[None, dict[str, Any]] = None,
-            scale_factor: float = 1.25,
-            special_press: tuple = (),
-            typing_instance: int = None,
-            visible_check: Callable[[], bool] = utility.passing
-    ):
+    def __init__(self, img: Surface, text: str, _rect: Rect, down_click: Union[None, Callable] = None,
+                 up_click: Union[None, Callable] = None, hold_click: Union[None, Callable] = None,
+                 fill_color: Union[tuple[int, int, int], tuple[int, int, int, int], None] = None,
+                 outline_color: Union[tuple[int, int, int], None] = None,
+                 inflate_center: tuple[float, float] = (0.5, 0.5), outline_width: int = 1,
+                 arguments: Union[None, dict[str, Any]] = None, scale_factor: float = 1.25, special_press: tuple = (),
+                 typing_instance: int = None, visible_check: Callable[[], bool] = utility.passing):
         """
         initialize a button
-        :param click:
+        :param down_click:
         :param img:
         :param text:
         :param _rect:
@@ -330,7 +325,7 @@ class Button(ButtonHolderTemplate):
         :param special_press:
         :param typing_instance:
         """
-        self.click: Union[None, Callable] = click
+        self.clicks = [down_click, up_click, hold_click]
         self.img: Surface = img
         self.text: str = text
         self.rect: Rect = _rect
@@ -368,46 +363,25 @@ class Button(ButtonHolderTemplate):
         :param special_press: what controls can be used to press it
         :return: a formed button
         """
-        return Button(
-            click,
-            img,
-            button_name,
-            Rect(center, (0, 0)) if img is None else img.get_rect(center=center),
-            inflate_center=inflate_center,
-            arguments=arguments,
-            scale_factor=scale_factor,
-            special_press=special_press,
-            outline_width=0
-        )
+        return Button(img, button_name, Rect(center, (0, 0)) if img is None else img.get_rect(center=center), click,
+                      inflate_center=inflate_center, outline_width=0, arguments=arguments, scale_factor=scale_factor,
+                      special_press=special_press)
 
     @staticmethod
-    def make_text_button(
-            text: str,
-            font: int,
-            click: Union[Callable, None],
-            center: tuple[int, int],
-            background_color: Union[tuple[int, int, int], tuple[int, int, int, int], None] = (255, 255, 255, 255),
-            outline_color: tuple[int, int, int] = (0, 0, 0),
-            border_width: int = 0,
-            max_line_pixels: int = 0,
-            max_line_words: int = 0,
-            max_width: int = 0,
-            preserve_words: bool = True,
-            text_align: float = 0,
-            x_align: float = 0.5,
-            y_align: float = 0.5,
-            arguments: dict[str, Any] = None,
-            special_press: Union[tuple[str], str] = (),
-            override_text: str = None,
-            max_lines: int = 0,
-            enforce_width: int = 0,
-            visible_check: Callable[[], bool] = utility.passing
-    ) -> Button:
+    def make_text_button(text: str, font: int, center: tuple[int, int], down_click: Union[Callable, None] = None,
+                         up_click: Union[Callable, None] = None, hold_click: Union[Callable, None] = None,
+                         background_color: Union[tuple[int, int, int], tuple[int, int, int, int], None] = (
+                         255, 255, 255, 255), outline_color: tuple[int, int, int] = (0, 0, 0), border_width: int = 0,
+                         max_line_pixels: int = 0, max_line_words: int = 0, max_width: int = 0,
+                         preserve_words: bool = True, text_align: float = 0, x_align: float = 0.5, y_align: float = 0.5,
+                         arguments: dict[str, Any] = None, special_press: Union[tuple[str], str] = (),
+                         override_text: str = None, max_lines: int = 0, enforce_width: int = 0,
+                         visible_check: Callable[[], bool] = utility.passing) -> Button:
         """
         creates a button object
         :param text: string
         :param font: size of the font object
-        :param click: function called when the button is clicked
+        :param down_click: function called when the button is clicked
         :param center: coordinate centers of the button
         :param background_color: background color for the text
         :param outline_color: color used for text and border
@@ -450,19 +424,10 @@ class Button(ButtonHolderTemplate):
             text = "Right"
         if override_text is None:
             override_text = text
-        return Button(
-            click,
-            text_surface,
-            override_text,
-            pygame.Rect(center[0] - x_align * x, center[1] - y_align * y, x, y),
-            background_color,
-            outline_color,
-            (x_align, y_align),
-            border_width,
-            arguments=arguments,
-            special_press=special,
-            visible_check=visible_check
-        )
+        return Button(text_surface, override_text, pygame.Rect(center[0] - x_align * x, center[1] - y_align * y, x, y),
+                      down_click=down_click, up_click=up_click, hold_click=hold_click, fill_color=background_color
+                      , outline_color=outline_color, inflate_center=(x_align, y_align), outline_width=border_width,
+                      arguments=arguments, special_press=special, visible_check=visible_check)
 
     def render_onto(self, onto: Surface, mouse_pos: tuple[int, int]) -> None:
         """
@@ -475,7 +440,7 @@ class Button(ButtonHolderTemplate):
             return
         if not self.visible():
             return
-        if self.click is not None and (self.rect.collidepoint(mouse_pos) or self.keyed):
+        if any(click is not None for click in self.clicks) and (self.rect.collidepoint(mouse_pos) or self.keyed):
             # mouse is over or keyed clicker is on
 
             # gets coordinates of button parts for scaling
@@ -515,22 +480,22 @@ class Button(ButtonHolderTemplate):
                     width=self.outline_width
                 )
 
-    def run_click(self) -> bool:
+    def run_click(self, click_type) -> bool:
         """
         runs click event
         :return: if event occurred
         """
-        if self.click is None:
+        if self.clicks[click_type.value] is None:
             return False
         if not self.visible():
             return False
         if self.arguments is None:
-            self.click()
+            self.clicks[click_type.value]()
         else:
-            self.click(**self.arguments)
+            self.clicks[click_type.value](**self.arguments)
         return True
 
-    def do_click(self, mouse_pos: tuple[int, int]) -> bool:
+    def do_click(self, mouse_pos: tuple[int, int], click_type) -> bool:
         """
         checks if mouse is on the button when mouse button is pressed, and if so, recursively
         :return:
@@ -540,16 +505,16 @@ class Button(ButtonHolderTemplate):
         if not self.visible():
             return False
         if self.rect.collidepoint(mouse_pos):
-            return self.run_click()
+            return self.run_click(click_type)
         return False
 
-    def do_key(self) -> bool:
+    def do_key(self, click_type) -> bool:
         """
         checks if button is keyed, and if so, does click
         :return:
         """
         if self.keyed:
-            self.run_click()
+            self.run_click(click_type)
         return self.keyed
 
     def special_key_click(self, key) -> bool:
@@ -564,7 +529,7 @@ class Button(ButtonHolderTemplate):
         else:
             special_pressed = key in self.special_press
         if special_pressed:
-            self.run_click()
+            self.run_click(Button.ClickTypes.down)
         return special_pressed
 
     def iter_key(self) -> int:
@@ -874,7 +839,7 @@ class ButtonHolder(ButtonHolderTemplate):
                     width=self.outline_width
                 )
 
-    def do_click(self, mouse_pos: tuple[int, int]) -> bool:
+    def do_click(self, mouse_pos: tuple[int, int], click_type) -> bool:
         """
         checks if mouse is on the button when mouse button is pressed, and if so, recursively
         :return:
@@ -892,11 +857,11 @@ class ButtonHolder(ButtonHolderTemplate):
             for button in self.list:
                 if button is None:
                     continue
-                if button.do_click(mouse_pos):
+                if button.do_click(mouse_pos, click_type):
                     return True
         return False
 
-    def do_key(self) -> bool:
+    def do_key(self, click_type) -> bool:
         """
         presses special action key for keyed action selection (not special key press)
         :return:

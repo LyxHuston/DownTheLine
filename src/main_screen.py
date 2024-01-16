@@ -34,58 +34,21 @@ def setup_main_screen():
 
     game_states.CAMERA_BOTTOM = game_states.DISTANCE - game_states.CAMERA_THRESHOLDS[0]
 
-    game_structures.BUTTONS.add_button(game_structures.Button.make_text_button(
-        "Down The Line",
-        300,
-        None,
-        (game_states.WIDTH // 2, 0),
-        (0, 0, 0, 0),
-        (255, 255, 255),
-        0,
-        text_align=0.5,
-        x_align=0.5,
-        y_align=0,
-        max_line_words=2
-    ))
-    game_structures.BUTTONS.add_button(game_structures.Button.make_text_button(
-        "Play",
-        100,
-        game_structures.PLACES.in_game.value.start,
-        (game_states.WIDTH // 2, game_states.HEIGHT - 1.5 * (game_states.DISTANCE - game_states.CAMERA_BOTTOM)),
-        (0, 0, 0, 0),
-        (255, 255, 255),
-        0,
-        text_align=0.5,
-        x_align=0.5,
-        y_align=1,
-        max_line_words=2
-    ))
-    game_structures.BUTTONS.add_button(game_structures.Button.make_text_button(
-        "Quit",
-        50,
-        other_screens.exit,
-        (game_states.WIDTH // 2, game_states.HEIGHT),
-        (0, 0, 0, 0),
-        (255, 255, 255),
-        0,
-        text_align=0.5,
-        x_align=0.5,
-        y_align=1,
-        max_line_words=2
-    ))
-    game_structures.BUTTONS.add_button(game_structures.Button.make_text_button(
-        "Logs",
-        75,
-        log_screen.screen.start,
-        (game_states.WIDTH, game_states.HEIGHT),
-        (0, 0, 0, 0),
-        (255, 255, 255),
-        0,
-        text_align=0.5,
-        x_align=1,
-        y_align=1,
-        max_line_words=2
-    ))
+    game_structures.BUTTONS.add_button(
+        game_structures.Button.make_text_button("Down The Line", 300, (game_states.WIDTH // 2, 0), None,
+                                                background_color=(0, 0, 0, 0), outline_color=(255, 255, 255),
+                                                border_width=0, max_line_words=2, text_align=0.5, x_align=0.5, y_align=0
+                                            ))
+    game_structures.BUTTONS.add_button(game_structures.Button.make_text_button("Play", 100, (
+        game_states.WIDTH // 2, game_states.HEIGHT - 1.5 * (game_states.DISTANCE - game_states.CAMERA_BOTTOM)),
+        game_structures.PLACES.in_game.value.start, background_color=(0, 0, 0, 0), outline_color=(255, 255, 255),
+        border_width=0, max_line_words=2, text_align=0.5, x_align=0.5, y_align=1))
+    game_structures.BUTTONS.add_button(game_structures.Button.make_text_button("Quit", 50, (
+        game_states.WIDTH // 2, game_states.HEIGHT), other_screens.exit, background_color=(0, 0, 0, 0),
+        outline_color=(255, 255, 255), border_width=0, max_line_words=2, text_align=0.5, x_align=0.5, y_align=1))
+    game_structures.BUTTONS.add_button(game_structures.Button.make_text_button("Logs", 75, (
+        game_states.WIDTH, game_states.HEIGHT), log_screen.screen.start, background_color=(0, 0, 0, 0), outline_color=(
+        255, 255, 255), border_width=0, max_line_words=2, text_align=0.5, x_align=1, y_align=1))
 
 
 def main_screen():

@@ -230,10 +230,15 @@ def make_reserved_audio_channel() -> pygame.mixer.Channel:
 
 
 button_hover_keyed = False
+special_key = pygame.K_RETURN
+
+
+keyed_down = False
+mouse_down = False
 
 
 def tick() -> None:
-    global button_hover_keyed
+    global button_hover_keyed, keyed_down, mouse_down
     """
     function that handles game clock and frame rate
     also handles some other actions that need to happen every frame
@@ -252,6 +257,25 @@ def tick() -> None:
         )
     game_structures.display_screen()
     game_structures.CLOCK.tick(60)
+
+    if keyed_down:
+        if pygame.key.get_pressed()[special_key]:
+            game_structures.BUTTONS.do_key(game_structures.Button.ClickTypes.hold)
+        else:
+            game_structures.BUTTONS.do_key(game_structures.Button.ClickTypes.up)
+            keyed_down = False
+
+    if mouse_down:
+        pos = pygame.mouse.get_pos()
+        if game_structures.TRUE_SCREEN is not None:
+            factor = game_states.HEIGHT / game_structures.TRUE_HEIGHT
+            pos = (pos[0] * factor, pos[1] * factor)
+        if pygame.mouse.get_pressed()[1]:
+            game_structures.BUTTONS.do_click(pos, game_structures.Button.ClickTypes.hold)
+        else:
+            game_structures.BUTTONS.do_click(pos, game_structures.Button.ClickTypes.up)
+            mouse_down = False
+
     for event in pygame.event.get():
         event_handled = False
         if event.type == pygame.QUIT:
@@ -283,9 +307,10 @@ def tick() -> None:
                         button_hover_keyed = True
                     if button_hover_keyed:
                         game_structures.ALERTS.speak.add(game_structures.BUTTONS.get_hover_keyed_text())
-                if event.key == pygame.K_RETURN:
+                if event.key == special_key and not keyed_down:
                     event_handled = True
-                    game_structures.BUTTONS.do_key()
+                    keyed_down = True
+                    game_structures.BUTTONS.do_key(game_structures.Button.ClickTypes.down)
                 game_structures.BUTTONS.special_key_click(event.key)
         elif event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 1:
@@ -293,7 +318,7 @@ def tick() -> None:
                 if game_structures.TRUE_SCREEN is not None:
                     factor = game_states.HEIGHT / game_structures.TRUE_HEIGHT
                     pos = (pos[0] * factor, pos[1] * factor)
-                event_handled = game_structures.BUTTONS.do_click(pos)
+                event_handled = game_structures.BUTTONS.do_click(pos, game_structures.Button.ClickTypes.down)
         if not event_handled:
             for catcher in game_structures.CUSTOM_EVENT_CATCHERS:
                 if catcher(event):

@@ -36,16 +36,10 @@ RECORDS = game_structures.ScrollableButtonHolder(
 )
 BUTTONS = game_structures.ButtonHolder()
 BUTTONS.add_button(RECORDS)
-BUTTONS.add_button(game_structures.Button.make_text_button(
-    "Back",
-    75,
-    main_screen.main_screen_place.start,
-    (game_states.WIDTH, 0),
-    background_color=(0, 0, 0),
-    outline_color=(255, 255, 255),
-    x_align=1,
-    y_align=0
-))
+BUTTONS.add_button(
+    game_structures.Button.make_text_button("Back", 75, (game_states.WIDTH, 0), main_screen.main_screen_place.start,
+                                            background_color=(0, 0, 0), outline_color=(255, 255, 255), x_align=1,
+                                            y_align=0))
 
 
 def clear_log():
@@ -54,16 +48,9 @@ def clear_log():
     screen.start()
 
 
-BUTTONS.add_button(game_structures.Button.make_text_button(
-    "Clear Log",
-    75,
-    clear_log,
-    (0, 0),
-    background_color=(0, 0, 0),
-    outline_color=(255, 255, 255),
-    x_align=0,
-    y_align=0
-))
+BUTTONS.add_button(
+    game_structures.Button.make_text_button("Clear Log", 75, (0, 0), clear_log, background_color=(0, 0, 0),
+                                            outline_color=(255, 255, 255), x_align=0, y_align=0))
 
 
 class RunRecord(game_structures.Place, game_structures.Button):
@@ -79,17 +66,8 @@ class RunRecord(game_structures.Place, game_structures.Button):
             background_color=(0, 0, 0),
             outline_color=(255, 255, 255)
         )
-        game_structures.Button.__init__(
-            self,
-            self.start,
-            img,
-            text,
-            img.get_rect(),
-            (0, 0, 0),
-            (255, 255, 255),
-            inflate_center=(0, 0.5),
-            outline_width=2
-        )
+        game_structures.Button.__init__(self, img, text, img.get_rect(), self.start, fill_color=(0, 0, 0),
+                                        outline_color=(255, 255, 255), outline_width=2, inflate_center=(0, 0.5))
         self.reason = reason
         self.furthest = furthest
         self.progress = progress
@@ -107,67 +85,39 @@ class RunRecord(game_structures.Place, game_structures.Button):
     def enter(self):
         self.buttons = game_structures.ButtonHolder()
         self.buttons.add_button(
-            game_structures.Button.make_text_button(
-                self.reason,
-                400,
-                None,
-                (game_states.WIDTH // 4, 20),
-                background_color=(0, 0, 0),
-                outline_color=(255, 255, 255),
-                x_align=0,
-                y_align=0
-            )
+            game_structures.Button.make_text_button(self.reason, 400, (game_states.WIDTH // 4, 20), None,
+                                                    background_color=(0, 0, 0), outline_color=(255, 255, 255),
+                                                    x_align=0, y_align=0)
         )
         self.buttons.add_button(
-            game_structures.Button.make_text_button(
-                f"seed: {self.seed}",
-                50,
-                self.set_seed,
-                (game_states.WIDTH // 4, 420),
-                background_color=(0, 0, 0),
-                outline_color=(255, 255, 255),
-                x_align=0,
-                y_align=0,
-            )
+            game_structures.Button.make_text_button(f"seed: {self.seed}", 50, (game_states.WIDTH // 4, 420),
+                                                    self.set_seed, background_color=(0, 0, 0),
+                                                    outline_color=(255, 255, 255), x_align=0, y_align=0)
         )
 
         self.buttons.add_button(
-            game_structures.Button.make_text_button(
-                "\n".join([
-                    f"time: {self.date}",
-                    f"{self.start_time}-{self.end_time} ({self.duration} elapsed)",
-                    "",
-                    f"distance: {self.furthest}",
-                    f"progress: {self.progress} rooms",
-                    ""
-                ] + [
-                    f"""{
-                        ''.join([char if char.islower() else ' ' + char for char in item[0]])[1:]
-                    }: {item[1]}""" for item in sorted(
-                        list(ast.literal_eval(self.room_record).items()), key=lambda tup: tup[1]
-                    )
-                ]),
-                80,
-                None,
-                (game_states.WIDTH // 4, 550),
-                background_color=(0, 0, 0),
-                outline_color=(255, 255, 255),
-                x_align=0,
-                y_align=0
-            )
+            game_structures.Button.make_text_button("\n".join([
+                                                                  f"time: {self.date}",
+                                                                  f"{self.start_time}-{self.end_time} ({self.duration} elapsed)",
+                                                                  "",
+                                                                  f"distance: {self.furthest}",
+                                                                  f"progress: {self.progress} rooms",
+                                                                  ""
+                                                              ] + [
+                                                                  f"""{
+                                                                  ''.join([char if char.islower() else ' ' + char for char in item[0]])[1:]
+                                                                  }: {item[1]}""" for item in sorted(
+                    list(ast.literal_eval(self.room_record).items()), key=lambda tup: tup[1]
+                )
+                                                              ]), 80, (game_states.WIDTH // 4, 550), None,
+                                                    background_color=(0, 0, 0), outline_color=(255, 255, 255),
+                                                    x_align=0, y_align=0)
         )
 
         self.buttons.add_button(
-            game_structures.Button.make_text_button(
-                "Back",
-                75,
-                screen.start,
-                (game_states.WIDTH, 0),
-                background_color=(0, 0, 0),
-                outline_color=(255, 255, 255),
-                x_align=1,
-                y_align=0
-            )
+            game_structures.Button.make_text_button("Back", 75, (game_states.WIDTH, 0), screen.start,
+                                                    background_color=(0, 0, 0), outline_color=(255, 255, 255),
+                                                    x_align=1, y_align=0)
         )
 
         game_structures.BUTTONS.add_button(self.buttons)
@@ -218,16 +168,11 @@ def enter():
         RECORDS.background = pygame.surface.Surface(
             (game_states.WIDTH, game_states.WIDTH)
         )
-        RECORDS.add_button(game_structures.Button.make_text_button(
-            "No runs logged.",
-            80,
-            None,
-            (game_states.WIDTH // 4, game_states.HEIGHT // 2),
-            background_color=(0, 0, 0),
-            outline_color=(255, 255, 255),
-            border_width=0,
-            text_align=0.5
-        ))
+        RECORDS.add_button(game_structures.Button.make_text_button("No runs logged.", 80,
+                                                                   (game_states.WIDTH // 4, game_states.HEIGHT // 2),
+                                                                   None, background_color=(0, 0, 0),
+                                                                   outline_color=(255, 255, 255), border_width=0,
+                                                                   text_align=0.5))
     RECORDS.rect.fit(RECORDS.background.get_rect())
 
 
