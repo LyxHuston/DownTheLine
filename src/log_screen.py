@@ -31,8 +31,10 @@ log_file_name: str = "run_log.txt"
 
 
 RECORDS = game_structures.ScrollableButtonHolder(
-    pygame.rect.Rect(game_states.WIDTH // 4 - 20, 0, 3 * game_states.WIDTH // 4, game_states.HEIGHT),
-    pygame.surface.Surface((3 * game_states.WIDTH // 4 + 20, game_states.HEIGHT))
+    pygame.rect.Rect(game_states.WIDTH // 4 - 20, 0, game_states.WIDTH // 2, game_states.HEIGHT),
+    pygame.surface.Surface((3 * game_states.WIDTH // 4 + 20, game_states.HEIGHT)),
+    scrollable_x=False,
+    scrollable_y=True
 )
 BUTTONS = game_structures.ButtonHolder()
 BUTTONS.add_button(RECORDS)
@@ -96,22 +98,22 @@ class RunRecord(game_structures.Place, game_structures.Button):
         )
 
         self.buttons.add_button(
-            game_structures.Button.make_text_button("\n".join([
-                                                                  f"time: {self.date}",
-                                                                  f"{self.start_time}-{self.end_time} ({self.duration} elapsed)",
-                                                                  "",
-                                                                  f"distance: {self.furthest}",
-                                                                  f"progress: {self.progress} rooms",
-                                                                  ""
-                                                              ] + [
-                                                                  f"""{
-                                                                  ''.join([char if char.islower() else ' ' + char for char in item[0]])[1:]
-                                                                  }: {item[1]}""" for item in sorted(
-                    list(ast.literal_eval(self.room_record).items()), key=lambda tup: tup[1]
-                )
-                                                              ]), 80, (game_states.WIDTH // 4, 550), None,
-                                                    background_color=(0, 0, 0), outline_color=(255, 255, 255),
-                                                    x_align=0, y_align=0)
+            game_structures.Button.make_text_button("\n".join(
+                [
+                    f"time: {self.date}",
+                    f"{self.start_time}-{self.end_time} ({self.duration} elapsed)",
+                    "",
+                    f"distance: {self.furthest}",
+                    f"progress: {self.progress} rooms",
+                    ""
+                ] + [
+                    f"""{
+                        ''.join([char if char.islower() else ' ' + char for char in item[0]])[1:]
+                    }: {item[1]}""" for item in sorted(
+                        list(ast.literal_eval(self.room_record).items()), key=lambda tup: tup[1]
+                    )
+                ]), 80, (game_states.WIDTH // 4, 550), None, background_color=(0, 0, 0),
+                outline_color=(255, 255, 255), x_align=0, y_align=0)
         )
 
         self.buttons.add_button(
@@ -154,15 +156,21 @@ def enter():
             make_record(ast.literal_eval(line))
             line = log_file.readline()
     if len(RECORDS) > 0:
-        record_height = (RECORDS[0].rect.height * 1.25)
+        record_height = (RECORDS[2].rect.height * 1.25)
         RECORDS.background = pygame.surface.Surface(
-            (game_states.WIDTH, max(record_height * len(RECORDS), game_states.HEIGHT))
+            (game_states.WIDTH // 2 + 40, max(record_height * len(RECORDS), game_states.HEIGHT))
         )
         i = 0
-        for record in RECORDS:
+        for record in RECORDS.list:
             record.rect.y = i * record_height
             record.rect.x = 20
             i += 1
+        RECORDS.rect = pygame.rect.Rect(
+            game_states.WIDTH // 4 - 20,
+            0,
+            game_states.WIDTH // 2 + 40,
+            max(record_height * len(RECORDS), game_states.HEIGHT)
+        )
         RECORDS.y = RECORDS.background.get_rect().height - game_states.HEIGHT
     else:
         RECORDS.background = pygame.surface.Surface(
@@ -173,7 +181,7 @@ def enter():
                                                                    None, background_color=(0, 0, 0),
                                                                    outline_color=(255, 255, 255), border_width=0,
                                                                    text_align=0.5))
-    RECORDS.rect.fit(RECORDS.background.get_rect())
+        RECORDS.rect.fit(RECORDS.background.get_rect())
 
 
 def end():

@@ -272,6 +272,9 @@ class Button(ButtonHolderTemplate):
         up = 1
         hold = 2
 
+    class SpecialArguments(enum.Enum):
+        mouse_pos = "mouse_pos"
+
     def get_hover_keyed_text(self) -> Union[str, None]:
         """
         if keyed, return text, else None
@@ -308,8 +311,9 @@ class Button(ButtonHolderTemplate):
                  fill_color: Union[tuple[int, int, int], tuple[int, int, int, int], None] = None,
                  outline_color: Union[tuple[int, int, int], None] = None,
                  inflate_center: tuple[float, float] = (0.5, 0.5), outline_width: int = 1,
-                 arguments: Union[None, dict[str, Any]] = None, scale_factor: float = 1.25, special_press: tuple = (),
-                 typing_instance: int = None, visible_check: Callable[[], bool] = utility.passing):
+                 down_arguments: Union[None, dict[str, Any]] = None, up_arguments: Union[None, dict[str, Any]] = None,
+                 hold_arguments: Union[None, dict[str, Any]] = None, scale_factor: float = 1.25, special_press: tuple =
+                 (), typing_instance: int = None, visible_check: Callable[[], bool] = utility.passing):
         """
         initialize a button
         :param down_click:
@@ -320,12 +324,13 @@ class Button(ButtonHolderTemplate):
         :param outline_color:
         :param inflate_center:
         :param outline_width:
-        :param arguments:
+        :param down_arguments:
         :param scale_factor:
         :param special_press:
         :param typing_instance:
         """
         self.clicks = [down_click, up_click, hold_click]
+        self.arguments: list[Union[None, dict[str, Any]]] = [down_arguments, up_arguments, hold_arguments]
         self.img: Surface = img
         self.text: str = text
         self.rect: Rect = _rect
@@ -333,7 +338,6 @@ class Button(ButtonHolderTemplate):
         self.outline_color: Union[tuple[int, int, int], None] = outline_color
         self.inflate_center: tuple[float, float] = inflate_center
         self.outline_width: int = outline_width
-        self.arguments: Union[None, dict[str, Any]] = arguments
         self.scale_factor: float = scale_factor
         self.special_press: tuple = special_press
         self.typing_instance: int = typing_instance
@@ -364,7 +368,7 @@ class Button(ButtonHolderTemplate):
         :return: a formed button
         """
         return Button(img, button_name, Rect(center, (0, 0)) if img is None else img.get_rect(center=center), click,
-                      inflate_center=inflate_center, outline_width=0, arguments=arguments, scale_factor=scale_factor,
+                      inflate_center=inflate_center, outline_width=0, down_arguments=arguments, scale_factor=scale_factor,
                       special_press=special_press)
 
     @staticmethod
@@ -427,7 +431,7 @@ class Button(ButtonHolderTemplate):
         return Button(text_surface, override_text, pygame.Rect(center[0] - x_align * x, center[1] - y_align * y, x, y),
                       down_click=down_click, up_click=up_click, hold_click=hold_click, fill_color=background_color
                       , outline_color=outline_color, inflate_center=(x_align, y_align), outline_width=border_width,
-                      arguments=arguments, special_press=special, visible_check=visible_check)
+                      down_arguments=arguments, special_press=special, visible_check=visible_check)
 
     def render_onto(self, onto: Surface, mouse_pos: tuple[int, int]) -> None:
         """
@@ -480,19 +484,24 @@ class Button(ButtonHolderTemplate):
                     width=self.outline_width
                 )
 
-    def run_click(self, click_type) -> bool:
+    def run_click(self, click_type, mouse_pos=None) -> bool:
         """
         runs click event
         :return: if event occurred
         """
-        if self.clicks[click_type.value] is None:
+        click = self.clicks[click_type.value]
+        if click is None:
             return False
         if not self.visible():
             return False
-        if self.arguments is None:
-            self.clicks[click_type.value]()
+        arguments = self.arguments[click_type.value]
+        if arguments is None:
+            click()
         else:
-            self.clicks[click_type.value](**self.arguments)
+            if Button.SpecialArguments.mouse_pos.value in arguments:
+                print("running", mouse_pos)
+                arguments[Button.SpecialArguments.mouse_pos.value] = mouse_pos
+            click(**arguments)
         return True
 
     def do_click(self, mouse_pos: tuple[int, int], click_type) -> bool:
@@ -505,7 +514,8 @@ class Button(ButtonHolderTemplate):
         if not self.visible():
             return False
         if self.rect.collidepoint(mouse_pos):
-            return self.run_click(click_type)
+            print(mouse_pos)
+            return self.run_click(click_type, mouse_pos)
         return False
 
     def do_key(self, click_type) -> bool:
@@ -786,7 +796,7 @@ class ButtonHolder(ButtonHolderTemplate):
         initializes
         """
         self.list = init_list
-        if self.list is None:
+        if init_list is None:
             self.list = list()
         self.background = background
         if _rect is None and self.background is not None:
@@ -1014,14 +1024,89 @@ class ScrollableButtonHolder(ButtonHolder):
         """
         initializes
         """
+
+        self.scrollable = [scrollable_x, scrollable_y]
+
+        def make_scroll_button(button: Button, direction: int) -> Button:
+            """
+            makes a button a scroll button
+            :param button: the button to modify
+            :param direction: 0 = x, 1 = y
+            :return: modified button object
+            """
+
+            visible_cache = [0, 0]
+
+            def determine_pos_and_dimensions() -> tuple[int, int, int, int]:
+                length = visible_cache[0] ** 2 // visible_cache[1]
+                pos: list[int] = [self.window.width - 20, self.window.height - 20]
+                dimensions: list[int] = [20, 20]
+                dimensions[direction] = length
+                pos[direction] = (self.window.size[direction] - length) * self.clip_rect.topleft[direction] // self.rect.size[
+                    direction]
+                return pos[0], pos[1], dimensions[0], dimensions[1]
+
+            def scroll_visible():
+                visible = self.scrollable[direction]
+                if visible:
+                    visible = self.clip_rect.size[direction] < self.rect.size[direction]
+                if visible:
+                    visible_cache[0] = self.clip_rect.size[direction]
+                    visible_cache[1] = self.rect.size[direction]
+                    button.rect = pygame.rect.Rect(*determine_pos_and_dimensions())
+                    button.img = pygame.surface.Surface(button.rect.size)
+                return visible
+
+            def change_pos(mouse_pos: tuple[int, int]):
+                print(mouse_pos)
+                pos = list(self.clip_rect.topleft)
+                new_pos = mouse_pos[direction] * self.rect.size[direction] // self.window.size[direction]
+                pos[direction] = min(max(new_pos, 0), self.rect.size[direction] - self.window.size[direction])
+                print(pos)
+                self.clip_rect.topleft = tuple(pos)
+
+            button.visible = scroll_visible
+
+            button.clicks = [
+                utility.passing,
+                utility.passing,
+                change_pos
+            ]
+
+            button.arguments = [
+                None,
+                None,
+                {Button.SpecialArguments.mouse_pos.value: None}
+            ]
+
+            return button
+
+        self.scrolls = [
+            make_scroll_button(Button(
+                pygame.Surface((0, 0)),
+                "scroll horizontal",
+                pygame.Rect(0, 0, 0, 0),
+                fill_color=(0, 0, 0),
+                outline_color=(255, 255, 255),
+                outline_width=2,
+                scale_factor=1
+            ), 0),
+            make_scroll_button(Button(
+                pygame.Surface((0, 0)),
+                "scroll vertical",
+                pygame.Rect(0, 0, 0, 0),
+                fill_color=(0, 0, 0),
+                outline_color=(255, 255, 255),
+                outline_width=2,
+                scale_factor=1
+            ), 1)
+        ]
+
         super().__init__(init_list, background, base_rect, fill_color, outline_color, outline_width,
                          visible_check=visible_check)
         self.window = window_rect
 
         self.clip_rect = self.window.copy()
-
-        self.x_scroll = scrollable_x
-        self.y_scroll = scrollable_y
 
         self.step = step
 
@@ -1062,6 +1147,32 @@ class ScrollableButtonHolder(ButtonHolder):
         """
         return mouse_pos[0] - self.window.x + self.x, mouse_pos[1] - self.window.y + self.y
 
+    def do_click(self, mouse_pos: tuple[int, int], click_type) -> bool:
+        """
+        checks if mouse is on the button when mouse button is pressed, and if so, recursively
+        :return:
+        """
+        if not self.visible():
+            return False
+        clip_mouse_pos = (mouse_pos[0] - self.window.left, mouse_pos[1] - self.window.top)
+        interior_mouse_pos = self.adjust_mouse_pos(mouse_pos)
+        if self.rect is None:
+            click = True
+        elif self.rect.collidepoint(interior_mouse_pos):
+            click = True
+        else:
+            return False
+        if click:
+            for scroll in self.scrolls:
+                if scroll.do_click(clip_mouse_pos, click_type):
+                    return True
+            for button in self.list:
+                if button is None:
+                    continue
+                if button.do_click(interior_mouse_pos, click_type):
+                    return True
+        return False
+
     def render_onto(self, onto: Surface, mouse_pos: tuple[int, int]) -> None:
         """
         draws onto a surface
@@ -1071,7 +1182,8 @@ class ScrollableButtonHolder(ButtonHolder):
         """
         if not self.visible():
             return
-        mouse_pos = self.adjust_mouse_pos(mouse_pos)
+        inside_mouse_pos = self.adjust_mouse_pos(mouse_pos)
+        on_mouse_pos = (mouse_pos[0] - self.rect.x, mouse_pos[1] - self.rect.y)
         if self.fill_color is None:
             self.background.fill((0, 0, 0, 0))
         else:
@@ -1079,8 +1191,11 @@ class ScrollableButtonHolder(ButtonHolder):
         for button in self.list:
             if button is None:
                 continue
-            button.render_onto(self.background, mouse_pos)
-        onto.blit(self.background.subsurface(self.clip_rect), self.window)
+            button.render_onto(self.background, inside_mouse_pos)
+        window = self.background.subsurface(self.clip_rect)
+        for scroll in self.scrolls:
+            scroll.render_onto(window, on_mouse_pos)
+        onto.blit(window, self.window)
         if self.outline_width > 0:
             rect(
                 onto,
