@@ -270,7 +270,7 @@ def tick() -> None:
         if game_structures.TRUE_SCREEN is not None:
             factor = game_states.HEIGHT / game_structures.TRUE_HEIGHT
             pos = (pos[0] * factor, pos[1] * factor)
-        if pygame.mouse.get_pressed()[1]:
+        if pygame.mouse.get_pressed()[0]:
             game_structures.BUTTONS.do_click(pos, game_structures.Button.ClickTypes.hold)
         else:
             game_structures.BUTTONS.do_click(pos, game_structures.Button.ClickTypes.up)
@@ -314,6 +314,7 @@ def tick() -> None:
                 game_structures.BUTTONS.special_key_click(event.key)
         elif event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 1:
+                mouse_down = True
                 pos = event.pos
                 if game_structures.TRUE_SCREEN is not None:
                     factor = game_states.HEIGHT / game_structures.TRUE_HEIGHT
