@@ -34,7 +34,9 @@ RECORDS = game_structures.ScrollableButtonHolder(
     pygame.rect.Rect(game_states.WIDTH // 4 - 20, 0, game_states.WIDTH // 2, game_states.HEIGHT),
     pygame.surface.Surface((3 * game_states.WIDTH // 4 + 20, game_states.HEIGHT)),
     scrollable_x=False,
-    scrollable_y=True
+    scrollable_y=True,
+    outline_width=1,
+    outline_color=(255, 255, 255)
 )
 BUTTONS = game_structures.ButtonHolder()
 BUTTONS.add_button(RECORDS)
