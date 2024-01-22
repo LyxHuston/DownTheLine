@@ -499,7 +499,6 @@ class Button(ButtonHolderTemplate):
             click()
         else:
             if Button.SpecialArguments.mouse_pos.value in arguments:
-                print("running", mouse_pos)
                 arguments[Button.SpecialArguments.mouse_pos.value] = mouse_pos
             click(**arguments)
         return True
@@ -514,7 +513,6 @@ class Button(ButtonHolderTemplate):
         if not self.visible():
             return False
         if self.rect.collidepoint(mouse_pos):
-            print(mouse_pos)
             return self.run_click(click_type, mouse_pos)
         return False
 
@@ -1063,7 +1061,28 @@ class ScrollableButtonHolder(ButtonHolder):
                 pos[direction] = min(max(new_pos, 0), self.rect.size[direction] - self.window.size[direction])
                 self.clip_rect.topleft = tuple(pos)
 
+            holding = False
+
+            def do_click(mouse_pos: tuple[int, int], click_type) -> bool:
+                """
+                specialized check for scroll wheel to check if the mouse is in channel for the window
+                :return:
+                """
+                nonlocal holding
+                if button.rect is None:
+                    return False
+                if not scroll_visible():
+                    return False
+                if click_type == Button.ClickTypes.down:
+                    holding = 0 < self.window.size[1 - direction] - mouse_pos[1 - direction] < 30
+                elif click_type == Button.ClickTypes.up:
+                    holding = False
+                if holding:
+                    return button.run_click(Button.ClickTypes.hold, mouse_pos)
+                return False
             button.visible = scroll_visible
+
+            button.do_click = do_click
 
             button.clicks = [
                 utility.passing,
@@ -1153,6 +1172,9 @@ class ScrollableButtonHolder(ButtonHolder):
         if not self.visible():
             return False
         clip_mouse_pos = (mouse_pos[0] - self.window.left, mouse_pos[1] - self.window.top)
+        for scroll in self.scrolls:
+            if scroll.do_click(clip_mouse_pos, click_type):
+                return True
         interior_mouse_pos = self.adjust_mouse_pos(mouse_pos)
         if self.rect is None:
             click = True
@@ -1161,9 +1183,6 @@ class ScrollableButtonHolder(ButtonHolder):
         else:
             return False
         if click:
-            for scroll in self.scrolls:
-                if scroll.do_click(clip_mouse_pos, click_type):
-                    return True
             for button in self.list:
                 if button is None:
                     continue
