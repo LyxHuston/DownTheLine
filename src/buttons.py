@@ -1042,7 +1042,7 @@ class ScrollableButtonHolder(ButtonHolder):
                 pos: list[int] = [self.window.width - 20, self.window.height - 20]
                 dimensions: list[int] = [20, 20]
                 dimensions[direction] = length
-                pos[direction] = (self.window.size[direction] - length) * self.clip_rect.topleft[direction] // self.rect.size[
+                pos[direction] = ((self.window.size[direction]) * self.clip_rect.topleft[direction]) / self.rect.size[
                     direction]
                 return pos[0], pos[1], dimensions[0], dimensions[1]
 
@@ -1058,11 +1058,9 @@ class ScrollableButtonHolder(ButtonHolder):
                 return visible
 
             def change_pos(mouse_pos: tuple[int, int]):
-                print(mouse_pos)
                 pos = list(self.clip_rect.topleft)
-                new_pos = mouse_pos[direction] * self.rect.size[direction] // self.window.size[direction]
+                new_pos = (mouse_pos[direction] - button.rect.size[direction] // 2) * self.rect.size[direction] // (self.window.size[direction])
                 pos[direction] = min(max(new_pos, 0), self.rect.size[direction] - self.window.size[direction])
-                print(pos)
                 self.clip_rect.topleft = tuple(pos)
 
             button.visible = scroll_visible
