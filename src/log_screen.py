@@ -31,7 +31,7 @@ log_file_name: str = "run_log.txt"
 
 
 RECORDS = game_structures.ScrollableButtonHolder(
-    pygame.rect.Rect(game_states.WIDTH // 4 - 20, 0, game_states.WIDTH // 2, game_states.HEIGHT),
+    pygame.rect.Rect(game_states.WIDTH // 4, 0, game_states.WIDTH // 2, game_states.HEIGHT),
     pygame.surface.Surface((game_states.WIDTH // 2, game_states.HEIGHT)),
     scrollable_x=False,
     scrollable_y=True,
@@ -165,12 +165,12 @@ def enter():
         i = 0
         for record in RECORDS.list:
             record.rect.y = i * record_height
-            record.rect.x = 20
+            record.rect.x = 0
             i += 1
         RECORDS.rect = pygame.rect.Rect(
-            game_states.WIDTH // 4 - 20,
+            game_states.WIDTH // 4,
             0,
-            game_states.WIDTH // 2 + 40,
+            game_states.WIDTH // 2,
             max(record_height * len(RECORDS), game_states.HEIGHT)
         )
         RECORDS.y = RECORDS.background.get_rect().height - game_states.HEIGHT

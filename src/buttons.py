@@ -1178,7 +1178,7 @@ class ScrollableButtonHolder(ButtonHolder):
         interior_mouse_pos = self.adjust_mouse_pos(mouse_pos)
         if self.rect is None:
             click = True
-        elif self.rect.collidepoint(interior_mouse_pos):
+        elif self.window.collidepoint(mouse_pos):
             click = True
         else:
             return False
