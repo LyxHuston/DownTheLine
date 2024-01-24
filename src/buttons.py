@@ -634,9 +634,9 @@ class Button(ButtonHolderTemplate):
             y_align: int = 0.5,
             x_align: int = 0.5,
             search_against: list[str] = ()
-    ) -> None:
+    ) -> str:
         """
-        edits a button's text, given an index.  Wrapper for interior async function
+        edits a button's text.
         :param font: font size of it
         :param max_characters: max characters in a line (0 if no max)
         :param min_characters: minimum characters in a line
