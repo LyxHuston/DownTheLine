@@ -56,7 +56,7 @@ def tick(do_tick: bool = True, draw_gui: bool = True):
             removing: game_areas.GameArea = game_structures.AREA_QUEUE[0]
             del game_structures.AREA_QUEUE[0]
             for entity in removing.entity_list:
-                if entity.y > removing.end_coordinate:
+                if entity.y > game_states.CAMERA_BOTTOM - 200:
                     entity.transfer(game_structures.AREA_QUEUE[1])
                     game_structures.AREA_QUEUE[1].entity_list.append(entity)
             if removing.__class__.__name__ in run_start_end.GameAreaLog.areas_dict:
