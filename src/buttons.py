@@ -591,7 +591,8 @@ class Button(ButtonHolderTemplate):
         """
         if instance is not None and self.typing_instance != instance:
             return
-        new_img = Button.draw_text(new_text, font, max_line_pixels=max_line_pixels, preserve_words=True)
+        new_img = Button.draw_text(new_text, font, max_line_pixels=max_line_pixels, preserve_words=True,
+                                   background_color=self.fill_color, outline_color=self.outline_color)
         width = new_img.get_width()
         if width > max_width > 0:
             new_img = Button.draw_text(
