@@ -84,7 +84,8 @@ class RunRecord(game_structures.Place, game_structures.Button):
         self.buttons = None
 
     def set_seed(self):
-        game_states.CUSTOM_SEED = self.seed
+        game_states.SEED = self.seed
+        game_states.CUSTOM_SEED = True
 
     def enter(self):
         self.buttons = game_structures.ButtonHolder()
