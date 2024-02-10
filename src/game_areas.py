@@ -52,6 +52,14 @@ class GameArea:
         self.__enforce_center = val
 
     @property
+    def start_coordinate(self):
+        return self.__start_coordinate
+
+    @start_coordinate.setter
+    def start_coordinate(self, val):
+        self.__start_coordinate = round(val)
+
+    @property
     def end_coordinate(self):
         return self.start_coordinate + self.length
 
