@@ -1530,6 +1530,7 @@ class Bomb(Glides):
             if self.allied_with_player:
                 for entity in game_structures.all_entities():
                     if colliding.colliderect(entity.rect):
+                        game_states.TIME_SINCE_LAST_INTERACTION = 0
                         entity.hit(self.damage, self)
             if colliding.colliderect(pygame.Rect(-32, game_states.DISTANCE - 32, 64, 64)):
                 if game_structures.deal_damage(self.damage, self):

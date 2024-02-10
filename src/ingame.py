@@ -47,6 +47,15 @@ def tick(do_tick: bool = None):
             game_states.INVULNERABILITY_LEFT -= 1
         if game_states.HEALTH <= 0 and game_states.PLACE is screen:
             game_structures.switch_to_place(game_structures.PLACES.dead)
+        game_states.TIME_SINCE_LAST_INTERACTION = min(game_states.TIME_SINCE_LAST_INTERACTION + 1, 600)
+        if game_states.TIME_SINCE_LAST_INTERACTION == 600 and game_states.HEALTH < 5:
+            if game_states.LAST_HEAL >= 15:
+                game_states.LAST_HEAL = 0
+                game_states.HEALTH += 1
+            else:
+                game_states.LAST_HEAL += 1
+        else:
+            game_states.LAST_HEAL = 0
         global tick_counter
         tick_counter = tick_counter + 1
         if tick_counter >= loop_counter:

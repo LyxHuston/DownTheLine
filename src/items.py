@@ -463,6 +463,7 @@ def simple_stab_tick(item: Item):
                     continue
                 if rect.colliderect(entity.rect):
                     entity.hit(item.data_pack[4], item)
+                    game_states.TIME_SINCE_LAST_INTERACTION = 0
                     item.data_pack[-1].append(entity)
         elif "p" not in item.data_pack[-1]:
             if rect.colliderect(pygame.Rect(-32, game_states.DISTANCE - 32, 64, 64)):
@@ -515,9 +516,11 @@ def simple_shield_tick(item: Item):
                     entity.y = rect.centery + (rect.height // 2 + entity.height // 2) * game_states.LAST_DIRECTION
                     if isinstance(entity, entities.Projectile):
                         entity.hit(entity.health, item)
+                        game_states.TIME_SINCE_LAST_INTERACTION = 0
                     else:
                         if entity not in item.data_pack[-1]:
                             entity.hit(item.data_pack[4], item)
+                            game_states.TIME_SINCE_LAST_INTERACTION = 0
                             item.data_pack[-1].append(entity)
                     game_states.DISTANCE -= game_states.LAST_DIRECTION * 2
         else:

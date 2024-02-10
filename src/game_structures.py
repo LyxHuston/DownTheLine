@@ -132,8 +132,9 @@ def deal_damage(damage: int, source):
                         if (source.pos[0].y > game_states.DISTANCE) != (game_states.LAST_DIRECTION == -1):
                             return False
                         continue
-        game_states.HEALTH -= damage
-        game_states.INVULNERABILITY_LEFT = damage * 10 + 1
+        game_states.HEALTH = max(game_states.HEALTH - damage, 0)
+        game_states.TIME_SINCE_LAST_INTERACTION = 0
+        game_states.INVULNERABILITY_LEFT = damage * 15 + 5
         return True
         # print(source, source.pos, source.img, source.tick, source.draw)
 
