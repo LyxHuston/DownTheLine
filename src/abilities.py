@@ -20,6 +20,7 @@ import pygame
 import game_states
 import game_structures
 import draw_constants
+import tutorials
 
 dash_img = pygame.image.load("resources/abilities/ability_icons/dash_icon.png")
 
@@ -55,13 +56,14 @@ def dash_input_catch(direction: int, tick_counter) -> None:
 
 
 def draw_dash_icon(tick_counter) -> None:
+    x, y = game_states.WIDTH // 2 - dash_img.get_width() // 2, game_states.HEIGHT - 2 * draw_constants.row_separation - tutorials.display_height
     game_structures.SCREEN.blit(
         dash_img,
-        (0, draw_constants.row_separation * 2)
+        (x, y)
     )
     pygame.draw.rect(
         game_structures.SCREEN,
         (0, 0, 0),
-        pygame.Rect(0, draw_constants.row_separation * 2, draw_constants.icon_size - round(
+        pygame.Rect(x, y, draw_constants.icon_size - round(
             -draw_constants.icon_size * (last_dash_time - tick_counter) / dash_cooldown), draw_constants.icon_size),
     )

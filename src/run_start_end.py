@@ -19,10 +19,12 @@ starts up a game instance
 """
 import datetime
 import enum
+import math
 from typing import Type
 
 import tutorials
 import game_structures
+import gameboard
 import game_states
 import game_areas
 import ingame
@@ -71,6 +73,11 @@ def start(with_seed: int = None):
     game_structures.HANDS = [None, None]
 
     tutorials.clear_tutorial_text()
+
+    heart_data_randomization = random.Random(game_states.SEED)
+    gameboard.heart_data.clear()
+    for i in range(game_states.HEALTH):
+        gameboard.heart_data.append(gameboard.HeartData(heart_data_randomization.random() * math.tau))
 
     # print(sys.int_info)
     # print(game_states.SEED)

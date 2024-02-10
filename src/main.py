@@ -22,6 +22,7 @@ import game_structures
 import game_states
 import pygame
 import sys
+import draw_constants
 
 def check_flags(flags: list[str], error_on_duplicates: bool = False):
     """
@@ -42,13 +43,12 @@ def check_flags(flags: list[str], error_on_duplicates: bool = False):
 
 
 if len(sys.argv) > 1:
-    match sys.argv[1]:
-        case "testing":
-            backdrop = (128, 128, 128)
-            game_structures.SCREEN = pygame.display.set_mode((1000, 700))
-        case _:
-            backdrop = (0, 0, 0)
-            game_structures.SCREEN = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+    if sys.argv[1] == "testing":
+        backdrop = (128, 128, 128)
+        game_structures.SCREEN = pygame.display.set_mode((1000, 700))
+    else:
+        backdrop = (0, 0, 0)
+        game_structures.SCREEN = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
     flag = check_flags(["--autosave", "-a"])
     if flag:
         game_states.AUTOSAVE = True
@@ -76,10 +76,12 @@ pygame.display.set_caption("Down the Line")
 game_states.WIDTH, game_states.HEIGHT = game_structures.SCREEN.get_size()
 game_structures.determine_screen()
 # print(game_states.WIDTH, game_states.HEIGHT)
-game_states.CAMERA_THRESHOLDS = (min(200, round(game_states.HEIGHT // 6)), min(200, round(game_states.HEIGHT // 6)))
+game_states.CAMERA_THRESHOLDS = (min(400, round(game_states.HEIGHT // 5)), min(400, round(game_states.HEIGHT // 5)))
 
 pygame.init()
 game_structures.init()
+
+draw_constants.hearts_y = game_states.HEIGHT - draw_constants.row_separation
 
 
 def do_custom_catchers(catch):

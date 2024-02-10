@@ -52,6 +52,7 @@ up_current = 0
 
 
 display: [pygame.Surface] = None
+display_height = 0
 
 
 def clear_tutorial_text():
@@ -75,8 +76,11 @@ def tick(do_tick):
     tutorial tick.
     :return:
     """
-    global display, typing, typing_cooldown, current_text, up_current, on
-    if display is not None:
+    global display, typing, typing_cooldown, current_text, up_current, on, display_height
+    if display is None:
+        display_height = 0
+    else:
+        display_height = display.get_height()
         game_structures.SCREEN.blit(display, (0, game_states.HEIGHT - display.get_height()))
         pygame.draw.line(game_structures.SCREEN, (255, 255, 255), (0, game_states.HEIGHT - display.get_height()),
                          (game_states.WIDTH, game_states.HEIGHT - display.get_height()), 10)

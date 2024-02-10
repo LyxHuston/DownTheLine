@@ -31,6 +31,7 @@ import math
 import enum
 import draw_constants
 import utility
+import tutorials
 
 
 class ItemTypes(enum.IntEnum):
@@ -161,6 +162,8 @@ def use_wrap_update(func: Callable):
         _wrap(new, func_2)
         return new
 
+    _wrap(internal, func)
+
     return internal
 
 
@@ -220,13 +223,18 @@ def draw_by_side_if_not_used(func: Callable):
     return internal
 
 
+spread = lambda: 384 - 32 * max(0, 4 - game_states.HEALTH)
+get_icon_x = lambda hand: game_states.WIDTH // 2 - spread() // 2 + spread() * hand - 64
+get_icon_y = lambda: game_states.HEIGHT - 2 * draw_constants.row_separation - tutorials.display_height + 16 * max(3 - game_states.HEALTH, 0) ** 2
+
+
 @make_add_wrapper
 def draw_icon(item: Item):
     if not isinstance(item.pos, int):
         return
     game_structures.SCREEN.blit(
         item.icon,
-        ((draw_constants.icon_size + 4) * item.pos, draw_constants.row_separation * 3)
+        (get_icon_x(item.pos), get_icon_y())
     )
 
 
@@ -239,13 +247,13 @@ def draw_icon_for_simple_duration_item(item: Item):
         pygame.draw.rect(
             game_structures.SCREEN,
             (0, 0, 0),
-            pygame.Rect((draw_constants.icon_size + 4) * item.pos, draw_constants.row_separation * 3, draw_constants.icon_size, draw_constants.icon_size),
+            pygame.Rect(get_icon_x(item.pos), get_icon_y(), draw_constants.icon_size, draw_constants.icon_size),
         )
     else:
         pygame.draw.rect(
             game_structures.SCREEN,
             (0, 0, 0),
-            pygame.Rect((draw_constants.icon_size + 4) * item.pos, draw_constants.row_separation * 3, draw_constants.icon_size - round(draw_constants.icon_size * item.data_pack[1] / item.data_pack[2]), draw_constants.icon_size),
+            pygame.Rect(get_icon_x(item.pos), get_icon_y(), draw_constants.icon_size - round(draw_constants.icon_size * item.data_pack[1] / item.data_pack[2]), draw_constants.icon_size),
         )
 
 
