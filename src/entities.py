@@ -68,6 +68,10 @@ class Entity(game_structures.Body):
             val = self.max_health
         self.__health = val
 
+    @property
+    def in_knockback(self):
+        return self.flashing > 0
+
     def __init__(self, img: pygame.Surface, rotation: int, pos: tuple[int, int]):
         super().__init__(img, rotation, pos)
         self.__health = 0

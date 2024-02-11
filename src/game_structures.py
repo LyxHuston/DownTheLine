@@ -116,6 +116,9 @@ def begin_shake(duration: int, maximum: tuple[int, int], change_per_tick: tuple[
 def deal_damage(damage: int, source):
     if game_states.INVULNERABLE:
         return False
+    if hasattr(source, "in_knockback"):
+        if source.in_knockback:
+            return
     if game_states.INVULNERABILITY_LEFT == 0:
         for hand in HANDS:
             if hand is None:
