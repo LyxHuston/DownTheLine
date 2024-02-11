@@ -133,6 +133,8 @@ def item_input_catch(num: int) -> None:
                 return
     if game_structures.HANDS[num] is None:
         return
+    if items.prevent_other_use(game_structures.HANDS[1 - num]):
+        return
     game_structures.HANDS[num].action(game_structures.HANDS[num])
 
 
