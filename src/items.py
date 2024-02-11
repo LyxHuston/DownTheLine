@@ -21,7 +21,7 @@ This is going to be full of factory functions, huh.  Factories of factories of f
 """
 
 from dataclasses import dataclass
-from typing import Callable, Union, Any
+from typing import Callable, Union, Any, Tuple
 import game_structures
 import game_states
 import pygame
@@ -56,52 +56,6 @@ class Item:
     icon: pygame.Surface
     data_pack: Any
     type: ItemTypes
-
-
-def find_range(item) -> int:
-    """
-    finds the effective range of a given item
-    :param item:
-    :return:
-    """
-
-    match item.type:
-        case ItemTypes.SimpleStab:
-            return item.img.get_height()
-        case ItemTypes.SimpleShield:
-            return item.img.get_width()
-        case ItemTypes.SimpleThrowable:
-            return item.data_pack[0].find_range(*item.data_pack[1])
-
-
-def action_available(item) -> bool:
-    match item.type:
-        case ItemTypes.SimpleStab:
-            return not item.data_pack[0] and item.data_pack[1] >= item.data_pack[2]
-        case ItemTypes.SimpleShield:
-            return not item.data_pack[0] and item.data_pack[1] >= item.data_pack[2]
-        case ItemTypes.SimpleThrowable:
-            return True
-
-
-def in_use(item) -> bool:
-    match item.type:
-        case ItemTypes.SimpleStab:
-            return item.data_pack[0]
-        case ItemTypes.SimpleShield:
-            return item.data_pack[0]
-        case ItemTypes.SimpleThrowable:
-            return False
-
-
-def from_player(item) -> bool:
-    match item.type:
-        case ItemTypes.SimpleStab:
-            return isinstance(item.pos, int)
-        case ItemTypes.SimpleShield:
-            return isinstance(item.pos, int)
-        case ItemTypes.SimpleThrowable:
-            return isinstance(item.pos, int)
 
 
 def deepcopy_datapack_factory(item) -> tuple[Callable, Callable, pygame.Surface, Any, Callable, pygame.Surface, Callable, ItemTypes]:
@@ -142,15 +96,17 @@ def offset_point_rotated(origin: tuple[int, int], offset: tuple[int, int], rotat
     )
 
 
-def _wrap(new, old):
+def _wrap(new, old: Any):
     """Simple substitute for functools.update_wrapper."""
     for replace in ['__module__', '__name__', '__qualname__', '__doc__']:
         if hasattr(old, replace):
             setattr(new, replace, getattr(old, replace))
     new.__dict__.update(old.__dict__)
+    return new
 
 
 EMPTY = object()
+ORIGINAL = object()
 
 
 def use_wrap_update(func: Callable):
@@ -160,74 +116,155 @@ def use_wrap_update(func: Callable):
     :return:
     """
 
-    def internal(func_2: Callable = EMPTY, *args, **kwargs):
+    @handle_arguments_meta_wrapper
+    def internal(func_2: Callable):
+        return _wrap(func(func_2), func_2)
 
-        if func_2 is EMPTY:
-            return use_wrap_update(func(*args, **kwargs))
-        elif not isinstance(func_2, Callable):
-            return use_wrap_update(func(func_2, *args, **kwargs))
+    return _wrap(internal, func)
 
-        new = func(func_2)
-        _wrap(new, func_2)
-        return new
 
-    _wrap(internal, func)
+def handle_arguments_meta_wrapper(wrapper_func: Callable):
+    """
+    handles arguments for wrappers.  If arguments are given, passes them to the wrapped function,
+    and passes the resultant function into the wrapper function.  Otherwise, passes the function
+    object in
+    if a function for running is given, instead runs with the specified function
+    :return:
+    """
+    def inner(*args, **kwargs):
+        if len(args) == 1 and len(kwargs) == 0 and isinstance(args[0], Callable):
+            return _wrap(wrapper_func(args[0]), args[0])
 
-    return internal
+        def inner2(func):
+            return _wrap(wrapper_func(func(*args, **kwargs)), func)
+        return inner2
+    return _wrap(inner, wrapper_func)
 
 
 @use_wrap_update
-def make_add_wrapper(func: Callable = EMPTY, *args_1, **kwargs_1):
+def make_meta_wrapper(wrapper_func: Callable):
     """
-    converts the function into something that calls itself then the function it's
-    wrapped on, returning the value from the second
+    converts the function into a wrapper that produces another wrapper.  When that wrapper is
+    used, it passes the two functions into the wrapper func, and returns the result.
 
-    if arguments are used on the add wrapper, it passes the arguments to the function
+    Example of use is the make_add_wrapper or make_conditional_wrapper
+
+    if arguments are used on the wrapper, it passes the arguments to the function
     then uses the resultant function in all wraps.
     if arguments are used in the resultant wrapper, it passes the arguments to the function
-    then uses the resultant function in only that wrap..
-    :param func:
+    then uses the resultant function in only that wrap.
+    """
+
+    # when you have enough helper functions that pretty much anything can be a lambda expression
+    # but you don't, because readability is important.  Disregard the rest of the file.
+    @handle_arguments_meta_wrapper
+    def inner(func1: Callable):
+        def inner2(*args, **kwargs):
+            if len(args) == 1 and len(kwargs) == 0 and isinstance(args[0], Callable):
+                return _wrap(wrapper_func(func1, args[0]), func1)
+
+            def inner3(func2: Callable):
+                return _wrap(wrapper_func(func1(*args, **kwargs), func2), func1)
+            return inner3
+        return inner2
+    return inner
+
+
+@use_wrap_update
+def forward_meta_wrapper_funcs(func: Callable):
+
+    @make_meta_wrapper
+    def inner(func1: Callable, func2: Callable):
+        return lambda *args, **kwargs: func(func1, func2, *args, **kwargs)
+
+    return inner
+
+
+@forward_meta_wrapper_funcs
+def make_add_wrapper(func1: Callable, func2: Callable, *args, **kwargs):
+    func1(*args, **kwargs)
+    return func2(*args, **kwargs)
+
+
+@forward_meta_wrapper_funcs
+def make_conditional_wrapper(func1: Callable, func2: Callable, *args, **kwargs):
+    """
+    makes a function a conditional wrapper.
+    :param func1: must have return of (boolean, Any)
+    :param func2: run if func1 returns (True, <Any>)
+    :return:
+    """
+    valid, result = func1(*args, **kwargs)
+    if valid:
+        return func2(*args, **kwargs)
+    return result
+
+
+@make_conditional_wrapper
+@utility.memoize
+def none_check(result: Any) -> Callable[[Any], tuple[Any, Any]]:
+    def inner(item):
+        return item is not None, result
+    return inner
+
+
+@none_check(0)
+def find_range(item) -> int:
+    """
+    finds the effective range of a given item
+    :param item:
     :return:
     """
 
-    @use_wrap_update
-    def internal(func_2: Callable = EMPTY, *args_2, **kwargs_2):
+    match item.type:
+        case ItemTypes.SimpleStab:
+            return item.img.get_height()
+        case ItemTypes.SimpleShield:
+            return item.img.get_width()
+        case ItemTypes.SimpleThrowable:
+            return item.data_pack[0].find_range(*item.data_pack[1])
 
-        if func_2 is EMPTY:
-            run_first = func(*args_2, **kwargs_2)
-            with_args = True
-        elif not isinstance(func_2, Callable):
-            run_first = func(func_2, *args_2, **kwargs_2)
-            with_args = True
-        else:
-            run_first = func
-            with_args = False
 
-        if with_args:
-            @use_wrap_update
-            def internal_3(func_3: Callable):
-                def internal_4(*args_4, **kwargs_4):
-                    run_first(*args_4, **kwargs_4)
-                    return func_3(*args_4, **kwargs_4)
-                return internal_4
-            return internal_3
+@none_check(False)
+def action_available(item) -> bool:
+    match item.type:
+        case ItemTypes.SimpleStab:
+            return not item.data_pack[0] and item.data_pack[1] >= item.data_pack[2]
+        case ItemTypes.SimpleShield:
+            return True
+        case ItemTypes.SimpleThrowable:
+            return True
 
-        def internal_2(*args_3, **kwargs_3):
-            run_first(*args_3, **kwargs_3)
-            return func_2(*args_3, **kwargs_3)
 
-        return internal_2
+@none_check(False)
+def in_use(item) -> bool:
+    match item.type:
+        case ItemTypes.SimpleStab:
+            return item.data_pack[0]
+        case ItemTypes.SimpleShield:
+            return item.data_pack[0]
+        case ItemTypes.SimpleThrowable:
+            return False
 
-    if func is None or not isinstance(func, Callable):
-        @use_wrap_update
-        def internal_apply_args(func_apply):
-            nonlocal func
-            func = func_apply(*args_1, **kwargs_1)
-            return internal
 
-        return internal_apply_args
+@none_check(False)
+def from_player(item) -> bool:
+    match item.type:
+        case ItemTypes.SimpleStab:
+            return isinstance(item.pos, int)
+        case ItemTypes.SimpleShield:
+            return isinstance(item.pos, int)
+        case ItemTypes.SimpleThrowable:
+            return isinstance(item.pos, int)
 
-    return internal
+
+@none_check(False)
+def prevent_other_use(item) -> bool:
+    match item.type:
+        case ItemTypes.SimpleShield:
+            return item.data_pack[0]
+        case _:
+            return False
 
 
 @use_wrap_update
@@ -403,7 +440,7 @@ def simple_stab_draw(item: Item):
 
 
 @draw_on_ground_if_not_held
-@draw_icon_for_simple_duration_item
+@draw_icon
 @draw_by_side_if_not_used
 def simple_shield_draw(item: Item):
     """
@@ -455,6 +492,16 @@ def simple_cooldown_action(item: Item):
         item.data_pack[1] = 0
         return True
     return False
+
+
+def simple_toggle_action(item: Item):
+    """
+    simple action that toggles if the item is in use
+    :param item:
+    :return:
+    """
+    item.data_pack[0] = not item.data_pack[0]
+    return True
 
 
 @make_add_wrapper
@@ -546,7 +593,6 @@ def simple_stab_tick(item: Item):
     return True
 
 
-@simple_duration_tick
 def simple_shield_tick(item: Item):
     """
     tick for shielding.
@@ -589,12 +635,12 @@ def simple_shield_tick(item: Item):
                         game_states.TIME_SINCE_LAST_INTERACTION = 0
                     else:
                         if entity not in item.data_pack[-1]:
-                            entity.hit(item.data_pack[4], item)
+                            entity.hit(item.data_pack[1], item)
                             game_states.TIME_SINCE_LAST_INTERACTION = 0
                             item.data_pack[-1].append(entity)
                     game_states.DISTANCE -= game_states.LAST_DIRECTION * 2
         else:
-            damage = item.data_pack[4]
+            damage = item.data_pack[1]
             correct_distance = item.pos[0].y + item.pos[0].height // 2 * math.cos(math.radians(item.pos[0].rotation))
             for entity in game_structures.all_entities():
                 if not entity.allied_with_player:
@@ -605,7 +651,7 @@ def simple_shield_tick(item: Item):
                         entity.hit(entity.health, item)
                     else:
                         if entity not in item.data_pack[-1]:
-                            entity.hit(item.data_pack[4], item)
+                            entity.hit(damage, item)
                             item.data_pack[-1].append(entity)
                     item.pos[0].y -= 2 * math.cos(math.radians(item.pos[0].rotation))
             if rect.colliderect(pygame.Rect(-32, game_states.DISTANCE - 32, 64, 64)):
@@ -685,18 +731,18 @@ def random_simple_stab(strength: int, random, pos=None):
     return simple_stab(cooldown, duration, img, pos, damage)
 
 
-def simple_shield(cooldown: int, duration: int, img: pygame.Surface, pos: tuple[int, int], damage: int = 0) -> Item:
+def simple_shield(img: pygame.Surface, pos: tuple[int, int], damage: int = 0) -> Item:
     """
     generate a simple stab item
     """
     return Item(
-        simple_cooldown_action,
+        simple_toggle_action,
         simple_shield_tick,
         img,
         pos,
         simple_shield_draw,
         images.SIMPLE_SHIELD_ICON.img,
-        [False, cooldown, cooldown, duration, damage, []],
+        [False, damage, []],
         ItemTypes.SimpleShield
     )
 
@@ -704,24 +750,10 @@ def simple_shield(cooldown: int, duration: int, img: pygame.Surface, pos: tuple[
 simple_shield_imgs = [images.SIMPLE_SHIELD, images.SPIKY_SHIELD]
 
 
-def random_simple_shield(strength: int, random, pos=None):
+def random_simple_shield(random, pos=None):
     damage = random.randint(0, 1)
 
-    match random.randint(1, 3):
-        case 1:  # long out, long cd
-            allotment = 180 + strength * 5
-            cooldown = 80
-        case 2:  # medium out, medium cd
-            allotment = 100 + strength * 2
-            cooldown = 40
-        case _:  # out for not long, extremely low cd
-            allotment = 40 + strength
-            cooldown = 10
-
-    cooldown += 10 * random.randint(1, 3)
-    duration = allotment - cooldown
-
-    return simple_shield(cooldown, duration, simple_shield_imgs[damage].img, pos, damage)
+    return simple_shield(simple_shield_imgs[damage].img, pos, damage)
 
 
 def make_random_reusable(random, pos):
@@ -734,7 +766,7 @@ def make_random_reusable(random, pos):
         case 0:
             return random_simple_stab(game_states.LAST_AREA, random, pos)
         case 1:
-            return random_simple_shield(game_states.LAST_AREA, random, pos)
+            return random_simple_shield(random, pos)
 
 
 def simple_throwable(img, pos, creates, args):
