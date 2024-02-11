@@ -150,6 +150,9 @@ def _wrap(new, old):
     new.__dict__.update(old.__dict__)
 
 
+EMPTY = object()
+
+
 def use_wrap_update(func: Callable):
     """
     makes a wrapper use the _wrap function on its output.  Needs to be a wrapper.
@@ -157,7 +160,13 @@ def use_wrap_update(func: Callable):
     :return:
     """
 
-    def internal(func_2: Callable):
+    def internal(func_2: Callable = EMPTY, *args, **kwargs):
+
+        if func_2 is EMPTY:
+            return use_wrap_update(func(*args, **kwargs))
+        elif not isinstance(func_2, Callable):
+            return use_wrap_update(func(func_2, *args, **kwargs))
+
         new = func(func_2)
         _wrap(new, func_2)
         return new
@@ -168,21 +177,55 @@ def use_wrap_update(func: Callable):
 
 
 @use_wrap_update
-def make_add_wrapper(func: Callable):
+def make_add_wrapper(func: Callable = EMPTY, *args_1, **kwargs_1):
     """
     converts the function into something that calls itself then the function it's
     wrapped on, returning the value from the second
+
+    if arguments are used on the add wrapper, it passes the arguments to the function
+    then uses the resultant function in all wraps.
+    if arguments are used in the resultant wrapper, it passes the arguments to the function
+    then uses the resultant function in only that wrap..
     :param func:
     :return:
     """
 
     @use_wrap_update
-    def internal(func_2: Callable):
-        def internal_2(*args):
-            func(*args)
-            return func_2(*args)
+    def internal(func_2: Callable = EMPTY, *args_2, **kwargs_2):
+
+        if func_2 is EMPTY:
+            run_first = func(*args_2, **kwargs_2)
+            with_args = True
+        elif not isinstance(func_2, Callable):
+            run_first = func(func_2, *args_2, **kwargs_2)
+            with_args = True
+        else:
+            run_first = func
+            with_args = False
+
+        if with_args:
+            @use_wrap_update
+            def internal_3(func_3: Callable):
+                def internal_4(*args_4, **kwargs_4):
+                    run_first(*args_4, **kwargs_4)
+                    return func_3(*args_4, **kwargs_4)
+                return internal_4
+            return internal_3
+
+        def internal_2(*args_3, **kwargs_3):
+            run_first(*args_3, **kwargs_3)
+            return func_2(*args_3, **kwargs_3)
 
         return internal_2
+
+    if func is None or not isinstance(func, Callable):
+        @use_wrap_update
+        def internal_apply_args(func_apply):
+            nonlocal func
+            func = func_apply(*args_1, **kwargs_1)
+            return internal
+
+        return internal_apply_args
 
     return internal
 
@@ -433,7 +476,34 @@ def simple_duration_tick(item: Item):
     return True
 
 
-@simple_duration_tick
+@make_add_wrapper
+def simple_damage_tick(cd: int, cache_slot: int):
+    """
+    an add wrapper that clears the damage cache on a weapon every <cd> ticks
+    :param cd: cooldown on clearing damage cache
+    :param cache_slot: slot to clear
+    :param count_slot: slot that is counting time since clear
+    :return:
+    """
+
+    @simple_duration_tick
+    def inner(item: Item):
+        if not hasattr(item, "damage_tick"):
+            setattr(item, "damage_tick", 0)
+
+        if not in_use(item):
+            item.damage_tick = 0
+            return
+
+        item.damage_tick += 1
+        if item.damage_tick == cd:
+            item.damage_tick = 0
+            item.data_pack[cache_slot].clear()
+
+    return inner
+
+
+@simple_damage_tick(25, -1)
 def simple_stab_tick(item: Item):
     """
     tick for stabbing.
@@ -585,7 +655,7 @@ def simple_stab(cooldown: int, duration: int, img: pygame.Surface, pos: tuple[in
         simple_stab_draw,
         images.SIMPLE_STAB_ICON.img,
         [False, cooldown, cooldown, duration, damage, []
-         ],  # state, tracker, cooldown ticks, duration ticks, hit tracker
+         ],  # state, tracker, cooldown ticks, duration ticks, damage, hit tracker
         ItemTypes.SimpleStab
     )
 
@@ -600,13 +670,13 @@ def random_simple_stab(strength: int, random, pos=None):
 
     match random.randint(1, 3):
         case 1:
-            cooldown = max(180 - strength, 70)
+            cooldown = max(120 - strength, 60)
             duration = 70
         case 2:
-            cooldown = max(120 - 3 * strength, 50)
+            cooldown = max(120 - 3 * strength, 40)
             duration = 50
         case _:
-            cooldown = max(60 - 9 * strength, 30)
+            cooldown = max(60 - 9 * strength, 20)
             duration = 10
 
     if cooldown < 30:
