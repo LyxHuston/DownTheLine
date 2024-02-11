@@ -668,6 +668,7 @@ class Projectile(Entity):
 
     def tick(self) -> bool:
         self.freeze_y(False)
+        self.freeze_x(False)
         self.x += self.move[0]
         self.y += self.move[1]
         if self.expiration_date == 0:
@@ -685,6 +686,7 @@ class Projectile(Entity):
             if self.destruct_on_collision:
                 return False
         self.freeze_y(True)
+        self.freeze_x(True)
         return self.health > 0
 
 
