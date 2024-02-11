@@ -675,7 +675,7 @@ def add_game_area():
             area.entity_list.append(entities.Obstacle(pos=(0, 170)))
             area.entity_list.append(entities.ItemEntity(items.simple_stab(
                 50,
-                20,
+                35,
                 images.SIMPLE_SWORD.img,
                 (0, 60)
             )))
