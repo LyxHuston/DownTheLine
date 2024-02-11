@@ -106,6 +106,7 @@ SIMPLE_SPEAR = Image("resources/items/simple_spear.png")
 SIMPLE_SHIELD = Image("resources/items/simple_shield.png")
 SPIKY_SHIELD = Image("resources/items/spiky_shield.png")
 SIMPLE_BOMB = Image("resources/items/simple_bomb.png")
+BATON = Image("resources/items/baton.png")
 
 # icons
 SIMPLE_STAB_ICON = Image("resources/items/icons/simple_stab.png")

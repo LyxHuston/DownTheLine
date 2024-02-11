@@ -478,14 +478,14 @@ class MinigameArea(GameArea):
                 self.entity_list.append(entities.ItemEntity(items.simple_stab(
                     10,
                     60,
-                    images.SIMPLE_SPEAR.img,
+                    images.BATON.img,
                     (5, self.length - 200),
                     0
                 )))
                 self.entity_list.append(entities.ItemEntity(items.simple_stab(
                     10,
                     60,
-                    images.SIMPLE_SPEAR.img,
+                    images.BATON.img,
                     (-5, self.length - 400),
                     0
                 )))
