@@ -59,7 +59,7 @@ class Entity(game_structures.Body):
     @health.setter
     def health(self, val):
         if val < self.__health:
-            self.flashing = 6 * (self.__health - val) + 2
+            self.flashing = max(3 * (self.__health - val) + 25, self.flashing)
             self.__shake_limit = 2 * (self.__health - val)
             self.__x_shake_momentum = (self.__health - val) ** 1.5 // 2
             self.__y_shake_momentum = 3 * (self.__health - val) ** 1.5 // 4
