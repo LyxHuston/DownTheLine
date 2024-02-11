@@ -128,10 +128,6 @@ def tick(do_tick: bool = True, draw_gui: bool = True):
         3
     )
     if do_tick:
-        if game_states.DISTANCE < game_states.CAMERA_BOTTOM + game_states.CAMERA_THRESHOLDS[0] + tutorials.display_height:
-            game_states.CAMERA_BOTTOM = game_states.DISTANCE - game_states.CAMERA_THRESHOLDS[0] - tutorials.display_height
-        if game_states.DISTANCE > game_states.CAMERA_BOTTOM + game_states.HEIGHT - game_states.CAMERA_THRESHOLDS[1]:
-            game_states.CAMERA_BOTTOM = game_states.DISTANCE + game_states.CAMERA_THRESHOLDS[1] - game_states.HEIGHT
         enforce_goal = None
         mass = 0
         total = 0
@@ -205,4 +201,9 @@ def tick(do_tick: bool = True, draw_gui: bool = True):
         if enforce_goal is not None and camera_move < 1 and goal != game_states.CAMERA_BOTTOM:
             game_states.CAMERA_BOTTOM += goal - game_states.CAMERA_BOTTOM > 0
         game_states.CAMERA_BOTTOM += camera_move
+
+        if game_states.DISTANCE < game_states.CAMERA_BOTTOM + game_states.CAMERA_THRESHOLDS[0] + tutorials.display_height:
+            game_states.CAMERA_BOTTOM = game_states.DISTANCE - game_states.CAMERA_THRESHOLDS[0] - tutorials.display_height
+        if game_states.DISTANCE > game_states.CAMERA_BOTTOM + game_states.HEIGHT - game_states.CAMERA_THRESHOLDS[1]:
+            game_states.CAMERA_BOTTOM = game_states.DISTANCE + game_states.CAMERA_THRESHOLDS[1] - game_states.HEIGHT
     tutorials.tick(do_tick)
