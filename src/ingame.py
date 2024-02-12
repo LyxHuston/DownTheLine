@@ -34,14 +34,20 @@ class Inputs:
     ignore_pickup = pygame.K_SPACE
     ability_1_input = pygame.K_a
     ability_2_input = pygame.K_d
+    pause = pygame.K_ESCAPE
 
 
 loop_counter = 2 ** 10
 
 tick_counter = 0
 
+paused = False
+
 
 def tick(do_tick: bool = None):
+    if paused:
+        gameboard.tick(False)
+        return
     if do_tick is None or do_tick:
         if game_states.INVULNERABILITY_LEFT > 0:
             game_states.INVULNERABILITY_LEFT -= 1
@@ -85,6 +91,11 @@ def tick(do_tick: bool = None):
 
 
 def event_catcher(event: pygame.event.Event) -> bool:
+    global paused
+    if paused:
+        if event.type == pygame.KEYDOWN and event.key == Inputs.pause:
+            paused = False
+        return True
     if game_states.HEALTH <= 0:
         return False
     match event.type:
@@ -95,6 +106,9 @@ def event_catcher(event: pygame.event.Event) -> bool:
                     return True
                 case Inputs.down_input:
                     abilities.dash_input_catch(-1, tick_counter)
+                    return True
+                case Inputs.pause:
+                    paused = True
                     return True
         case pygame.MOUSEBUTTONDOWN:
             match event.button:

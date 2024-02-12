@@ -22,6 +22,8 @@ import enum
 import math
 from typing import Type
 
+import pygame
+
 import tutorials
 import game_structures
 import gameboard
@@ -32,9 +34,48 @@ import random
 import sys
 import utility
 
+PAUSE_BUTTONS = game_structures.ButtonHolder(
+    background=None,
+    fill_color=(0, 0, 0, 127),
+    visible_check=lambda: ingame.paused
+)
+
+
+def quit_run():
+    import main_screen
+    log_run(RunEndReasons.quit)
+    main_screen.main_screen_place.start()
+
 
 def start(with_seed: int = None):
+    PAUSE_BUTTONS.clear()
+    PAUSE_BUTTONS.background = pygame.Surface((game_states.WIDTH, game_states.HEIGHT), flags=pygame.SRCALPHA)
+    PAUSE_BUTTONS.rect = PAUSE_BUTTONS.background.get_rect()
+    PAUSE_BUTTONS.add_button(game_structures.Button.make_text_button(
+        "Quit",
+        128,
+        (game_states.WIDTH // 2, game_states.HEIGHT // 3),
+        enforce_width=512,
+        text_align=0.5,
+        up_click=quit_run,
+        background_color=(0, 0, 0),
+        outline_color=(255, 255, 255),
+        border_width=5
+    ))
+    PAUSE_BUTTONS.add_button(game_structures.Button.make_text_button(
+        "Resume",
+        128,
+        (game_states.WIDTH // 2, 2 * game_states.HEIGHT // 3),
+        enforce_width=512,
+        text_align=0.5,
+        up_click=lambda: setattr(ingame, "paused", False),
+        background_color=(0, 0, 0),
+        outline_color=(255, 255, 255),
+        border_width=5
+    ))
     game_structures.BUTTONS.clear()
+    game_structures.BUTTONS.add_button(PAUSE_BUTTONS)
+
     if not game_states.CUSTOM_SEED:
         if with_seed is None:
             game_states.SEED = random.randrange(2 ** sys.int_info.bits_per_digit)
@@ -71,6 +112,8 @@ def start(with_seed: int = None):
     game_states.RUN_START = datetime.datetime.now()
 
     game_structures.HANDS = [None, None]
+
+    ingame.paused = False
 
     tutorials.clear_tutorial_text()
 

@@ -92,7 +92,7 @@ def determine_screen():
         TRUE_WIDTH = game_states.WIDTH
         game_states.WIDTH = round(game_states.WIDTH * __minimum_height / game_states.HEIGHT)  # scale width appropriately
         game_states.HEIGHT = __minimum_height
-        SCREEN = pygame.Surface((game_states.WIDTH, game_states.HEIGHT))
+        SCREEN = pygame.Surface((game_states.WIDTH, game_states.HEIGHT), pygame.SRCALPHA)
 
 
 def to_screen_x(x: int = 0) -> int:

@@ -255,8 +255,6 @@ def tick() -> None:
             alert_img,
             (240 * 2 - game_structures.ALERTS.width / 2, 0)
         )
-    game_structures.display_screen()
-    game_structures.CLOCK.tick(60)
 
     if keyed_down:
         if pygame.key.get_pressed()[special_key]:
@@ -324,3 +322,6 @@ def tick() -> None:
             for catcher in game_structures.CUSTOM_EVENT_CATCHERS:
                 if catcher(event):
                     break
+
+    game_structures.display_screen()
+    game_structures.CLOCK.tick(60)

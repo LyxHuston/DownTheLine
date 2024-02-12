@@ -99,15 +99,16 @@ class Entity(game_structures.Body):
         if self.img is None:
             return
         if self.flashing > 0:
-            self.flashing -= 1
-            self.__x_shake += self.__x_shake_momentum
-            if abs(self.__x_shake) > self.__shake_limit:
-                self.__x_shake += 2 * (abs(self.__x_shake) - self.__shake_limit) * ((self.__x_shake < 0) * 2 - 1)
-                self.__x_shake_momentum *= -1
-            self.__y_shake += self.__y_shake_momentum
-            if abs(self.__y_shake) > self.__shake_limit:
-                self.__y_shake += 2 * (abs(self.__y_shake) - self.__shake_limit) * ((self.__y_shake < 0) * 2 - 1)
-                self.__y_shake_momentum *= -1
+            if not ingame.paused:
+                self.flashing -= 1
+                self.__x_shake += self.__x_shake_momentum
+                if abs(self.__x_shake) > self.__shake_limit:
+                    self.__x_shake += 2 * (abs(self.__x_shake) - self.__shake_limit) * ((self.__x_shake < 0) * 2 - 1)
+                    self.__x_shake_momentum *= -1
+                self.__y_shake += self.__y_shake_momentum
+                if abs(self.__y_shake) > self.__shake_limit:
+                    self.__y_shake += 2 * (abs(self.__y_shake) - self.__shake_limit) * ((self.__y_shake < 0) * 2 - 1)
+                    self.__y_shake_momentum *= -1
             img = pygame.Surface(self.img.get_rect().size, flags=pygame.SRCALPHA)
             img.blit(self.img, (0, 0))
             img.fill((255, 255, 255), special_flags=pygame.BLEND_ADD)
@@ -1209,17 +1210,6 @@ class Spawner(Entity):
             return
         self.timer += 1
 
-    def draw(self):
-        super().draw()
-        # game_structures.SCREEN.blit(
-        #     game_structures.FONTS[20].render(
-        #         str(self.__list),
-        #         False,
-        #         (0, 0, 0)
-        #     ),
-        #     self.screen_pos
-        # )
-
     def lose(self, index):
         """
         signal to the spawner to lose track of an object
@@ -1647,11 +1637,13 @@ class Particle(Entity):
         return self.__id
 
 
+import ingame
+
+
 if __name__ == "__main__":
     import game_areas
     import utility
     import main
-    import ingame
 
     game_states.PLACE = ingame.screen
 

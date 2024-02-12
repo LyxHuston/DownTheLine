@@ -24,6 +24,7 @@ import pygame
 import sys
 import draw_constants
 
+
 def check_flags(flags: list[str], error_on_duplicates: bool = False):
     """
     checks for if flags exist, and if so where.  If appears twice (or different versions) errors
@@ -71,7 +72,7 @@ if len(sys.argv) > 1:
         game_states.PRINT_SEED = True
 else:
     backdrop = (0, 0, 0)
-    game_structures.SCREEN = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+    game_structures.SCREEN = pygame.display.set_mode((0, 0), pygame.FULLSCREEN + pygame.SRCALPHA)
 pygame.display.set_caption("Down the Line")
 game_states.WIDTH, game_states.HEIGHT = game_structures.SCREEN.get_size()
 game_structures.determine_screen()
@@ -84,11 +85,7 @@ game_structures.init()
 draw_constants.hearts_y = game_states.HEIGHT - draw_constants.row_separation
 
 
-def do_custom_catchers(catch):
-    game_states.PLACE.catcher(catch)
-
-
-game_structures.CUSTOM_EVENT_CATCHERS.append(do_custom_catchers)
+game_structures.CUSTOM_EVENT_CATCHERS.append(lambda catch: game_states.PLACE.catcher(catch))
 
 
 if __name__ == "__main__":
