@@ -104,7 +104,7 @@ SERPENT_BODY = [Image("./resources/entities/serpent/serpent_body_1.png"),
 SIMPLE_SWORD = Image("./resources/items/simple_sword.png")
 SIMPLE_SPEAR = Image("./resources/items/simple_spear.png")
 SIMPLE_SHIELD = Image("./resources/items/simple_shield.png")
-SPIKY_SHIELD = Image("./resources/items/spiky_shield.png")
+# SPIKY_SHIELD = Image("./resources/items/spiky_shield.png")
 SIMPLE_BOMB = Image("./resources/items/simple_bomb.png")
 BATON = Image("./resources/items/baton.png")
 

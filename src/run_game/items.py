@@ -610,69 +610,55 @@ def simple_shield_tick(item: Item):
     :param item:
     :return:
     """
-    if item.data_pack[0]:
-        if isinstance(item.pos, int):
-            rect = pygame.Rect(
-                8 * (item.pos * 2 - 1) * game_states.LAST_DIRECTION - item.img.get_height() // 2,
-                game_states.DISTANCE + (20 + item.img.get_width() // 2) * game_states.LAST_DIRECTION - item.img.get_width() // 2,
-                item.img.get_height(),
-                item.img.get_width()
-            )
-        else:
-            if isinstance(item.pos[0], int):
-                return True
-            new_center = offset_point_rotated(
-                item.pos[0].pos,
-                (
-                    item.pos[0].width // 4 * (item.pos[1] * 2 - 1),
-                    20 + item.img.get_width() // 2
-                ),
-                item.pos[0].rotation
-            )
-            # rect = item.img.get_rect(center=new_center)
-            rect = pygame.Rect(
-                new_center[0] - item.img.get_height() // 2,
-                new_center[1] - item.img.get_width() // 2,
-                item.img.get_height(),
-                item.img.get_width()
-            )
-        if isinstance(item.pos, int):
-            for entity in game_structures.all_entities():
-                if rect.colliderect(entity.rect):
-                    entity.y = rect.centery + (rect.height // 2 + entity.height // 2) * game_states.LAST_DIRECTION
-                    if isinstance(entity, entities.Projectile):
-                        entity.hit(entity.health, item)
-                        game_states.TIME_SINCE_LAST_INTERACTION = 0
-                    else:
-                        if entity not in item.data_pack[-1]:
-                            entity.hit(item.data_pack[1], item)
-                            game_states.TIME_SINCE_LAST_INTERACTION = 0
-                            item.data_pack[-1].append(entity)
-                    game_states.DISTANCE -= game_states.LAST_DIRECTION * 2
-        else:
-            damage = item.data_pack[1]
-            correct_distance = item.pos[0].y + item.pos[0].height // 2 * math.cos(math.radians(item.pos[0].rotation))
-            for entity in game_structures.all_entities():
-                if not entity.allied_with_player:
-                    continue
-                if rect.colliderect(entity.rect):
-                    entity.y = correct_distance + entity.height // 2 * math.cos(math.radians(item.pos[0].rotation))
-                    if isinstance(entity, entities.Projectile):
-                        entity.hit(entity.health, item)
-                    else:
-                        if entity not in item.data_pack[-1]:
-                            entity.hit(damage, item)
-                            item.data_pack[-1].append(entity)
-                    item.pos[0].y -= 2 * math.cos(math.radians(item.pos[0].rotation))
-            if rect.colliderect(pygame.Rect(-32, game_states.DISTANCE - 32, 64, 64)):
-                if "p" not in item.data_pack[-1]:
-                    item.data_pack.append("p")
-                    game_structures.deal_damage(damage, item)
-                    entities.glide_player(item.data_pack[4] * 3, 20, 3, (
-                            (item.pos[1] if isinstance(item.pos[0], int) else item.pos[0].y) < game_states.DISTANCE) * 2 - 1)
-                    game_structures.begin_shake(10 * (1 + damage // 2), (20, 20), (2 * (1 + damage), -5 * (1 + damage)))
-                game_states.DISTANCE = item.pos[0].y + (item.pos[0].height // 2 + item.img.get_width()) * math.cos(math.radians(item.pos[0].rotation))
+    if not item.data_pack[0]:
+        return True
+    if isinstance(item.pos, int):
+        rect = pygame.Rect(
+            8 * (item.pos * 2 - 1) * game_states.LAST_DIRECTION - item.img.get_height() // 2,
+            game_states.DISTANCE + (20 + item.img.get_width() // 2) * game_states.LAST_DIRECTION - item.img.get_width() // 2,
+            item.img.get_height(),
+            item.img.get_width()
+        )
+
+        for entity in game_structures.all_entities():
+            if rect.colliderect(entity.rect):
+                entity.y = rect.centery + (rect.height // 2 + entity.height // 2) * game_states.LAST_DIRECTION
+                if isinstance(entity, entities.Projectile):
+                    entity.hit(entity.health, item)
+                game_states.TIME_SINCE_LAST_INTERACTION = 0
+                game_states.DISTANCE -= game_states.LAST_DIRECTION * 2
+    else:
+        if isinstance(item.pos[0], int):
+            return True
+        new_center = offset_point_rotated(
+            item.pos[0].pos,
+            (
+                item.pos[0].width // 4 * (item.pos[1] * 2 - 1),
+                20 + item.img.get_width() // 2
+            ),
+            item.pos[0].rotation
+        )
+        # rect = item.img.get_rect(center=new_center)
+        rect = pygame.Rect(
+            new_center[0] - item.img.get_height() // 2,
+            new_center[1] - item.img.get_width() // 2,
+            item.img.get_height(),
+            item.img.get_width()
+        )
+
+        correct_distance = item.pos[0].y + item.pos[0].height // 2 * math.cos(math.radians(item.pos[0].rotation))
+        for entity in game_structures.all_entities():
+            if not entity.allied_with_player:
+                continue
+            if rect.colliderect(entity.rect):
+                entity.y = correct_distance + entity.height // 2 * math.cos(math.radians(item.pos[0].rotation))
+                if isinstance(entity, entities.Projectile):
+                    entity.hit(entity.health, item)
                 item.pos[0].y -= 2 * math.cos(math.radians(item.pos[0].rotation))
+        if rect.colliderect(pygame.Rect(-32, game_states.DISTANCE - 32, 64, 64)):
+            game_states.DISTANCE = item.pos[0].y + (item.pos[0].height // 2 + item.img.get_width()) * math.cos(
+                math.radians(item.pos[0].rotation))
+            item.pos[0].y -= 2 * math.cos(math.radians(item.pos[0].rotation))
     return True
 
 
@@ -741,7 +727,7 @@ def random_simple_stab(strength: int, random, pos=None):
     return simple_stab(cooldown, duration, img, pos, damage)
 
 
-def simple_shield(img: pygame.Surface, pos: tuple[int, int], damage: int = 0) -> Item:
+def simple_shield(img: pygame.Surface, pos: tuple[int, int]) -> Item:
     """
     generate a simple stab item
     """
@@ -752,18 +738,14 @@ def simple_shield(img: pygame.Surface, pos: tuple[int, int], damage: int = 0) ->
         pos,
         simple_shield_draw,
         images.SIMPLE_SHIELD_ICON.img,
-        [False, damage, []],
+        [False],
         ItemTypes.SimpleShield
     )
 
 
-simple_shield_imgs = [images.SIMPLE_SHIELD, images.SPIKY_SHIELD]
-
-
 def random_simple_shield(random, pos=None):
-    damage = random.randint(0, 1)
 
-    return simple_shield(simple_shield_imgs[damage].img, pos, damage)
+    return simple_shield(images.SIMPLE_SHIELD.img, pos)
 
 
 def make_random_reusable(random, pos):
