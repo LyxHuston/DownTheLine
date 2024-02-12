@@ -146,7 +146,7 @@ def start(with_seed: int = None):
         game_structures.FONTS[100]
     )
     tutorials.add_text(
-        "Use the w and s keys to move up and down.  You can also double tap to dash.",
+        "Use the w and s keys to move up and down.  Press d to dash in your current direction.",
         game_structures.TUTORIAL_FONTS[90]
     )
 

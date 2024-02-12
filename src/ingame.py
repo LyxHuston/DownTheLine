@@ -31,9 +31,8 @@ import run_start_end
 class Inputs:
     up_input = pygame.K_w
     down_input = pygame.K_s
+    dash = pygame.K_d
     ignore_pickup = pygame.K_SPACE
-    ability_1_input = pygame.K_a
-    ability_2_input = pygame.K_d
     pause = pygame.K_ESCAPE
 
 
@@ -67,7 +66,6 @@ def tick(do_tick: bool = None):
         if tick_counter >= loop_counter:
             tick_counter = 0
             abilities.last_dash_time -= loop_counter
-            abilities.last_press_for_dash -= loop_counter
         if game_states.GLIDE_SPEED > 0:
             if game_states.GLIDE_DURATION == 0:
                 game_states.GLIDE_SPEED -= game_states.TAPER_AMOUNT
@@ -101,11 +99,8 @@ def event_catcher(event: pygame.event.Event) -> bool:
     match event.type:
         case pygame.KEYDOWN:
             match event.key:
-                case Inputs.up_input:
-                    abilities.dash_input_catch(1, tick_counter)
-                    return True
-                case Inputs.down_input:
-                    abilities.dash_input_catch(-1, tick_counter)
+                case Inputs.dash:
+                    abilities.dash_input_catch(tick_counter)
                     return True
                 case Inputs.pause:
                     paused = True
