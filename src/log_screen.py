@@ -47,6 +47,10 @@ BUTTONS.add_button(
 
 
 def clear_log():
+    RECORDS.x = 0
+    RECORDS.y = 0
+    RECORDS.background = pygame.surface.Surface((game_states.WIDTH // 2, game_states.HEIGHT))
+    RECORDS.rect = RECORDS.background.get_rect()
     with open(log_file_name, "w") as log_file:
         log_file.write("")
     screen.start()
