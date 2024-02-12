@@ -45,14 +45,55 @@ def dash_input_catch(tick_counter) -> None:
 
 
 def draw_dash_icon(tick_counter) -> None:
-    x, y = game_states.WIDTH // 2 - dash_img.get_width() // 2, game_states.HEIGHT - 2 * draw_constants.row_separation - tutorials.display_height
-    game_structures.SCREEN.blit(
+
+    # blit = pygame.surface.Surface((draw_constants.icon_size, draw_constants.icon_size), pygame.SRCALPHA)
+    # blit.blit(dash_img, (0, 0))
+    #
+    # pygame.draw.rect(
+    #     blit,
+    #     (0, 0, 0, 0),
+    #     pygame.Rect(0, 0, draw_constants.icon_size - round(
+    #         -draw_constants.icon_size * (last_dash_time - tick_counter) / dash_cooldown), draw_constants.icon_size),
+    # )
+    #
+    # game_structures.SCREEN.blit(
+    #     blit,
+    #     (
+    #         game_states.WIDTH // 2 - dash_img.get_width() // 2,
+    #         game_states.HEIGHT - 2 * draw_constants.row_separation - tutorials.display_height
+    #     )
+    # )
+
+    draw_icon(
         dash_img,
-        (x, y)
+        1 - min((tick_counter - last_dash_time) / dash_cooldown, 1),
+        (
+            game_states.WIDTH // 2 - dash_img.get_width() // 2,
+            game_states.HEIGHT - 2 * draw_constants.row_separation - tutorials.display_height
+        )
     )
+
+
+def draw_icon(icon: pygame.Surface, disappeared: float, pos: tuple[int, int]):
+    blit = pygame.surface.Surface(icon.get_size(), pygame.SRCALPHA)
+    blit.blit(icon, (0, 0))
+
+    # cover = pygame.surface.Surface(
+    #     (icon.get_width(), round(icon.get_height() * covered)))
+    # cover.fill((255, 255, 255))
+    # blit.blit(
+    #     cover,
+    #     (0, icon.get_height() - cover.get_height()),
+    #     special_flags=pygame.BLEND_RGBA_MULT
+    # )
+
     pygame.draw.rect(
-        game_structures.SCREEN,
-        (0, 0, 0),
-        pygame.Rect(x, y, draw_constants.icon_size - round(
-            -draw_constants.icon_size * (last_dash_time - tick_counter) / dash_cooldown), draw_constants.icon_size),
+        blit,
+        (0, 0, 0, 0),
+        pygame.Rect(0, 0, icon.get_width(), round(icon.get_height() * disappeared))
+    )
+
+    game_structures.SCREEN.blit(
+        blit,
+        pos
     )

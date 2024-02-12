@@ -23,7 +23,7 @@ This is going to be full of factory functions, huh.  Factories of factories of f
 from dataclasses import dataclass
 from typing import Callable, Union, Any
 import pygame
-from run_game import entities, tutorials
+from run_game import entities, tutorials, abilities
 import math
 import enum
 from data import draw_constants, game_states, images
@@ -324,34 +324,27 @@ get_icon_x = lambda hand: game_states.WIDTH // 2 - spread() // 2 + spread() * ha
 get_icon_y = lambda: game_states.HEIGHT - 2 * draw_constants.row_separation - tutorials.display_height + 16 * max(3 - game_states.HEALTH, 0) ** 2
 
 
+@make_conditional_wrapper
+def if_held_by_player(item: Item):
+    if isinstance(item.pos, int):
+        return True, False
+    return False, False
+
+
 @make_add_wrapper
+@if_held_by_player
 def draw_icon(item: Item):
-    if not isinstance(item.pos, int):
-        return
-    game_structures.SCREEN.blit(
+    abilities.draw_icon(item.icon, 0, (get_icon_x(item.pos), get_icon_y()))
+
+
+@make_add_wrapper
+@if_held_by_player
+def draw_icon_for_simple_duration_item(item: Item):
+    abilities.draw_icon(
         item.icon,
+        item.data_pack[1] / item.data_pack[3] if item.data_pack[0] else 1 - item.data_pack[1] / item.data_pack[2],
         (get_icon_x(item.pos), get_icon_y())
     )
-
-
-@make_add_wrapper
-@draw_icon
-def draw_icon_for_simple_duration_item(item: Item):
-    if not isinstance(item.pos, int):
-        return
-    if item.data_pack[0]:
-        pygame.draw.rect(
-            game_structures.SCREEN,
-            (0, 0, 0),
-            pygame.Rect(get_icon_x(item.pos), get_icon_y(), draw_constants.icon_size, draw_constants.icon_size),
-        )
-    else:
-        pygame.draw.rect(
-            game_structures.SCREEN,
-            (0, 0, 0),
-            pygame.Rect(get_icon_x(item.pos), get_icon_y(), draw_constants.icon_size - round(
-                draw_constants.icon_size * item.data_pack[1] / item.data_pack[2]), draw_constants.icon_size),
-        )
 
 
 def original_simple_draw(item: Item):
