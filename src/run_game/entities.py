@@ -20,10 +20,11 @@ entities
 """
 import pygame
 
-import abilities
-import game_states
-import game_structures
-import images
+Entity = None
+
+from run_game import abilities, game_areas, ingame, items
+from data import game_states, images
+from general_use import game_structures
 import random
 import math
 from typing import Type, Iterable
@@ -285,9 +286,6 @@ class ItemEntity(InvulnerableEntity):
 
     def draw(self):
         self.item.draw(self.item)
-
-
-import items
 
 
 def make_item_duplicator(item: items.Item):
@@ -1637,12 +1635,8 @@ class Particle(Entity):
         return self.__id
 
 
-import ingame
-
-
 if __name__ == "__main__":
-    import game_areas
-    import utility
+    import general_use
     import main
 
     game_states.PLACE = ingame.screen
@@ -1722,4 +1716,4 @@ if __name__ == "__main__":
     while game_states.RUNNING:
         game_structures.SCREEN.fill(main.backdrop)
         game_states.PLACE.tick()
-        utility.tick()
+        general_use.tick()

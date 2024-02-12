@@ -17,11 +17,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 describe the home screen of the game
 """
-import game_states
-import game_structures
-import gameboard
-import other_screens
-import run_start_end
+from data import game_states
+from general_use import game_structures
+from run_game import gameboard
+from screens import other_screens
 
 
 def setup_main_screen():
@@ -38,14 +37,14 @@ def setup_main_screen():
         game_structures.Button.make_text_button("Down The Line", 300, (game_states.WIDTH // 2, 0), None,
                                                 background_color=(0, 0, 0, 0), outline_color=(255, 255, 255),
                                                 border_width=0, max_line_words=2, text_align=0.5, x_align=0.5, y_align=0
-                                            ))
+                                                ))
     game_structures.BUTTONS.add_button(game_structures.Button.make_text_button("Play", 100, (
         game_states.WIDTH // 2, game_states.HEIGHT - 1.5 * (game_states.DISTANCE - game_states.CAMERA_BOTTOM)),
-        game_structures.PLACES.in_game.value.start, background_color=(0, 0, 0, 0), outline_color=(255, 255, 255),
-        border_width=0, text_align=0.5, x_align=0.5, y_align=1))
+                                                                               game_structures.PLACES.in_game.value.start, background_color=(0, 0, 0, 0), outline_color=(255, 255, 255),
+                                                                               border_width=0, text_align=0.5, x_align=0.5, y_align=1))
     game_structures.BUTTONS.add_button(game_structures.Button.make_text_button("Quit", 50, (
         game_states.WIDTH // 2, game_states.HEIGHT), other_screens.exit, background_color=(0, 0, 0, 0),
-        outline_color=(255, 255, 255), border_width=0, text_align=0.5, x_align=0.5, y_align=1))
+                                                                               outline_color=(255, 255, 255), border_width=0, text_align=0.5, x_align=0.5, y_align=1))
     game_structures.BUTTONS.add_button(game_structures.Button.make_text_button("Logs", 75, (
         game_states.WIDTH, game_states.HEIGHT), log_screen.screen.start, background_color=(0, 0, 0, 0), outline_color=(
         255, 255, 255), border_width=0, text_align=0.5, x_align=1, y_align=1))
@@ -68,7 +67,7 @@ def setup_main_screen():
         , game_states.HEIGHT - custom_seed_button.rect.height), lambda: seed_setter_button.write_button_text(
             75, prepend="seed: ", callback=set_seed, x_align=0, y_align=1, start_text=(lambda: str(game_states.SEED))()
         ), background_color=(0, 0, 0, 0), outline_color=(255, 255, 255), border_width=0, text_align=0.5, x_align=0,
-        y_align=1, visible_check=lambda: game_states.CUSTOM_SEED)
+                                                                 y_align=1, visible_check=lambda: game_states.CUSTOM_SEED)
     game_structures.BUTTONS.add_button(seed_setter_button)
 
 
@@ -90,4 +89,4 @@ main_screen_place = game_structures.Place(
     end=end
 )
 
-import log_screen
+from screens import run_start_end, log_screen

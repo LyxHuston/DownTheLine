@@ -20,19 +20,14 @@ starts up a game instance
 import datetime
 import enum
 import math
-from typing import Type
 
 import pygame
 
-import tutorials
-import game_structures
-import gameboard
-import game_states
-import game_areas
-import ingame
+from general_use import game_structures
+from data import game_states
+from run_game import game_areas, gameboard, ingame, tutorials
 import random
 import sys
-import utility
 
 PAUSE_BUTTONS = game_structures.ButtonHolder(
     background=None,
@@ -125,7 +120,7 @@ def start(with_seed: int = None):
     # print(sys.int_info)
     # print(game_states.SEED)
 
-    import entities
+    from run_game import entities
     for attr_value in entities.Entity.__subclasses__():
         attr_value.seen = False
     entities.Slime.seen = True
@@ -197,5 +192,5 @@ def log_run(reason: RunEndReasons):
         "progress": game_states.AREAS_PASSED,
         "room_record": GameAreaLog.get_result_string()
     })
-    with open("run_log.txt", "a") as file:
+    with open("./run_log.txt", "a") as file:
         file.write(log_string + "\n")

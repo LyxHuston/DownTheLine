@@ -27,8 +27,7 @@ from pygame import Rect, Surface, SRCALPHA
 from pygame.transform import scale
 from pygame.draw import rect
 
-import utility
-import game_structures
+from general_use import utility, game_structures
 
 
 class ButtonHolderTemplate(ABC):
@@ -696,7 +695,7 @@ class Button(ButtonHolderTemplate):
                             max_line_pixels, max_width, y_align, x_align, start_text)
 
         try:
-            while game_structures.TYPING.instance == instance.instance and game_structures.game_states.RUNNING:
+            while game_structures.TYPING.instance == instance.instance and data.game_states.RUNNING:
                 if instance.text != current:
                     if len(instance.text) > max_characters > 0:
                         current = instance.text[0:max_characters]

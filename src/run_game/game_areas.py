@@ -21,14 +21,10 @@ import random
 
 import pygame
 
-import game_structures
-import game_states
-import tutorials
-from utility import make_async
-import entities
-import bosses
-import items
-import images
+from data import game_states, images
+from run_game import tutorials, entities, bosses, items
+from general_use.utility import make_async
+from general_use import game_structures
 import math
 from collections import deque
 from typing import Type, Iterable
@@ -183,7 +179,8 @@ class BasicArea(GameArea):
     a basic fight area.  Fight a few monsters and continue.
     """
 
-    allowable_thresh_holds = [(entities.Slime, 0), (entities.Crawler, 5), (entities.Fencer, 10), (entities.Archer, 10), (entities.Knight, 15)]
+    allowable_thresh_holds = [(entities.Slime, 0), (entities.Crawler, 5), (entities.Fencer, 10), (entities.Archer, 10), (
+    entities.Knight, 15)]
     # allowable_thresh_holds = [(entities.Knight, 0)]
 
     def __init__(self, determiner, count):
@@ -750,7 +747,7 @@ def add_game_area():
 
 
 if __name__ == "__main__":
-    import utility
+    from general_use import utility, game_structures
     import main
 
     game_states.PLACE = game_structures.PLACES.in_game

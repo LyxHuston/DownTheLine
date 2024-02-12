@@ -18,8 +18,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 handles the tutorial
 """
 
-import game_states
-import game_structures
+from data import game_states
+from general_use import game_structures
 from collections import deque
 from dataclasses import dataclass
 import pygame

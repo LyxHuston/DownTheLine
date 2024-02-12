@@ -18,9 +18,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 entities file, but only for bosses
 """
 
-import entities
+from run_game import entities
 import pygame
-import game_structures
+from general_use import game_structures
 
 
 class Boss(entities.Entity):

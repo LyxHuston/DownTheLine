@@ -20,14 +20,13 @@ describe the run log screen of the game
 
 import ast
 
-import game_states
-import game_structures
-import main_screen
-import utility
+from data import game_states
+from general_use import game_structures, utility
+from screens import main_screen
 import pygame
 
 
-log_file_name: str = "run_log.txt"
+log_file_name: str = "./run_log.txt"
 
 
 RECORDS = game_structures.ScrollableButtonHolder(

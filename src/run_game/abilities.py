@@ -17,12 +17,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
 import pygame
-import game_states
-import game_structures
-import draw_constants
-import tutorials
+from general_use import game_structures
+from data import draw_constants, game_states
+from run_game import tutorials
 
-dash_img = pygame.image.load("resources/abilities/ability_icons/dash_icon.png")
+dash_img = pygame.image.load("./resources/abilities/ability_icons/dash_icon.png")
 
 dash_cooldown = 100
 

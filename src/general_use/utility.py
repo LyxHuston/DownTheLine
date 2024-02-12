@@ -20,8 +20,7 @@ import threading
 from typing import Callable, Any, Union, Hashable
 import traceback
 import logging
-from sys import argv, stderr
-
+from sys import argv
 
 memoize_not_have = object()
 
@@ -144,10 +143,9 @@ def make_async(*args, with_lock: Union[threading.Lock, bool] = None, singular: b
     return inner_make_async
 
 
-import game_structures
+from general_use import game_structures
 import pygame
-import game_states
-
+from data import game_states
 
 if len(argv) >= 2 and argv[1] == "admin":
     admin = True
@@ -199,7 +197,7 @@ def add_error_checking(
     return error_wrap
 
 
-logging.basicConfig(filename="errors.log", format='%(asctime)s\n%(message)s', filemode='a')
+logging.basicConfig(filename="./errors.log", format='%(asctime)s\n%(message)s', filemode='a')
 
 
 def log_error(exc: Exception) -> None:

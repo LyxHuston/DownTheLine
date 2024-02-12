@@ -17,12 +17,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 main ran file for the game
 """
-import utility
-import game_structures
-import game_states
+from general_use import game_structures, utility
 import pygame
 import sys
-import draw_constants
+from data import draw_constants, game_states
 
 
 def check_flags(flags: list[str], error_on_duplicates: bool = False):

@@ -18,20 +18,18 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 a module containing classes for various game structures
 """
 from dataclasses import dataclass
-from typing import Union, Callable, Any
+from typing import Union, Callable
 
 from pygame.font import Font, SysFont
 from pygame.transform import scale
 import pygame.mixer
 from pygame.event import custom_type
-import enum
 from collections import deque
 
-import game_states
-import utility
+from general_use import utility
 from gtts import gTTS
 from io import BytesIO
-import images
+from data import images, game_states
 
 import math
 
@@ -204,7 +202,7 @@ def get_special_click(indicator: str | int):
         return getattr(ingame.Inputs, indicator)
 
 
-from buttons import *
+from general_use.buttons import *
 
 
 BUTTONS = ButtonHolder()
@@ -545,11 +543,10 @@ def get_first_match(substring: str, strings: list[str]) -> Union[str, None]:
 def init() -> None:
     global VOICE_CHANNEL, ALERTS, PLACES
 
-    import utility
-    import ingame
-    import main_screen
-    import other_screens
-    import tutorials
+    from general_use import utility
+    from run_game import ingame
+    from screens import main_screen
+    from screens import other_screens
 
     VOICE_CHANNEL = utility.make_reserved_audio_channel()
     tutorials.TUTORIAL_VOICE_CHANNEL = utility.make_reserved_audio_channel()
@@ -816,10 +813,6 @@ def all_entities():
     return res
 
 
-import entities
-import items
-
-
 def make_save():
     if game_states.AUTOSAVE:
         import copy
@@ -840,13 +833,11 @@ def make_save():
         game_states.SAVE_DATA = game_states.__dict__
 
 
-import ingame
-
+from run_game import ingame, items, entities, tutorials
 
 if __name__ == "__main__":
-    import main
 
-    SCREEN = entities.game_structures.SCREEN
+    SCREEN = utility.game_structures.SCREEN
 
     body_img = pygame.Surface((200, 400), pygame.SRCALPHA)
     body_img.fill((0, 0, 0))
@@ -862,7 +853,7 @@ if __name__ == "__main__":
             body.rotation += 30
 
 
-    entities.game_structures.CUSTOM_EVENT_CATCHERS.append(click_catcher)
+    utility.game_structures.CUSTOM_EVENT_CATCHERS.append(click_catcher)
 
 
     def to_screen_points(points: tuple[tuple[int, int], ...]):

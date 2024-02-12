@@ -19,11 +19,10 @@ handles the ending screens for the game, both won and lost
 """
 
 import pygame
-import game_structures
-import game_states
-import ingame
-import utility
-import run_start_end
+from general_use import game_structures, utility
+from data import game_states
+from run_game import ingame
+from screens import run_start_end
 
 fade_counter = 0
 tick_counter = 0
@@ -84,7 +83,7 @@ def dead():
                                                     background_color=(0, 0, 0), outline_color=(255, 255, 255),
                                                     text_align=0, x_align=0))
         game_structures.BUTTONS.add_button(game_structures.Button.make_text_button("Play Again", 100, (
-        game_states.WIDTH // 2 - 800, game_states.HEIGHT - 200), game_structures.PLACES.in_game.value.start,
+            game_states.WIDTH // 2 - 800, game_states.HEIGHT - 200), game_structures.PLACES.in_game.value.start,
                                                                                    background_color=(0, 0, 0),
                                                                                    outline_color=(255, 255, 255),
                                                                                    border_width=5, text_align=0.5,
@@ -95,7 +94,7 @@ def dead():
                                                     outline_color=(255, 255, 255), border_width=5, text_align=0.5,
                                                     enforce_width=600))
         game_structures.BUTTONS.add_button(game_structures.Button.make_text_button("Quit", 100, (
-        game_states.WIDTH // 2 + 800, game_states.HEIGHT - 200), exit, background_color=(0, 0, 0),
+            game_states.WIDTH // 2 + 800, game_states.HEIGHT - 200), exit, background_color=(0, 0, 0),
                                                                                    outline_color=(255, 255, 255),
                                                                                    border_width=5, text_align=0.5,
                                                                                    enforce_width=600))

@@ -21,17 +21,13 @@ This is going to be full of factory functions, huh.  Factories of factories of f
 """
 
 from dataclasses import dataclass
-from typing import Callable, Union, Any, Tuple
-import game_structures
-import game_states
+from typing import Callable, Union, Any
 import pygame
-import entities
-import images
+from run_game import entities, tutorials
 import math
 import enum
-import draw_constants
-import utility
-import tutorials
+from data import draw_constants, game_states, images
+from general_use import utility, game_structures
 
 
 class ItemTypes(enum.IntEnum):
@@ -96,7 +92,7 @@ def offset_point_rotated(origin: tuple[int, int], offset: tuple[int, int], rotat
     )
 
 
-def _wrap(new, old: Any):
+def _wrap(new: Any, old: Any):
     """Simple substitute for functools.update_wrapper."""
     for replace in ['__module__', '__name__', '__qualname__', '__doc__']:
         if hasattr(old, replace):
@@ -106,7 +102,6 @@ def _wrap(new, old: Any):
 
 
 EMPTY = object()
-ORIGINAL = object()
 
 
 def use_wrap_update(func: Callable):
@@ -141,6 +136,17 @@ def handle_arguments_meta_wrapper(wrapper_func: Callable):
     return _wrap(inner, wrapper_func)
 
 
+def preset_args(*args, **kwargs) -> Callable[[Callable], Callable]:
+    """
+    given arguments as a wrapper, it makes invocations use those arguments first,
+    and applies additional ones as supplied
+    """
+    @use_wrap_update
+    def inner(func: Callable) -> Callable:
+        return lambda *args2, **kwargs2: func(*args, *args2, **kwargs, **kwargs2)
+    return inner
+
+
 @use_wrap_update
 def make_meta_wrapper(wrapper_func: Callable):
     """
@@ -170,14 +176,34 @@ def make_meta_wrapper(wrapper_func: Callable):
     return inner
 
 
+@utility.memoize
+def forward_args(num: int):
+
+    def to_func(func):
+        def inner(current_list: tuple[[Callable], ...], *args):
+            if len(current_list) + len(args) == num:
+                return preset_args(*current_list, *args)(func)
+            if len(current_list) + len(args) > num:
+                raise ValueError("Too many arguments given in forwarding.")
+
+            return preset_args((*current_list, *args))(inner)
+
+        return preset_args(())(inner)
+
+    return to_func
+
+
 @use_wrap_update
 def forward_meta_wrapper_funcs(func: Callable):
 
     @make_meta_wrapper
     def inner(func1: Callable, func2: Callable):
-        return lambda *args, **kwargs: func(func1, func2, *args, **kwargs)
+        return _wrap(preset_args(func1, func2)(func), func)
 
     return inner
+
+
+forward_wrapper_func = forward_args(1)
 
 
 @forward_meta_wrapper_funcs
@@ -267,40 +293,30 @@ def prevent_other_use(item) -> bool:
             return False
 
 
-@use_wrap_update
-def draw_on_ground_if_not_held(func: Callable):
+@forward_wrapper_func
+def draw_on_ground_if_not_held(func: Callable, item: Item):
     """
     wrapper to make a function draw on the ground if it wasn't held
     :param func:
     :return:
     """
-
-    def internal(item: Item):
-        if isinstance(item.pos, int):
-            func(item)
-        elif isinstance(item.pos[0], int):
-            draw_on_ground(item)
-        else:
-            func(item)
-
-    return internal
+    if isinstance(item.pos, int):
+        func(item)
+    elif isinstance(item.pos[0], int):
+        draw_on_ground(item)
+    else:
+        func(item)
 
 
-@use_wrap_update
-def draw_by_side_if_not_used(func: Callable):
+@forward_wrapper_func
+def draw_by_side_if_not_used(func: Callable, item: Item):
     """
     assumes already checked if being held
-    :param func:
-    :return:
     """
-
-    def internal(item: Item):
-        if item.data_pack[0]:
-            func(item)
-        else:
-            original_simple_draw(item)
-
-    return internal
+    if in_use(item):
+        func(item)
+    else:
+        original_simple_draw(item)
 
 
 spread = lambda: 384 - 32 * max(0, 4 - game_states.HEALTH)
@@ -333,7 +349,8 @@ def draw_icon_for_simple_duration_item(item: Item):
         pygame.draw.rect(
             game_structures.SCREEN,
             (0, 0, 0),
-            pygame.Rect(get_icon_x(item.pos), get_icon_y(), draw_constants.icon_size - round(draw_constants.icon_size * item.data_pack[1] / item.data_pack[2]), draw_constants.icon_size),
+            pygame.Rect(get_icon_x(item.pos), get_icon_y(), draw_constants.icon_size - round(
+                draw_constants.icon_size * item.data_pack[1] / item.data_pack[2]), draw_constants.icon_size),
         )
 
 

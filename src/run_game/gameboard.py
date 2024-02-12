@@ -17,23 +17,20 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 draws, loads, and unloads the game scene.
 """
-import game_areas
-import game_states
-import game_structures
-from game_areas import add_game_area
+from general_use import game_structures
+from run_game.game_areas import add_game_area
 import pygame
-import abilities
-import ingame
-import draw_constants
-import tutorials
-import run_start_end
+from run_game import abilities, game_areas, ingame, tutorials
+from data import draw_constants, game_states
+from screens import run_start_end
 import math
 
 
-player_img = pygame.image.load("resources/player/player.png")
-heart_img = pygame.image.load("resources/player/hearts.png")
+player_img = pygame.image.load("./resources/player/player.png")
+heart_img = pygame.image.load("./resources/player/hearts.png")
 
-class HeartData():
+
+class HeartData:
     """
     helper class to compute heart jiggle.
     """
@@ -114,11 +111,13 @@ def tick(do_tick: bool = True, draw_gui: bool = True):
             else:
                 game_states.X_DISPLACEMENT += game_states.X_CHANGE
                 if abs(game_states.X_DISPLACEMENT) > abs(game_states.X_LIMIT):
-                    game_states.X_DISPLACEMENT += 2 * (abs(game_states.X_DISPLACEMENT) - abs(game_states.X_LIMIT)) * ((game_states.X_DISPLACEMENT < 0) * 2 - 1)
+                    game_states.X_DISPLACEMENT += 2 * (abs(game_states.X_DISPLACEMENT) - abs(game_states.X_LIMIT)) * ((
+                                                                                                                                  game_states.X_DISPLACEMENT < 0) * 2 - 1)
                     game_states.X_CHANGE *= -1
                 game_states.Y_DISPLACEMENT += game_states.Y_CHANGE
                 if abs(game_states.Y_DISPLACEMENT) > abs(game_states.Y_LIMIT):
-                    game_states.Y_DISPLACEMENT += 2 * (abs(game_states.Y_DISPLACEMENT) - abs(game_states.Y_LIMIT)) * ((game_states.Y_DISPLACEMENT < 0) * 2 - 1)
+                    game_states.Y_DISPLACEMENT += 2 * (abs(game_states.Y_DISPLACEMENT) - abs(game_states.Y_LIMIT)) * ((
+                                                                                                                                  game_states.Y_DISPLACEMENT < 0) * 2 - 1)
                     game_states.Y_CHANGE *= -1
     pygame.draw.line(
         game_structures.SCREEN,
@@ -170,7 +169,8 @@ def tick(do_tick: bool = True, draw_gui: bool = True):
                 heart_data[i].tick()
             game_structures.SCREEN.blit(
                 heart_img,
-                heart_data[i].generate_pos((game_states.WIDTH // 2 - (game_states.HEALTH / 2) * (draw_constants.icon_size + 4) + i * (draw_constants.icon_size + 4), draw_constants.hearts_y - tutorials.display_height))
+                heart_data[i].generate_pos((game_states.WIDTH // 2 - (game_states.HEALTH / 2) * (
+                            draw_constants.icon_size + 4) + i * (draw_constants.icon_size + 4), draw_constants.hearts_y - tutorials.display_height))
             )
     # draw player
     game_structures.SCREEN.blit(

@@ -18,14 +18,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 in-game calculations
 """
 
-import gameboard
 import pygame
-import game_states
-import game_structures
-import items
-import entities
-import abilities
-import run_start_end
+from data import game_states
+from general_use import game_structures
+from run_game import abilities, gameboard, items, entities
+from screens import run_start_end
 
 
 class Inputs:
