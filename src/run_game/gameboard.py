@@ -52,11 +52,11 @@ class HeartData:
         self.x += self.x_dir * speed
         if abs(self.x) > limit:
             self.x_dir *= -1
-            self.x = 2 * (abs(self.x) - limit) * ((self.x > 0) * 2 - 1)
+            self.x = 0 if abs(self.x) > 2 * limit else 2 * (abs(self.x) - limit) * ((self.x > 0) * 2 - 1)
         self.y += self.y_dir * speed
         if abs(self.y) > limit:
             self.y_dir *= -1
-            self.y = 2 * (abs(self.y) - limit) * ((self.y > 0) * 2 - 1)
+            self.y = 0 if abs(self.y) > 2 * limit else 2 * (abs(self.y) - limit) * ((self.y > 0) * 2 - 1)
         if game_states.HEALTH <= 2:
             if self.since_last_direction_change >= 30 * game_states.HEALTH + 10:
                 self.since_last_direction_change = 0
