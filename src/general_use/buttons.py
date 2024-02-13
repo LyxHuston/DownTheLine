@@ -17,6 +17,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 handle button system
 """
+
 import enum
 from abc import ABC, abstractmethod
 from typing import Union, Callable, Any
@@ -27,6 +28,7 @@ from pygame import Rect, Surface, SRCALPHA
 from pygame.transform import scale
 from pygame.draw import rect
 
+import data
 from general_use import utility, game_structures
 
 
@@ -258,13 +260,12 @@ class ButtonHolderTemplate(ABC):
         return text_surface
 
 
-Button = object()
-
-
 class Button(ButtonHolderTemplate):
     """
     dataclass containing information for a button
     """
+
+    DEFAULT = object()
 
     class ClickTypes(enum.Enum):
         down = 0
@@ -379,7 +380,7 @@ class Button(ButtonHolderTemplate):
                          preserve_words: bool = True, text_align: float = 0, x_align: float = 0.5, y_align: float = 0.5,
                          arguments: dict[str, Any] = None, special_press: Union[tuple[str], str] = (),
                          override_text: str = None, max_lines: int = 0, enforce_width: int = 0,
-                         visible_check: Callable[[], bool] = utility.passing) -> Button:
+                         visible_check: Callable[[], bool] = utility.passing):
         """
         creates a button object
         :param text: string
@@ -915,14 +916,13 @@ class ButtonHolder(ButtonHolderTemplate):
             for button in self.list:
                 if button is None:
                     continue
-                match res:
-                    case 0:
-                        res = button.iter_key()
-                    case 1:
-                        if button.set_keyed():
-                            return 2
-                    case 2:
+                if res == 0:
+                    res = button.iter_key()
+                if res == 1:
+                    if button.set_keyed():
                         return 2
+                if res == 2:
+                    return 2
             return res
         else:
             for button in self.list:

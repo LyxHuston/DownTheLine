@@ -784,11 +784,10 @@ class Knight(Glides):
             if not items.in_use(hand):
                 continue
             hand_drawing = None
-            match hand.type:
-                case items.ItemTypes.SimpleStab:
-                    hand_drawing = self.stabbing.img
-                case items.ItemTypes.SimpleShield:
-                    hand_drawing = self.shielding.img
+            if hand.type == items.ItemTypes.SimpleStab:
+                hand_drawing = self.stabbing.img
+            elif hand.type == items.ItemTypes.SimpleShield:
+                hand_drawing = self.shielding.img
             if hand_drawing is None:
                 continue
             canvas.blit(
@@ -1058,54 +1057,53 @@ class Fish(Glides):
     def tick(self):
         self.glide_tick()
         self.wait -= 1
-        match self.state:
-            case 0:  # underwater
-                if self.wait <= 0:
-                    self.direction = self.random.randint(0, 1) * 2 - 1
-                    self.rotation = 90 - 90 * self.direction
-                    self.target_flight = 15 * self.random.randint(3, 5) // round(math.sqrt(self.speed))
-                    self.state = 1
-                    if self.random.randint(0, 1):  # go on the player
-                        self.y = game_states.DISTANCE
-                        self.x = 0
-                    else:
-                        self.y = game_states.DISTANCE + self.random.randint(-400, 400)
-                        self.x = (self.random.randint(0, 1) * 2 - 1) * (100 + self.target_flight * self.speed // 2 + self.random.randint(0, 400))
-                    self.x -= self.direction * (self.target_flight * self.speed // 2 + 20)
-                    self.wait = 5 * self.frame_change_ticks
-            case 1:  # surfacing
-                if self.wait <= 0:
-                    self.img = images.FISH.img
-                    self.x += self.direction * 20
-                    self.wait = self.target_flight
-                    # print(self.target_flight)
-                    self.already_hit = False
-                    self.state = 2
+        if self.state == 0:  # underwater
+            if self.wait <= 0:
+                self.direction = self.random.randint(0, 1) * 2 - 1
+                self.rotation = 90 - 90 * self.direction
+                self.target_flight = 15 * self.random.randint(3, 5) // round(math.sqrt(self.speed))
+                self.state = 1
+                if self.random.randint(0, 1):  # go on the player
+                    self.y = game_states.DISTANCE
+                    self.x = 0
                 else:
-                    self.img = images.FISH_RIPPLES[4 - self.wait // self.frame_change_ticks].img
-            case 2:  # flying
-                if self.wait <= 0:
-                    self.x += self.direction * 20
-                    self.state = 3
-                    self.img = images.FISH_RIPPLES[4].img
-                    self.rotation += 180
-                    self.wait = 5 * self.frame_change_ticks
-                else:
-                    self.x += self.speed * self.direction
-                    if not self.already_hit and abs(self.x) < 64 and abs(self.y - game_states.DISTANCE) < 48:
-                        self.already_hit = True
-                        self.wait //= 2
-                        if game_structures.deal_damage(1, self):
-                            glide_player(5, 2, 1, ((self.y - game_states.DISTANCE) < 0) * 2 - 1)
-                            game_structures.begin_shake(6, (10, 10), (-5, 7))
-            case 3:  # diving
-                if self.wait <= 0:
-                    self.state = 0
-                    self.wait = 3 * 60 + 60 * self.random.randint(0, 3)
-                    self.img = images.EMPTY
-                    self.x = 30000  # go offscreen, shoo
-                else:
-                    self.img = images.FISH_RIPPLES[self.wait // self.frame_change_ticks].img
+                    self.y = game_states.DISTANCE + self.random.randint(-400, 400)
+                    self.x = (self.random.randint(0, 1) * 2 - 1) * (100 + self.target_flight * self.speed // 2 + self.random.randint(0, 400))
+                self.x -= self.direction * (self.target_flight * self.speed // 2 + 20)
+                self.wait = 5 * self.frame_change_ticks
+        if self.state == 1:  # surfacing
+            if self.wait <= 0:
+                self.img = images.FISH.img
+                self.x += self.direction * 20
+                self.wait = self.target_flight
+                # print(self.target_flight)
+                self.already_hit = False
+                self.state = 2
+            else:
+                self.img = images.FISH_RIPPLES[4 - self.wait // self.frame_change_ticks].img
+        if self.state == 2:  # flying
+            if self.wait <= 0:
+                self.x += self.direction * 20
+                self.state = 3
+                self.img = images.FISH_RIPPLES[4].img
+                self.rotation += 180
+                self.wait = 5 * self.frame_change_ticks
+            else:
+                self.x += self.speed * self.direction
+                if not self.already_hit and abs(self.x) < 64 and abs(self.y - game_states.DISTANCE) < 48:
+                    self.already_hit = True
+                    self.wait //= 2
+                    if game_structures.deal_damage(1, self):
+                        glide_player(5, 2, 1, ((self.y - game_states.DISTANCE) < 0) * 2 - 1)
+                        game_structures.begin_shake(6, (10, 10), (-5, 7))
+        if self.state == 3:  # diving
+            if self.wait <= 0:
+                self.state = 0
+                self.wait = 3 * 60 + 60 * self.random.randint(0, 3)
+                self.img = images.EMPTY
+                self.x = 30000  # go offscreen, shoo
+            else:
+                self.img = images.FISH_RIPPLES[self.wait // self.frame_change_ticks].img
         return self.health > 0
 
     def hit(self, damage, source):
@@ -1430,43 +1428,43 @@ class NoteSpawner(InvulnerableEntity):
         self.cooldown_track -= 1
         self.last_dash_arpeggio += 1
         if self.cooldown_track <= 0:
-            match self.random.randint(0, 3):
-                case 0:  # single note
-                    self.area.entity_list.append(Note(self.last_y))
-                    self.cooldown_track = 30 + 15 * self.random.randint(0, 2)
-                    self.last_y += self.random.randint(-2, 2) * 5 * self.cooldown_track
-                case 1:  # arpeggio
+            choose = self.random.randint(0, 3)
+            if choose == 0:  # single note
+                self.area.entity_list.append(Note(self.last_y))
+                self.cooldown_track = 30 + 15 * self.random.randint(0, 2)
+                self.last_y += self.random.randint(-2, 2) * 5 * self.cooldown_track
+            elif choose == 1:  # arpeggio
+                direction = self.random.randint(0, 1) * 2 - 1
+                offscreen = 0
+                spacing = 9
+                for i in range(45 // spacing):
+                    self.last_y += direction * 10 * spacing
+                    self.area.entity_list.append(Note(self.last_y, offscreen=offscreen))
+                    offscreen += note_speed * spacing
+                self.cooldown_track = 45
+            else:
+                if choose == 2 and self.last_dash_arpeggio > abilities.dash_cooldown + 10:  # dash arpeggio
+                    self.last_dash_arpeggio = 0
+                    direction = self.random.randint(0, 1) * 2 - 1
+                    offscreen = 0
+                    spacing = 5
+                    for i in range(20 // spacing):
+                        self.last_y += direction * 25 * spacing
+                        self.area.entity_list.append(Note(self.last_y, offscreen=offscreen))
+                        offscreen += note_speed * spacing
+                    self.cooldown_track = 20
+                else:  # switch arpeggio
                     direction = self.random.randint(0, 1) * 2 - 1
                     offscreen = 0
                     spacing = 9
                     for i in range(45 // spacing):
+                        if self.random.random() < 0.125:
+                            direction *= -1
+                            self.last_y += direction * 64 * spacing
                         self.last_y += direction * 10 * spacing
                         self.area.entity_list.append(Note(self.last_y, offscreen=offscreen))
                         offscreen += note_speed * spacing
                     self.cooldown_track = 45
-                case other:
-                    if other == 2 and self.last_dash_arpeggio > abilities.dash_cooldown + 10:  # dash arpeggio
-                        self.last_dash_arpeggio = 0
-                        direction = self.random.randint(0, 1) * 2 - 1
-                        offscreen = 0
-                        spacing = 5
-                        for i in range(20 // spacing):
-                            self.last_y += direction * 25 * spacing
-                            self.area.entity_list.append(Note(self.last_y, offscreen=offscreen))
-                            offscreen += note_speed * spacing
-                        self.cooldown_track = 20
-                    else:  # switch arpeggio
-                        direction = self.random.randint(0, 1) * 2 - 1
-                        offscreen = 0
-                        spacing = 9
-                        for i in range(45 // spacing):
-                            if self.random.random() < 0.125:
-                                direction *= -1
-                                self.last_y += direction * 64 * spacing
-                            self.last_y += direction * 10 * spacing
-                            self.area.entity_list.append(Note(self.last_y, offscreen=offscreen))
-                            offscreen += note_speed * spacing
-                        self.cooldown_track = 45
             self.cooldown_track += 30
             self.waves -= 1
             self.last_y = min(self.area.end_coordinate - 128, max(self.area.start_coordinate + 128, self.last_y))

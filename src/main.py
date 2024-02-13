@@ -86,8 +86,7 @@ draw_constants.hearts_y = game_states.HEIGHT - draw_constants.row_separation
 game_structures.CUSTOM_EVENT_CATCHERS.append(lambda catch: game_states.PLACE.catcher(catch))
 
 
-if __name__ == "__main__":
-
+def run():
     game_structures.switch_to_place(game_structures.PLACES.main)
 
     while game_states.RUNNING:  # outer loop only for when the try except successfully handles it
@@ -101,3 +100,7 @@ if __name__ == "__main__":
             if not game_states.PLACE.crash(E):
                 utility.log_error(E)
                 game_states.RUNNING = False
+
+
+if __name__ == "__main__":
+    run()

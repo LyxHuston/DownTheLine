@@ -60,13 +60,12 @@ def deepcopy_datapack_factory(item) -> tuple[Callable, Callable, pygame.Surface,
     :param item: any item
     :return:
     """
-    match item.type:
-        case ItemTypes.SimpleStab:
-            contents = (*item.data_pack[:-1], [])
-        case ItemTypes.SimpleShield:
-            contents = (*item.data_pack[:-1], [])
-        case ItemTypes.SimpleThrowable:
-            contents = item.data_pack[:]
+    if item.type == ItemTypes.SimpleStab:
+        contents = (*item.data_pack[:-1], [])
+    elif item.type == ItemTypes.SimpleShield:
+        contents = (*item.data_pack[:-1], [])
+    elif item.type == ItemTypes.SimpleThrowable:
+        contents = item.data_pack[:]
 
     def factory():
         return list(contents)
@@ -242,55 +241,50 @@ def find_range(item) -> int:
     :return:
     """
 
-    match item.type:
-        case ItemTypes.SimpleStab:
-            return item.img.get_height()
-        case ItemTypes.SimpleShield:
-            return item.img.get_width()
-        case ItemTypes.SimpleThrowable:
-            return item.data_pack[0].find_range(*item.data_pack[1])
+    if item.type == ItemTypes.SimpleStab:
+        return item.img.get_height()
+    elif item.type == ItemTypes.SimpleShield:
+        return item.img.get_width()
+    elif item.type == ItemTypes.SimpleThrowable:
+        return item.data_pack[0].find_range(*item.data_pack[1])
 
 
 @none_check(False)
 def action_available(item) -> bool:
-    match item.type:
-        case ItemTypes.SimpleStab:
-            return not item.data_pack[0] and item.data_pack[1] >= item.data_pack[2]
-        case ItemTypes.SimpleShield:
-            return True
-        case ItemTypes.SimpleThrowable:
-            return True
+    if item.type == ItemTypes.SimpleStab:
+        return not item.data_pack[0] and item.data_pack[1] >= item.data_pack[2]
+    elif item.type == ItemTypes.SimpleShield:
+        return True
+    elif item.type == ItemTypes.SimpleThrowable:
+        return True
 
 
 @none_check(False)
 def in_use(item) -> bool:
-    match item.type:
-        case ItemTypes.SimpleStab:
-            return item.data_pack[0]
-        case ItemTypes.SimpleShield:
-            return item.data_pack[0]
-        case ItemTypes.SimpleThrowable:
-            return False
+    if item.type == ItemTypes.SimpleStab:
+        return item.data_pack[0]
+    elif item.type == ItemTypes.SimpleShield:
+        return item.data_pack[0]
+    elif item.type == ItemTypes.SimpleThrowable:
+        return False
 
 
 @none_check(False)
 def from_player(item) -> bool:
-    match item.type:
-        case ItemTypes.SimpleStab:
-            return isinstance(item.pos, int)
-        case ItemTypes.SimpleShield:
-            return isinstance(item.pos, int)
-        case ItemTypes.SimpleThrowable:
-            return isinstance(item.pos, int)
+    if item.type == ItemTypes.SimpleStab:
+        return isinstance(item.pos, int)
+    elif item.type == ItemTypes.SimpleShield:
+        return isinstance(item.pos, int)
+    elif item.type == ItemTypes.SimpleThrowable:
+        return isinstance(item.pos, int)
 
 
 @none_check(False)
 def prevent_other_use(item) -> bool:
-    match item.type:
-        case ItemTypes.SimpleShield:
-            return item.data_pack[0]
-        case _:
-            return False
+    if item.type == ItemTypes.SimpleShield:
+        return item.data_pack[0]
+    else:
+        return False
 
 
 @forward_wrapper_func
@@ -710,16 +704,16 @@ def random_simple_stab(strength: int, random, pos=None):
 
     damage = max(3 - img.get_height() // 100, 0)
 
-    match random.randint(1, 3):
-        case 1:
-            cooldown = max(120 - strength, 60)
-            duration = 70
-        case 2:
-            cooldown = max(120 - 3 * strength, 40)
-            duration = 50
-        case _:
-            cooldown = max(60 - 9 * strength, 20)
-            duration = 10
+    choose = random.randint(1, 3)
+    if choose == 1:
+        cooldown = max(120 - strength, 60)
+        duration = 70
+    elif choose == 2:
+        cooldown = max(120 - 3 * strength, 40)
+        duration = 50
+    else:
+        cooldown = max(60 - 9 * strength, 20)
+        duration = 10
 
     if cooldown < 30:
         cooldown = 30
@@ -754,11 +748,11 @@ def make_random_reusable(random, pos):
     :param random:
     :return:
     """
-    match random.randint(0, 1):
-        case 0:
-            return random_simple_stab(game_states.LAST_AREA, random, pos)
-        case 1:
-            return random_simple_shield(random, pos)
+    choose = random.randint(0, 1)
+    if choose == 0:
+        return random_simple_stab(game_states.LAST_AREA, random, pos)
+    elif choose == 1:
+        return random_simple_shield(random, pos)
 
 
 def simple_throwable(img, pos, creates, args):
@@ -792,32 +786,32 @@ def simple_bomb(pos, speed, taper, glide_duration, delay, size, damage):
 
 
 def random_simple_bomb(random, pos):
-    match random.randint(0, 2):
-        case 0:  # archetype.1 1: landmine
-            speed = 0
-            taper = 0
-            glide_duration = 0
-            delay = 15 * random.randint(4, 7)
-        case 1:  # archetype.1 2: glider
-            speed = 5 * random.randint(1, 3)
-            taper = 0
-            glide_duration = 0
-            delay = 15 * random.randint(3, 4)
-        case _:  # archetype.1 3: sitter
-            speed = 5 * random.randint(2, 4)
-            taper = 1
-            glide_duration = 5 * random.randint(1, 2)
-            delay = glide_duration + 60
-    match random.randint(0, 2):
-        case 0:  # archetype.2 1: pinpoint nuke
-            size = 64
-            damage = 64
-        case 1:  # archetype.2 2: semi-precise destruction
-            size = 256
-            damage = 10
-        case _:  # archetype.2 3: screen wide relatively low damage
-            size = 640
-            damage = 4
+    choose = random.randint(0, 2)
+    if choose == 0:  # archetype.1 1: landmine
+        speed = 0
+        taper = 0
+        glide_duration = 0
+        delay = 15 * random.randint(4, 7)
+    elif choose == 1:  # archetype.1 2: glider
+        speed = 5 * random.randint(1, 3)
+        taper = 0
+        glide_duration = 0
+        delay = 15 * random.randint(3, 4)
+    elif choose == _:  # archetype.1 3: sitter
+        speed = 5 * random.randint(2, 4)
+        taper = 1
+        glide_duration = 5 * random.randint(1, 2)
+        delay = glide_duration + 60
+    choose = random.randint(0, 2)
+    if choose == 0:  # archetype.2 1: pinpoint nuke
+        size = 64
+        damage = 64
+    elif choose == 1:  # archetype.2 2: semi-precise destruction
+        size = 256
+        damage = 10
+    else:  # archetype.2 3: screen wide relatively low damage
+        size = 640
+        damage = 4
     return simple_bomb(pos, speed, taper, glide_duration, delay, size, damage)
 
 
@@ -828,6 +822,4 @@ def make_random_single_use(random, pos):
     :param pos:
     :return:
     """
-    match 0:
-        case 0:
-            return random_simple_bomb(random, pos)
+    return random_simple_bomb(random, pos)

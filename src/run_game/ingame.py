@@ -93,23 +93,20 @@ def event_catcher(event: pygame.event.Event) -> bool:
         return True
     if game_states.HEALTH <= 0:
         return False
-    match event.type:
-        case pygame.KEYDOWN:
-            match event.key:
-                case Inputs.dash:
-                    abilities.dash_input_catch(tick_counter)
-                    return True
-                case Inputs.pause:
-                    paused = True
-                    return True
-        case pygame.MOUSEBUTTONDOWN:
-            match event.button:
-                case 1:
-                    item_input_catch(0)
-                    return True
-                case 3:
-                    item_input_catch(1)
-                    return True
+    if event.type == pygame.KEYDOWN:
+        if event.key == Inputs.dash:
+            abilities.dash_input_catch(tick_counter)
+            return True
+        elif event.key == Inputs.pause:
+            paused = True
+            return True
+    elif event.type == pygame.MOUSEBUTTONDOWN:
+        if event.button == 1:
+            item_input_catch(0)
+            return True
+        if event.button == 3:
+            item_input_catch(1)
+            return True
     return False
 
 

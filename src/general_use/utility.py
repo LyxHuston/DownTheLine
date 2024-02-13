@@ -293,11 +293,11 @@ def tick() -> None:
                 if event.key == pygame.K_TAB:
                     event_handled = True
                     if button_hover_keyed:
-                        match game_structures.BUTTONS.iter_key():
-                            case 1:
-                                button_hover_keyed = False
-                            case 0:
-                                game_structures.BUTTONS.set_keyed()
+                        res = game_structures.BUTTONS.iter_key()
+                        if res == 1:
+                            button_hover_keyed = False
+                        elif res == 0:
+                            game_structures.BUTTONS.set_keyed()
                     else:
                         game_structures.BUTTONS.set_keyed()
                         button_hover_keyed = True

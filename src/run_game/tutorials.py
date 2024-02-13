@@ -97,11 +97,10 @@ def tick(do_tick):
                 max_line_pixels=game_states.WIDTH,
                 enforce_width=game_states.WIDTH
             )
-            match current_text[-1]:
-                case ".":
-                    typing_cooldown = 3 * typing_delay
-                case _:
-                    typing_cooldown = typing_delay
+            if current_text[-1] == ".":
+                typing_cooldown = 3 * typing_delay
+            else:
+                typing_cooldown = typing_delay
             if len(current_text) == len(on.text):
                 typing = False
                 up_current = 0
