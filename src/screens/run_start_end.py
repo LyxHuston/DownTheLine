@@ -37,7 +37,7 @@ PAUSE_BUTTONS = game_structures.ButtonHolder(
 
 
 def quit_run():
-    import main_screen
+    from screens import main_screen
     log_run(RunEndReasons.quit)
     main_screen.main_screen_place.start()
 
