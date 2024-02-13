@@ -497,7 +497,7 @@ class MinigameArea(GameArea):
     def tick(self):
         ret = super(MinigameArea, self).tick()
         match self.state:
-            case 0:
+            case 0:  # setup game
                 if game_states.DISTANCE > self.start_coordinate + self.length // 2:
                     self.state = 1
                     end_wall = entities.InvulnerableObstacle(pos=(0, self.start_coordinate), health=1)
@@ -555,7 +555,9 @@ class MinigameArea(GameArea):
                                         delay = tracker_delay * (repeats + 1)
                                 wave = [(entities.MassDelayedDeploy, (delay, self, wave))]
                             self.entity_list.append(wave[0][0](*wave[0][1]))
-            case 1:
+            case 1:  # in game
+                if self.type == 0:
+                    self.enforce_center = game_states.DISTANCE
                 if len(self.entity_list) == self.solved_entity_number:
                     self.state = 2
                     self.enforce_center = None
