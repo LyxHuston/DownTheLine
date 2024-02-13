@@ -319,9 +319,9 @@ def draw_by_side_if_not_used(func: Callable, item: Item):
         original_simple_draw(item)
 
 
-spread = lambda: 384 - 32 * max(0, 4 - game_states.HEALTH)
+spread = lambda: 384 - 32 * min(max(0, 4 - game_states.HEALTH), 3)
 get_icon_x = lambda hand: game_states.WIDTH // 2 - spread() // 2 + spread() * hand - 64
-get_icon_y = lambda: game_states.HEIGHT - 2 * draw_constants.row_separation - tutorials.display_height + 16 * max(3 - game_states.HEALTH, 0) ** 2
+get_icon_y = lambda: game_states.HEIGHT - 2 * draw_constants.row_separation - tutorials.display_height + 16 * min(max(3 - game_states.HEALTH, 0), 2) ** 2
 
 
 @make_conditional_wrapper
