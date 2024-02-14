@@ -72,6 +72,7 @@ else:
     backdrop = (0, 0, 0)
     game_structures.SCREEN = pygame.display.set_mode((0, 0), pygame.FULLSCREEN + pygame.SRCALPHA)
 pygame.display.set_caption("Down the Line")
+pygame.display.set_icon(pygame.image.load("./resources/down_the_line.ico"))
 game_states.WIDTH, game_states.HEIGHT = game_structures.SCREEN.get_size()
 game_structures.determine_screen()
 # print(game_states.WIDTH, game_states.HEIGHT)
