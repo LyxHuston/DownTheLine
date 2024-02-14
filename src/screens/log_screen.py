@@ -164,7 +164,7 @@ def enter():
             make_record(ast.literal_eval(line))
             line = log_file.readline()
     if len(RECORDS) > 0:
-        record_height = (RECORDS[2].rect.height * 1.25)
+        record_height = (RECORDS[0].rect.height * 1.25)
         RECORDS.background = pygame.surface.Surface(
             (game_states.WIDTH // 2 + 40, max(record_height * len(RECORDS), game_states.HEIGHT))
         )
