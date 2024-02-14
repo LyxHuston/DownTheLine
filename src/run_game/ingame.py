@@ -146,5 +146,5 @@ screen = game_structures.Place(
     enter=run_start_end.start,
     catcher=event_catcher,
     exit_on=lambda: run_start_end.log_run(run_start_end.RunEndReasons.close),
-    crash_on=lambda: run_start_end.log_run(run_start_end.RunEndReasons.error)
+    crash_on=lambda e: False and run_start_end.log_run(run_start_end.RunEndReasons.error)
 )
