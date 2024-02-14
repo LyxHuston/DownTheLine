@@ -62,8 +62,8 @@ BUTTONS.add_button(
 
 class RunRecord(game_structures.Place, game_structures.Button):
 
-    def __init__(self, reason: str, furthest: int, progress: int, date: str, duration: str, start_time: str,
-                 end_time: str, seed: str, room_record: str):
+    def __init__(self, reason: str, furthest: int | str, progress: int | str, date: str, duration: str, start_time: str,
+                 end_time: str, seed: str | str, room_record: str):
 
         game_structures.Place.__init__(self, tick=utility.passing, enter=self.enter, end=self.end)
         text = f"{reason}: {furthest}"
@@ -134,6 +134,7 @@ class RunRecord(game_structures.Place, game_structures.Button):
         game_structures.BUTTONS.remove(self.buttons)
 
 
+@utility.add_error_checking
 def make_record(line: dict):
     RECORDS.add_button(RunRecord(
         line.get("reason", "N/A"),
@@ -149,6 +150,7 @@ def make_record(line: dict):
 
 
 @utility.make_async(singular=True)
+@utility.add_error_checking
 def enter():
     """
     enter run log screen and populate records

@@ -62,8 +62,8 @@ class Entity(game_structures.Body):
         if val < self.__health:
             self.flashing = max(3 * (self.__health - val) + 25, self.flashing)
             self.__shake_limit = 2 * (self.__health - val)
-            self.__x_shake_momentum = (self.__health - val) ** 1.5 // 2
-            self.__y_shake_momentum = 3 * (self.__health - val) ** 1.5 // 4
+            self.__x_shake_momentum = round((self.__health - val) ** 1.5 // 2)
+            self.__y_shake_momentum = round(3 * (self.__health - val) ** 1.5 // 4)
             # print(self.y, game_states.DISTANCE, self.tick, val, self.tick())
         elif val > self.max_health:
             val = self.max_health
@@ -322,10 +322,10 @@ class Glides(Entity):
 
     def __init__(self, img: pygame.Surface, rotation: int, pos: tuple[int, int]):
         super().__init__(img, rotation, pos)
-        self.glide_speed = 0
-        self.glide_direction = 0
-        self.taper = 0
-        self.glide_duration = 0
+        self.glide_speed: int = 0
+        self.glide_direction: int = 0
+        self.taper: int = 0
+        self.glide_duration: int = 0
 
     def glide_tick(self) -> bool:
         """

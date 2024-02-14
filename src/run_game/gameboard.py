@@ -200,7 +200,7 @@ def tick(do_tick: bool = True, draw_gui: bool = True):
         camera_move += (min(total, 2) + 2) / 324 * (goal - game_states.CAMERA_BOTTOM)
         if enforce_goal is not None and camera_move < 1 and goal != game_states.CAMERA_BOTTOM:
             game_states.CAMERA_BOTTOM += goal - game_states.CAMERA_BOTTOM > 0
-        game_states.CAMERA_BOTTOM += camera_move
+        game_states.CAMERA_BOTTOM += round(camera_move)
 
         if game_states.DISTANCE < game_states.CAMERA_BOTTOM + game_states.CAMERA_THRESHOLDS[0] + tutorials.display_height:
             game_states.CAMERA_BOTTOM = game_states.DISTANCE - game_states.CAMERA_THRESHOLDS[0] - tutorials.display_height

@@ -23,7 +23,7 @@ import pygame
 
 from data import game_states, images
 from run_game import tutorials, entities, bosses, items
-from general_use.utility import make_async
+from general_use.utility import make_async, add_error_checking
 from general_use import game_structures
 import math
 from collections import deque
@@ -44,7 +44,7 @@ class GameArea:
         return None
 
     @enforce_center.setter
-    def enforce_center(self, val: int):
+    def enforce_center(self, val: int | None):
         self.__enforce_center = val
 
     @property
@@ -127,7 +127,7 @@ class GameArea:
                     self.random.randint(-game_states.WIDTH // 2, game_states.WIDTH // 2),
                     self.start_coordinate + self.length // 2 + (self.spawn_end * 2 - 1) * (
                             self.length +
-                            self.taper_length - (math.sqrt(1 + 8 * self.random.randint(0, (self.taper_length + 1) * self.taper_length // 2) - 1) - 1)
+                            self.taper_length - round(math.sqrt(1 + 8 * self.random.randint(0, (self.taper_length + 1) * self.taper_length // 2) - 1) - 1)
                     ) // 2
                 )
             ))
@@ -640,6 +640,7 @@ class BossArea(GameArea):
 
 
 @make_async(with_lock=True)
+@add_error_checking
 def add_game_area():
     # print(game_states.LAST_AREA)
     determinator = hash(str(game_states.SEED + game_states.LAST_AREA))

@@ -61,10 +61,10 @@ if len(sys.argv) > 1:
             game_states.SEED = int(sys.argv[flag + 1])
         except IndexError:
             print("Provide a seed.")
-            exit(2)
+            sys.exit(2)
         except ValueError:
             print("The seed must be an integer.")
-            exit(2)
+            sys.exit(2)
     flag = check_flags(["--print_seed", "-p"])
     if flag:
         game_states.PRINT_SEED = True
