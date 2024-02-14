@@ -960,7 +960,7 @@ class Lazer(InvulnerableEntity):
                     images.STEAM_PARTICLES,
                     4,
                     12,
-                    (end.x + 10 * math.sin(math.radians(end.rotation)), end.y - 10 * math.cos(math.radians(end.rotation))),
+                    (end.x + round(10 * math.sin(math.radians(end.rotation))), end.y - round(10 * math.cos(math.radians(end.rotation)))),
                     (round(speed * math.sin(math.radians(rot))), round(speed * -1 * math.cos(math.radians(rot)))),
                     rot
                 ))
