@@ -141,10 +141,19 @@ def item_input_catch(num: int) -> None:
     game_structures.HANDS[num].action(game_structures.HANDS[num])
 
 
+def crash(e: Exception):
+    from screens import main_screen
+    from general_use import utility
+    run_start_end.log_run(run_start_end.RunEndReasons.error)
+    utility.log_error(e)
+    main_screen.main_screen_place.start()
+    return True
+
+
 screen = game_structures.Place(
     tick=tick,
     enter=run_start_end.start,
     catcher=event_catcher,
     exit_on=lambda: run_start_end.log_run(run_start_end.RunEndReasons.close),
-    crash_on=lambda e: False and run_start_end.log_run(run_start_end.RunEndReasons.error)
+    crash_on=crash
 )
