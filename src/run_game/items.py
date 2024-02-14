@@ -797,7 +797,7 @@ def random_simple_bomb(random, pos):
         taper = 0
         glide_duration = 0
         delay = 15 * random.randint(3, 4)
-    elif choose == _:  # archetype.1 3: sitter
+    else:  # archetype.1 3: sitter
         speed = 5 * random.randint(2, 4)
         taper = 1
         glide_duration = 5 * random.randint(1, 2)
