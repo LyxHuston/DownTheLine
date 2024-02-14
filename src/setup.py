@@ -30,8 +30,6 @@ from Cython.Build import cythonize
 from Cython.Distutils import build_ext
 
 
-# currently trying this tutorial: https://www.peterspython.com/en/blog/using-pyinstaller-and-cython-to-create-a-python-executable
-
 with open("exclude_from_cython_compile.txt", "r") as exclude_file:
     exclude = [line.strip().split("\\")[-1] for line in exclude_file.readlines()]
 
