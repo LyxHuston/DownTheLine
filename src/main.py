@@ -96,7 +96,7 @@ def run():
                 game_states.PLACE.tick()
                 utility.tick()
             game_states.PLACE.exit()
-        except RuntimeError as E:
+        except Exception as E:
             if not game_states.PLACE.crash(E):
                 utility.log_error(E)
                 game_states.RUNNING = False
