@@ -26,6 +26,9 @@ class Image:
     an image class to consolidate references.
     """
 
+    root: str = "./resources/"
+    suffix: str = ".png"
+
     @property
     def img(self) -> pygame.Surface:
         """
@@ -33,7 +36,10 @@ class Image:
         :return:
         """
         if self.__img is None:
-            self.__img = pygame.image.load(self.path)
+            try:
+                self.__img = pygame.image.load(self.root + self.path + self.suffix)
+            except Exception:
+                return EMPTY
         return self.__img
 
     def __init__(self, path: str):
@@ -46,86 +52,98 @@ class Image:
 
 
 # entities
-WALL_FULL: Image = Image("./resources/entities/obstacle/wall_full.png")
-WALL_HALF: Image = Image("./resources/entities/obstacle/wall_half.png")
-WALL_FRAGILE: Image = Image("./resources/entities/obstacle/wall_fragile.png")
+WALL_FULL: Image = Image("entities/obstacle/wall_full")
+WALL_HALF: Image = Image("entities/obstacle/wall_half")
+WALL_FRAGILE: Image = Image("entities/obstacle/wall_fragile")
 
-SLIME_1: Image = Image("./resources/entities/slime/slime_1.png")
-SLIME_2: Image = Image("./resources/entities/slime/slime_2.png")
-SLIME_3: Image = Image("./resources/entities/slime/slime_3.png")
-SLIME_4: Image = Image("./resources/entities/slime/slime_4.png")
-SLIME_ALERT: Image = Image("./resources/entities/slime/slime_alert.png")
+SLIME_1: Image = Image("entities/slime/slime_1")
+SLIME_2: Image = Image("entities/slime/slime_2")
+SLIME_3: Image = Image("entities/slime/slime_3")
+SLIME_4: Image = Image("entities/slime/slime_4")
+SLIME_ALERT: Image = Image("entities/slime/slime_alert")
 
-CRAWLER_1: Image = Image("./resources/entities/crawler/crawler_extended.png")
-CRAWLER_2: Image = Image("./resources/entities/crawler/crawler_retracting.png")
-CRAWLER_3: Image = Image("./resources/entities/crawler/crawler_mid_step.png")
+CRAWLER_1: Image = Image("entities/crawler/crawler_extended")
+CRAWLER_2: Image = Image("entities/crawler/crawler_retracting")
+CRAWLER_3: Image = Image("entities/crawler/crawler_mid_step")
 
-SPAWNER_1: Image = Image("./resources/entities/spawner/spawner_1.png")
-SPAWNER_2: Image = Image("./resources/entities/spawner/spawner_2.png")
-SPAWNER_3: Image = Image("./resources/entities/spawner/spawner_3.png")
-SPAWNER_4: Image = Image("./resources/entities/spawner/spawner_4.png")
+SPAWNER_1: Image = Image("entities/spawner/spawner_1")
+SPAWNER_2: Image = Image("entities/spawner/spawner_2")
+SPAWNER_3: Image = Image("entities/spawner/spawner_3")
+SPAWNER_4: Image = Image("entities/spawner/spawner_4")
 
-FENCER_1: Image = Image("./resources/entities/fencer/fencer_1.png")
-FENCER_2: Image = Image("./resources/entities/fencer/fencer_2.png")
-FENCER_3: Image = Image("./resources/entities/fencer/fencer_3.png")
-FENCER_DASHING: Image = Image("./resources/entities/fencer/fencer_dashing.png")
+FENCER_1: Image = Image("entities/fencer/fencer_1")
+FENCER_2: Image = Image("entities/fencer/fencer_2")
+FENCER_3: Image = Image("entities/fencer/fencer_3")
+FENCER_DASHING: Image = Image("entities/fencer/fencer_dashing")
 
-ARCHER_RELAXED: Image = Image("./resources/entities/archer/archer_relaxed.png")
-ARCHER_DRAWING: Image = Image("./resources/entities/archer/archer_drawing.png")
-ARCHER_DRAWN: Image = Image("./resources/entities/archer/archer_drawn.png")
+ARCHER_RELAXED: Image = Image("entities/archer/archer_relaxed")
+ARCHER_DRAWING: Image = Image("entities/archer/archer_drawing")
+ARCHER_DRAWN: Image = Image("entities/archer/archer_drawn")
 
-KNIGHT_TOP: Image = Image("./resources/entities/knight/knight_top.png")
-KNIGHT_STEP_1: Image = Image("./resources/entities/knight/knight_step_cycle_1.png")
-KNIGHT_STEP_2: Image = Image("./resources/entities/knight/knight_step_cycle_2.png")
-KNIGHT_STABBING: Image = Image("./resources/entities/knight/knight_stabbing.png")
-KNIGHT_SHIELDING: Image = Image("./resources/entities/knight/knight_shielding.png")
+KNIGHT_TOP: Image = Image("entities/knight/knight_top")
+KNIGHT_STEP_1: Image = Image("entities/knight/knight_step_cycle_1")
+KNIGHT_STEP_2: Image = Image("entities/knight/knight_step_cycle_2")
+KNIGHT_STABBING: Image = Image("entities/knight/knight_stabbing")
+KNIGHT_SHIELDING: Image = Image("entities/knight/knight_shielding")
 
-ARROW: Image = Image("./resources/entities/projectiles/arrow.png")
+ARROW: Image = Image("entities/projectiles/arrow")
 
-LAZER_END: Image = Image("./resources/entities/lazer/lazer_end.png")
+LAZER_END: Image = Image("entities/lazer/lazer_end")
 
-FISH_RIPPLES: list[Image] = [Image("./resources/entities/fish/fish_ripple_1.png"),
-                Image("./resources/entities/fish/fish_ripple_2.png"),
-                Image("./resources/entities/fish/fish_ripple_3.png"),
-                Image("./resources/entities/fish/fish_ripple_4.png"),
-                Image("./resources/entities/fish/fish_ripple_5.png")]
-FISH: Image = Image("./resources/entities/fish/fish_flight.png")
+FISH_RIPPLES: list[Image] = [
+    Image("entities/fish/fish_ripple_1"),
+    Image("entities/fish/fish_ripple_2"),
+    Image("entities/fish/fish_ripple_3"),
+    Image("entities/fish/fish_ripple_4"),
+    Image("entities/fish/fish_ripple_5")]
+FISH: Image = Image("entities/fish/fish_flight")
 
-TARGET: Image = Image("./resources/entities/target/target.png")
+TARGET: Image = Image("entities/target/target")
 
 #bosses
-SERPENT_HEAD: Image = Image("./resources/entities/serpent/serpent_head.png")
-SERPENT_BODY: list[Image] = [Image("./resources/entities/serpent/serpent_body_1.png"),
-                Image("./resources/entities/serpent/serpent_body_2.png"),
-                Image("./resources/entities/serpent/serpent_body_3.png"),
-                Image("./resources/entities/serpent/serpent_body_4.png")]
+SERPENT_HEAD: Image = Image("entities/serpent/serpent_head")
+SERPENT_BODY: list[Image] = [
+    Image("entities/serpent/serpent_body_1"),
+    Image("entities/serpent/serpent_body_2"),
+    Image("entities/serpent/serpent_body_3"),
+    Image("entities/serpent/serpent_body_4")]
 
 # items
-SIMPLE_SWORD: Image = Image("./resources/items/simple_sword.png")
-SIMPLE_SPEAR: Image = Image("./resources/items/simple_spear.png")
-SIMPLE_SHIELD: Image = Image("./resources/items/simple_shield.png")
+SIMPLE_SWORD: Image = Image("items/simple_sword")
+SIMPLE_SPEAR: Image = Image("items/simple_spear")
+SIMPLE_SHIELD: Image = Image("items/simple_shield")
 # SPIKY_SHIELD = Image("./resources/items/spiky_shield.png")
-SIMPLE_BOMB: Image = Image("./resources/items/simple_bomb.png")
-BATON: Image = Image("./resources/items/baton.png")
+SIMPLE_BOMB: Image = Image("items/simple_bomb")
+BATON: Image = Image("items/baton")
 
 # icons
-SIMPLE_STAB_ICON: Image = Image("./resources/items/icons/simple_stab.png")
-SIMPLE_SHIELD_ICON: Image = Image("./resources/items/icons/simple_shield.png")
-SIMPLE_THROWABLE_ICON: Image = Image("./resources/items/icons/simple_throwable.png")
+SIMPLE_STAB_ICON: Image = Image("items/icons/simple_stab")
+SIMPLE_SHIELD_ICON: Image = Image("items/icons/simple_shield")
+SIMPLE_THROWABLE_ICON: Image = Image("items/icons/simple_throwable")
 
 # particles
-VOID_PARTICLES: list[Image] = [Image("./resources/particles/basic_void/basic_void_1.png"),
-                  Image("./resources/particles/basic_void/basic_void_2.png"),
-                  Image("./resources/particles/basic_void/basic_void_3.png"),
-                  Image("./resources/particles/basic_void/basic_void_4.png")]
+VOID_PARTICLES: list[Image] = [
+    Image("particles/basic_void/basic_void_1"),
+    Image("particles/basic_void/basic_void_2"),
+    Image("particles/basic_void/basic_void_3"),
+    Image("particles/basic_void/basic_void_4")]
 
-EXPLOSION_PARTICLES: list[Image] = [Image("./resources/particles/explosion/explosion_1.png"),
-                       Image("./resources/particles/explosion/explosion_2.png"),
-                       Image("./resources/particles/explosion/explosion_3.png")]
+EXPLOSION_PARTICLES: list[Image] = [
+    Image("particles/explosion/explosion_1"),
+    Image("particles/explosion/explosion_2"),
+    Image("particles/explosion/explosion_3")]
 
-STEAM_PARTICLES: list[Image] = [Image("./resources/particles/steam/steam_1.png"),
-                   Image("./resources/particles/steam/steam_2.png"),
-                   Image("./resources/particles/steam/steam_3.png")]
+STEAM_PARTICLES: list[Image] = [
+    Image("particles/steam/steam_1"),
+    Image("particles/steam/steam_2"),
+    Image("particles/steam/steam_3")]
+
+DASH_PARTICLES: list[Image] = [
+    Image("particles/dash_ripples/ripple_1"),
+    Image("particles/dash_ripples/ripple_2"),
+    Image("particles/dash_ripples/ripple_3"),
+    Image("particles/dash_ripples/ripple_4")
+]
 
 # empty
 EMPTY: pygame.Surface = pygame.Surface((0, 0))
