@@ -25,7 +25,7 @@ import pygame
 
 from general_use import game_structures
 from data import game_states
-from run_game import game_areas, gameboard, ingame, tutorials
+from run_game import game_areas, gameboard, ingame, tutorials, abilities
 import random
 import sys
 
@@ -105,6 +105,8 @@ def start(with_seed: int = None):
     game_states.LAST_AREA = 0
     # times
     game_states.RUN_START = datetime.datetime.now()
+
+    abilities.last_dash_time = -1 - abilities.dash_cooldown
 
     game_structures.HANDS = [None, None]
 
