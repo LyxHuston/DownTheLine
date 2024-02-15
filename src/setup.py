@@ -21,6 +21,9 @@ A note on build directories:
 The build directory that is made by Cython is already set to be ignored in .gitignore
 """
 
+# use from command line: python setup.py build_ext --build-lib build/pyd
+# keeps the
+
 import os
 
 from setuptools import setup
@@ -30,6 +33,8 @@ from Cython.Build import cythonize
 from Cython.Distutils import build_ext
 
 
+# these files had some sort of issue with compiling in Cython
+# (currently 1, it was an issue with default arguments)
 with open("exclude_from_cython_compile.txt", "r") as exclude_file:
     exclude = [line.strip().split("\\")[-1] for line in exclude_file.readlines()]
 
@@ -67,11 +72,11 @@ setup(
         build_dir="build/c",
         compiler_directives={
             'language_level': "3",
-            'always_allow_keywords': True,
+            'always_allow_keywords': True
         }
     ),
     cmdclass=dict(
         build_ext=build_ext
-    ),
+    )
 )
 
