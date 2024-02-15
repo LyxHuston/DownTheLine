@@ -18,16 +18,16 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 describing most non-player entities.  Items and ability drops are not considered
 entities
 """
+import weakref
+
 import pygame
 
-Entity = None
-
-from run_game import abilities, game_areas, ingame, items
+from run_game import abilities, game_areas, ingame
 from data import game_states, images
 from general_use import game_structures
 import random
 import math
-from typing import Type, Iterable
+from typing import Type, Iterable, Self
 
 
 def glide_player(speed: int, duration: int, taper: int, direction: int):
@@ -42,19 +42,25 @@ class Entity(game_structures.Body):
     base entity class that describes a few things most entities need to do
     """
 
-    seen = False
-    tutorial_given = False
-    tutorial_text = ""
+    __instances: weakref.WeakSet | None = None
+    seen: bool = False
+    tutorial_given: bool = False
+    tutorial_text: str = ""
 
-    is_item_entity = False
-    is_holder = False
+    is_item_entity: bool = False
+    is_holder: bool = False
 
-    allied_with_player = False
+    allied_with_player: bool = False
 
-    cost = 2
+    track_instances: bool = False
+
+    cost: int = 2
+
+    def alive(self) -> bool:
+        return self.health > 0
 
     @property
-    def health(self):
+    def health(self) -> int:
         return self.__health
 
     @health.setter
@@ -70,19 +76,34 @@ class Entity(game_structures.Body):
         self.__health = val
 
     @property
-    def in_knockback(self):
+    def in_knockback(self) -> bool:
         return self.flashing > 0
 
     def __init__(self, img: pygame.Surface, rotation: int, pos: tuple[int, int]):
         super().__init__(img, rotation, pos)
-        self.__health = 0
-        self.max_health = 0
-        self.flashing = 0
-        self.__x_shake_momentum = 0
-        self.__x_shake = 0
-        self.__y_shake_momentum = 0
-        self.__y_shake = 0
-        self.__shake_limit = 0
+        self.__health: int = 0
+        self.max_health: int = 0
+        self.flashing: int = 0
+        self.__x_shake_momentum: int = 0
+        self.__x_shake: int = 0
+        self.__y_shake_momentum: int = 0
+        self.__y_shake: int = 0
+        self.__shake_limit: int = 0
+        if self.track_instances:
+            self.__instances.add(self)
+
+    def __init_subclass__(cls, **kwargs):
+        if kwargs.get("track_instances", False):
+            cls.track_instances = True
+            cls.__instances = weakref.WeakSet()
+        super().__init_subclass__()
+
+    @classmethod
+    def instances(cls) -> list[Self]:
+        if not cls.track_instances:
+            return []
+        res = [en for en in cls.__instances if en.alive()]
+        return res
 
     def first_seen(self):
         """
@@ -142,7 +163,7 @@ class Entity(game_structures.Body):
         """
         return self.health > 0
 
-    def final_load(self):
+    def final_load(self) -> None:
         """
         called when an area initializes.  In most cases, starts AI/movement
         :return:
@@ -152,7 +173,7 @@ class Entity(game_structures.Body):
             self.first_seen()
 
     @classmethod
-    def make(cls, determiner: int, area):
+    def make(cls, determiner: int, area) -> Self:
         """
         makes an entity in the given area of the specific entity
         :param determiner:
@@ -161,13 +182,31 @@ class Entity(game_structures.Body):
         """
         raise NotImplementedError(f"Attempted to use make method from generic Entity superclass: {cls.__name__} should implement it separately.")
 
-    def transfer(self, area):
+    def transfer(self, area) -> None:
         """
         called when transferring an entity to a new area, in case the entity needs to do something there
         :param area:
         :return:
         """
         pass
+
+    # positional utility
+
+    def obstacle_in_between(self, pos: int | None = None) -> bool:
+        """
+        checks if there's an obstacle in between this and a target location
+        :param pos:
+        :return:
+        """
+        if pos is None:
+            pos = game_states.DISTANCE
+        for obstacle in Obstacle.instances():
+            if (obstacle.y < pos) == (obstacle.y > self.y):
+                return True
+        return False
+
+    def in_view(self, margin: int = 0) -> bool:
+        return game_states.CAMERA_BOTTOM + margin < self.y < game_states.CAMERA_BOTTOM + game_states.HEIGHT - margin
 
 
 EntityType = Type[Entity]
@@ -198,6 +237,9 @@ def make_invulnerable_version(entity_class: Type[Entity]) -> Type[Entity]:
 
 
 InvulnerableEntity: Type[Entity] = make_invulnerable_version(Entity)
+
+
+from run_game import items
 
 
 class ItemEntity(InvulnerableEntity):
@@ -350,7 +392,7 @@ class Glides(Entity):
         self.glide_direction = direction
 
 
-class Obstacle(Entity):
+class Obstacle(Entity, track_instances=True):
     """
     harmless obstacles on path.
     """
@@ -514,7 +556,6 @@ class Crawler(Glides):
         self.switch_ticks = max(9 // speed, 1)
         self.frame = 0
         self.area = area
-        self.threshhold = area.start_coordinate
         self.max_health = 6
         self.health = 6
 
@@ -528,16 +569,15 @@ class Crawler(Glides):
     def tick(self) -> bool:
         # print(self.y, self.health)
         self.glide_tick()
-        if (self.glide_speed == 0 or (
-                self.taper == 0 and self.glide_direction != (self.y < game_states.DISTANCE) * 2 - 1)) and game_states.DISTANCE > self.threshhold:
-            if self.threshhold != 0:
-                self.threshhold = 0
-            self.start_glide(
-                self.speed,
-                0,
-                0,
-                (self.y < game_states.DISTANCE) * 2 - 1
-            )
+        if not self.obstacle_in_between():
+            if self.glide_speed == 0 or (
+                    self.taper == 0 and self.glide_direction != (self.y < game_states.DISTANCE) * 2 - 1):
+                self.start_glide(
+                    self.speed,
+                    0,
+                    0,
+                    (self.y < game_states.DISTANCE) * 2 - 1
+                )
         if self.glide_speed > 0 and self.taper == 0:
             self.frame = (self.frame + self.glide_direction) % (8 * self.frame_change_frequency * self.switch_ticks)
             self.img = self.imgs[self.frame // (self.frame_change_frequency * self.switch_ticks)]
@@ -574,7 +614,6 @@ class Crawler(Glides):
 
     def final_load(self):
         super().final_load()
-        self.threshhold = self.area.start_coordinate
 
 
 class Fencer(Glides):
@@ -592,11 +631,11 @@ class Fencer(Glides):
 
     def __init__(self, pos: tuple[int, int], difficulty: int):
         super().__init__(images.FENCER_1.img, 0, pos)
-        self.max_health = 4
-        self.health = 4
-        self.cooldown = 0
-        self.cooldown_length = max(180 - difficulty, 30)
-        self.frame = 0
+        self.max_health: int = 4
+        self.health: int = 4
+        self.cooldown: int = 0
+        self.cooldown_length: int = max(180 - difficulty, 30)
+        self.frame: int = 0
 
     def tick(self) -> bool:
         dist = abs(self.y - game_states.DISTANCE)
@@ -612,8 +651,8 @@ class Fencer(Glides):
             if self.cooldown > 0:
                 self.cooldown -= 1
             return self.health > 0
-        if self.cooldown > 0:
-            self.cooldown -= 1
+        if self.cooldown > 0 or self.obstacle_in_between():
+            self.cooldown = max(0, self.cooldown - 1)
             if dist < 400:
                 self.y += 5 * ((self.y > game_states.DISTANCE) * 2 - 1)
             elif dist > 450:
@@ -627,7 +666,7 @@ class Fencer(Glides):
                 self.img = self.dashing.img
             elif dist < 300:
                 self.y += 5 * ((self.y > game_states.DISTANCE) * 2 - 1)
-            elif dist < 450 and game_states.CAMERA_BOTTOM + 100 < self.y < game_states.CAMERA_BOTTOM + game_states.HEIGHT - 100:
+            elif dist < 450 and self.in_view(100):
                 self.start_glide(20, 24, 20, (self.y < game_states.DISTANCE) * 2 - 1)
                 self.cooldown = self.cooldown_length
                 self.img = self.dashing.img
@@ -718,7 +757,7 @@ class Archer(Glides):
             if dist < 900:
                 self.cooldown = self.cooldown_length
                 self.area.entity_list.append(Projectile(images.ARROW.img, self.rotation, (self.x + self.area.random.randint(-1, 1) * 16, self.y), speed=5))
-        elif abs(self.y - game_states.CAMERA_BOTTOM - game_states.HEIGHT // 2) < game_states.HEIGHT // 2:
+        elif self.in_view():
             self.cooldown -= 1
             self.img = self.imgs[3 * self.cooldown // self.cooldown_length]
         if dist < 150:
@@ -812,27 +851,28 @@ class Knight(Glides):
         self.rotation = 180 * (self.y < game_states.DISTANCE)
         dist = abs(self.y - game_states.DISTANCE)
         desired_dist = 300
-        trigerable = None
+        triggerable = None
+        wall_in_between = self.obstacle_in_between()
         for hand in self.hands:
             if hand is None:
                 continue
             if hand.pos[0] is not self:
                 hand.pos = (self, hand.pos[1])
             hand.tick(hand)
-            if items.action_available(hand):
+            if not wall_in_between and items.action_available(hand):
                 new_dist = items.find_range(hand)
                 if new_dist < desired_dist:
-                    trigerable = hand
+                    triggerable = hand
                     desired_dist = new_dist
-        if trigerable is not None:
+        if triggerable is not None:
             if dist < desired_dist + 32:
-                trigerable.action(trigerable)
-                # print(self is trigerable.pos[0], self.pos == trigerable.pos[0].pos)
+                triggerable.action(triggerable)
+                # print(self is triggerable.pos[0], self.pos == triggerable.pos[0].pos)
         if dist < desired_dist - 100:  # back up
             self.frame = (self.frame - 1) % (self.frame_change_frequency * 6)
             self.step = self.imgs[self.frame // self.frame_change_frequency]
             self.y += 5 * ((self.y > game_states.DISTANCE) * 2 - 1)
-        elif (dist > desired_dist + 100) or (trigerable is not None and dist > desired_dist):  # go towards
+        elif (dist > desired_dist + 100) or (triggerable is not None and dist > desired_dist):  # go towards
             self.y += 5 * ((self.y < game_states.DISTANCE) * 2 - 1)
             self.frame = (self.frame + 1) % (self.frame_change_frequency * 6)
             self.step = self.imgs[self.frame // self.frame_change_frequency]
