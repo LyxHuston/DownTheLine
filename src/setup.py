@@ -38,10 +38,10 @@ from Cython.Distutils import build_ext
 with open("exclude_from_cython_compile.txt", "r") as exclude_file:
     exclude = [line.strip().split("\\")[-1] for line in exclude_file.readlines()]
 
-dirs = {"data": [], "general_use": [], "resources": [], "run_game": [], "screens": []}
+dirs = {"data", "general_use", "run_game", "screens"}
 # attempt to put it all in one .pyd
 # source_list = ["main.py"]
-# for dir_name in ("data", "general_use", "resources", "run_game", "screens"):
+# for dir_name in dirs:
 #     source_list.extend([
 #         f"{dir_name}/{file_name}" for file_name in os.listdir(dir_name)
 #         if file_name.endswith(".py") and file_name not in exclude
@@ -49,13 +49,13 @@ dirs = {"data": [], "general_use": [], "resources": [], "run_game": [], "screens
 # extension_list = [Extension(module_name, source) for module_name, source in source_list]
 
 # attempt to put directories into singular pyd-s
-# source_list = [("main", ["main.py"])]
-# for dir_name in ("data", "general_use", "resources", "run_game", "screens"):
-#     source_list[0][1].extend((dir_name, [
+# source_list = ["main.py"]
+# for dir_name in dirs:
+#     source_list.extend((dir_name, [
 #         f"{dir_name}/{file_name}" for file_name in os.listdir(dir_name)
 #         if file_name.endswith(".py") and file_name not in exclude
 #     ]))
-# extension_list = [Extension(module_name, source) for module_name, source in source_list]
+# extension_list = [Extension("main", source_list)]
 
 # attempt to make each file into a .pyd
 extension_list = [Extension("main", ["main.py"])]
