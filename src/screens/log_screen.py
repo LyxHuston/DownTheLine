@@ -98,7 +98,7 @@ class RunRecord(game_structures.Place, game_structures.Button):
                                                     x_align=0, y_align=0)
         )
         self.buttons.add_button(
-            game_structures.Button.make_text_button(f"seed: {self.seed}", 50, (game_states.WIDTH // 4, 420),
+            game_structures.Button.make_text_button(f"seed: {self.seed}", 50, (game_states.WIDTH // 4, 520),
                                                     self.set_seed, background_color=(0, 0, 0),
                                                     outline_color=(255, 255, 255), x_align=0, y_align=0)
         )
@@ -118,19 +118,19 @@ class RunRecord(game_structures.Place, game_structures.Button):
                     }: {item[1]}""" for item in sorted(
                         list(ast.literal_eval(self.room_record).items()), key=lambda tup: tup[1]
                     )
-                ]), 80, (game_states.WIDTH // 4, 550), None, background_color=(0, 0, 0),
+                ]), 80, (game_states.WIDTH // 4, 650), None, background_color=(0, 0, 0),
                 outline_color=(255, 255, 255), x_align=0, y_align=0)
         )
 
         self.buttons.add_button(
             game_structures.Button.make_text_button("Back", 75, (game_states.WIDTH, 0), screen.start,
                                                     background_color=(0, 0, 0), outline_color=(255, 255, 255),
-                                                    x_align=1, y_align=0)
+                                                    x_align=1, y_align=0, arguments={"re_setup": False})
         )
 
         game_structures.BUTTONS.add_button(self.buttons)
 
-    def end(self):
+    def end(self, **kwargs):
         game_structures.BUTTONS.remove(self.buttons)
 
 
@@ -151,13 +151,15 @@ def make_record(line: dict):
 
 @utility.make_async(singular=True)
 @utility.add_error_checking
-def enter():
+def enter(re_setup: bool = True):
     """
     enter run log screen and populate records
     :return:
     """
-    RECORDS.clear()
     game_structures.BUTTONS.add_button(BUTTONS)
+    if not re_setup:
+        return
+    RECORDS.clear()
     with open(log_file_name, "r") as log_file:
         line = log_file.readline()
         while line:

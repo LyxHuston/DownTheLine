@@ -57,18 +57,17 @@ class Place:
         self.crash = crash_on
         self.exit = exit_on
 
-    def start(self):
-        switch_to_place(self)
+    def start(self, *args, **kwargs):
+        switch_to_place(self, *args, **kwargs)
 
 
-def switch_to_place(place: Place):
+def switch_to_place(place: Place, *args, **kwargs):
     if not isinstance(place, Place):
-        switch_to_place(place.value)
-        return
+        return switch_to_place(place.value, *args, **kwargs)
     if game_states.PLACE:
-        game_states.PLACE.end()
+        game_states.PLACE.end(*args, **kwargs)
     game_states.PLACE = place
-    game_states.PLACE.enter()
+    game_states.PLACE.enter(*args, **kwargs)
 
 
 def display_screen():
