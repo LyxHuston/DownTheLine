@@ -49,22 +49,22 @@ dirs = {"data", "general_use", "run_game", "screens"}
 # extension_list = [Extension(module_name, source) for module_name, source in source_list]
 
 # attempt to put directories into singular pyd-s
-# source_list = ["main.py"]
-# for dir_name in dirs:
-#     source_list.extend((dir_name, [
-#         f"{dir_name}/{file_name}" for file_name in os.listdir(dir_name)
-#         if file_name.endswith(".py") and file_name not in exclude
-#     ]))
-# extension_list = [Extension("main", source_list)]
+source_list = ["main.py"]
+for dir_name in dirs:
+    source_list.extend(
+        f"{dir_name}/{file_name}" for file_name in os.listdir(dir_name)
+        if file_name.endswith(".py") and file_name not in exclude
+    )
+extension_list = [Extension("main", source_list)]
 
 # attempt to make each file into a .pyd
-extension_list = [Extension("main", ["main.py"])]
-for dir_name in dirs:
-    extension_list.extend(
-        Extension(f"{dir_name}.{file_name.split('.')[0].replace('/', '.')}", [f"{dir_name}/{file_name.strip()}"])
-        for file_name in os.listdir(dir_name)
-        if file_name.strip() not in exclude and file_name.endswith(".py")
-    )
+# extension_list = [Extension("main", ["main.py"])]
+# for dir_name in dirs:
+#     extension_list.extend(
+#         Extension(f"{dir_name}.{file_name.split('.')[0].replace('/', '.')}", [f"{dir_name}/{file_name.strip()}"])
+#         for file_name in os.listdir(dir_name)
+#         if file_name.strip() not in exclude and file_name.endswith(".py")
+#     )
 
 setup(
     name="DownTheLine",
