@@ -1111,7 +1111,7 @@ class Fish(Glides):
                     self.x = (self.random.randint(0, 1) * 2 - 1) * (100 + self.target_flight * self.speed // 2 + self.random.randint(0, 400))
                 self.x -= self.direction * (self.target_flight * self.speed // 2 + 20)
                 self.wait = 5 * self.frame_change_ticks
-        if self.state == 1:  # surfacing
+        elif self.state == 1:  # surfacing
             if self.wait <= 0:
                 self.img = images.FISH.img
                 self.x += self.direction * 20
@@ -1121,7 +1121,7 @@ class Fish(Glides):
                 self.state = 2
             else:
                 self.img = images.FISH_RIPPLES[4 - self.wait // self.frame_change_ticks].img
-        if self.state == 2:  # flying
+        elif self.state == 2:  # flying
             if self.wait <= 0:
                 self.x += self.direction * 20
                 self.state = 3
@@ -1136,14 +1136,14 @@ class Fish(Glides):
                     if game_structures.deal_damage(1, self):
                         glide_player(5, 2, 1, ((self.y - game_states.DISTANCE) < 0) * 2 - 1)
                         game_structures.begin_shake(6, (10, 10), (-5, 7))
-        if self.state == 3:  # diving
+        elif self.state == 3:  # diving
             if self.wait <= 0:
                 self.state = 0
                 self.wait = 3 * 60 + 60 * self.random.randint(0, 3)
                 self.img = images.EMPTY
                 self.x = 30000  # go offscreen, shoo
             else:
-                self.img = images.FISH_RIPPLES[self.wait // self.frame_change_ticks].img
+                self.img = images.FISH_RIPPLES[self.wait // self.frame_change_ticks].img # 5 total
         return self.health > 0
 
     def hit(self, damage, source):
