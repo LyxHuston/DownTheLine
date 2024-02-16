@@ -42,29 +42,32 @@ dirs = {"data", "general_use", "run_game", "screens"}
 # attempt to put it all in one .pyd
 # source_list = ["main.py"]
 # for dir_name in dirs:
-#     source_list.extend([
+#     source_list.extend(
 #         f"{dir_name}/{file_name}" for file_name in os.listdir(dir_name)
 #         if file_name.endswith(".py") and file_name not in exclude
-#     ])
-# extension_list = [Extension(module_name, source) for module_name, source in source_list]
+#     )
+# extension_list = [Extension("main", source_list)]
+# works in pycharm testing environment, nowhere else
 
 # attempt to put directories into singular pyd-s
-source_list = ["main.py"]
-for dir_name in dirs:
-    source_list.extend(
-        f"{dir_name}/{file_name}" for file_name in os.listdir(dir_name)
-        if file_name.endswith(".py") and file_name not in exclude
-    )
-extension_list = [Extension("main", source_list)]
+# org_list = [("main", ["main.py"])]
+# for dir_name in dirs:
+#     org_list.append((dir_name, [
+#         f"{dir_name}/{file_name}" for file_name in os.listdir(dir_name)
+#         if file_name.endswith(".py") and file_name not in exclude
+#     ]))
+# extension_list = [Extension(name, source_list) for name, source_list in org_list]
+# works in pycharm testing environment, nowhere else
 
 # attempt to make each file into a .pyd
-# extension_list = [Extension("main", ["main.py"])]
-# for dir_name in dirs:
-#     extension_list.extend(
-#         Extension(f"{dir_name}.{file_name.split('.')[0].replace('/', '.')}", [f"{dir_name}/{file_name.strip()}"])
-#         for file_name in os.listdir(dir_name)
-#         if file_name.strip() not in exclude and file_name.endswith(".py")
-#     )
+extension_list = [Extension("main", ["main.py"])]
+for dir_name in dirs:
+    extension_list.extend(
+        Extension(f"{dir_name}.{file_name.split('.')[0].replace('/', '.')}", [f"{dir_name}/{file_name.strip()}"])
+        for file_name in os.listdir(dir_name)
+        if file_name.strip() not in exclude and file_name.endswith(".py")
+    )
+# works everywhere
 
 setup(
     name="DownTheLine",
