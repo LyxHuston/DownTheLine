@@ -137,7 +137,8 @@ class GameArea:
         total = 0
         while i < len(self.entity_list):
             e = self.entity_list[i]
-            if e.tick():
+            if e.alive():
+                e.tick()
                 i += 1
                 if game_states.DISTANCE + game_states.HEIGHT > e.y > game_states.DISTANCE:
                     mass += 1
