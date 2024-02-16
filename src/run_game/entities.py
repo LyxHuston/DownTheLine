@@ -208,6 +208,9 @@ class Entity(game_structures.Body):
     def in_view(self, margin: int = 0) -> bool:
         return game_states.CAMERA_BOTTOM + margin < self.y < game_states.CAMERA_BOTTOM + game_states.HEIGHT - margin
 
+    def distance_to_player(self) -> int:
+        return abs(self.y - game_states.DISTANCE)
+
 
 EntityType = Type[Entity]
 
@@ -610,7 +613,7 @@ class Crawler(Glides):
 
     @classmethod
     def make(cls, determiner: int, area):
-        return cls((0, area.random.randint(area.length // 3, area.length)), area.random.randint(1, min(area.difficulty // 4, 5)), area)
+        return cls((0, area.random.randint(area.length // 3, area.length)), area.random.randint(1, min(area.difficulty // 4, 5)))
 
     def final_load(self):
         super().final_load()
