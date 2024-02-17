@@ -1012,7 +1012,7 @@ class Lazer(InvulnerableEntity):
         self.damage = damage
 
     def tick(self):
-        for end in self.ends:
+        for end in self.ends:  # if an end was killed, kill the whole thing
             if not end.alive:
                 for kill_end in self.ends:
                     kill_end.alive = False
@@ -1121,6 +1121,14 @@ class ComponentEntity(Entity):
         self.parent = parent
         super().__init__(img, rotation, pos)
         self.alive = True
+
+    @property
+    def alive(self) -> bool:
+        return self.__alive
+
+    @alive.setter
+    def alive(self, val):
+        self.__alive = val
 
 
 class Fish(Glides):
