@@ -42,7 +42,7 @@ class Entity(game_structures.Body):
     base entity class that describes a few things most entities need to do
     """
 
-    __instances: weakref.WeakSet | None = None
+    __instances: set | None = None
     seen: bool = False
     tutorial_given: bool = False
     tutorial_text: str = ""
@@ -56,8 +56,28 @@ class Entity(game_structures.Body):
 
     cost: int = 2
 
+    @property
     def alive(self) -> bool:
         return self.health > 0
+
+    @alive.setter
+    def alive(self, val: bool):
+        if val:
+            if not self.alive:
+                self.health = 1
+        else:
+            self.health = 0
+
+    def die(self):
+        if self.track_instances:
+            if self in self.__instances:
+                print("removing:", self, (self.x, self.y))
+                self.__instances.remove(self)
+            else:
+                print("this entity was not tracked:", self, (self.x, self.y))
+
+    def despawn(self):
+        self.die()
 
     @property
     def health(self) -> int:
@@ -90,19 +110,20 @@ class Entity(game_structures.Body):
         self.__y_shake: int = 0
         self.__shake_limit: int = 0
         if self.track_instances:
+            print("adding to tracking:", self, (self.x, self.y))
             self.__instances.add(self)
 
     def __init_subclass__(cls, **kwargs):
         if kwargs.get("track_instances", False):
             cls.track_instances = True
-            cls.__instances = weakref.WeakSet()
+            cls.__instances = set()
         super().__init_subclass__()
 
     @classmethod
     def instances(cls) -> list[Self]:
         if not cls.track_instances:
             return []
-        res = [en for en in cls.__instances if en.alive()]
+        res = [en for en in cls.__instances]
         return res
 
     def first_seen(self):
@@ -188,7 +209,7 @@ class Entity(game_structures.Body):
         :param area:
         :return:
         """
-        pass
+        area.entity_list.append(self)
 
     # positional utility
 
@@ -553,12 +574,11 @@ class Crawler(Glides):
 
     tutorial_text = "Beware of the crawler.  As soon as they see you they are relentless at hunting you down."
 
-    def __init__(self, pos: tuple[int, int], speed: int, area):
+    def __init__(self, pos: tuple[int, int], speed: int):
         super().__init__(images.CRAWLER_1.img, 0, pos)
         self.speed = speed * 2
         self.switch_ticks = max(9 // speed, 1)
         self.frame = 0
-        self.area = area
         self.max_health = 6
         self.health = 6
 
@@ -575,6 +595,8 @@ class Crawler(Glides):
         if not self.obstacle_in_between():
             if self.glide_speed == 0 or (
                     self.taper == 0 and self.glide_direction != (self.y < game_states.DISTANCE) * 2 - 1):
+                print("Started movement")
+                print(Obstacle.instances())
                 self.start_glide(
                     self.speed,
                     0,
@@ -613,7 +635,10 @@ class Crawler(Glides):
 
     @classmethod
     def make(cls, determiner: int, area):
-        return cls((0, area.random.randint(area.length // 3, area.length)), area.random.randint(1, min(area.difficulty // 4, 5)))
+        return cls(
+            (0, area.random.randint(area.length // 3, area.length)),
+            area.random.randint(1, min(max(area.difficulty // 4, 1), 5))
+        )
 
     def final_load(self):
         super().final_load()
@@ -772,6 +797,7 @@ class Archer(Glides):
         return self.health > 0
 
     def transfer(self, area):
+        super().transfer(area)
         self.area = area
 
     def first_seen(self):
@@ -1269,17 +1295,12 @@ class Spawner(Entity):
         self.img = self.imgs[self.frame // (self.frame_change_frequency * self.switch_ticks)]
         return self.health > 0
 
-    def transfer(self, area):
+    def despawn(self):
         if self.__spawning is not None:
-            if self.__spawning.y < self.area.end_coordinate:
-                self.__spawning = None
-        if self.__list is not None:
-            for i in range(len(self.__list)):
-                if self.__list[i] is None:
-                    continue
-                if self.__list[i].y < self.area.end_coordinate:
-                    self.__list[i] = None
-        self.area = area
+            self.__spawning.alive = False
+
+    def transfer(self, area):
+        self.despawn()
 
     @classmethod
     def make(cls, determiner: int, area):
@@ -1433,6 +1454,12 @@ class SpawnerHolder(Entity):
 
     def final_load(self):
         self.holding.final_load()
+
+    def die(self):
+        self.holding.die()
+
+    def despawn(self):
+        self.holding.despawn()
 
 
 note_speed = 15

@@ -137,13 +137,13 @@ class GameArea:
         total = 0
         while i < len(self.entity_list):
             e: entities.Entity = self.entity_list[i]
-            if e.alive():
+            if e.alive:
                 e.tick()
                 i += 1
                 dist = e.distance_to_player()
                 if dist < game_states.HEIGHT:
                     if dist > 100 or not e.in_view(game_states.CAMERA_THRESHOLDS[0]):
-                        mass += (game_states.DISTANCE > e.y) * 2 - 1
+                        mass += (game_states.DISTANCE < e.y) * 2 - 1
                         total += 1
                 # if game_states.DISTANCE + game_states.HEIGHT > e.y > game_states.DISTANCE:
                 #     mass += 1
@@ -151,6 +151,7 @@ class GameArea:
                 #     mass -= 1
                 # total += 1
             else:
+                e.die()
                 del self.entity_list[i]
         if not self.boundary_crossed and game_states.DISTANCE > self.start_coordinate:
             self.boundary_crossed = True
@@ -364,6 +365,7 @@ class EnslaughtArea(GameArea):
             if self.timer <= 0:
                 self.state = 2
                 self.cooldown_ticks = 0
+                self.entity_list[0].die()
                 del self.entity_list[0]
         elif self.state == 2:
             if self.cooldown_ticks <= 0:
@@ -567,6 +569,7 @@ class MinigameArea(GameArea):
                     wall.hit(9, self)
                     self.entity_list[0] = wall
                 else:
+                    self.entity_list[0].die()
                     del self.entity_list[0]
 
         return ret

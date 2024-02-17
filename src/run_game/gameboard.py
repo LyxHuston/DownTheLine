@@ -85,24 +85,25 @@ def tick(do_tick: bool = True, draw_gui: bool = True):
     """
     global camera_move
     if do_tick:
-        for i in range(len(game_structures.AREA_QUEUE)):
+        if game_structures.AREA_QUEUE[0].end_coordinate < game_states.CAMERA_BOTTOM:  # despawn
+            removing: game_areas.GameArea = game_structures.AREA_QUEUE[0]
+            del game_structures.AREA_QUEUE[0]
+            for entity in removing.entity_list:
+                if entity.y > game_states.CAMERA_BOTTOM - 200:
+                    entity.transfer(game_structures.AREA_QUEUE[0])
+                else:
+                    entity.despawn()
+            if removing.__class__.__name__ in run_start_end.GameAreaLog.areas_dict:
+                run_start_end.GameAreaLog.areas_dict[removing.__class__.__name__] += 1
+            game_states.AREAS_PASSED += 1
+            add_game_area()
+        for i in range(len(game_structures.AREA_QUEUE)):  # load next that is becoming onscreen
             if game_structures.AREA_QUEUE[i].start_coordinate < game_states.CAMERA_BOTTOM + game_states.HEIGHT and not game_structures.AREA_QUEUE[i].initialized:
                 game_structures.AREA_QUEUE[i].initialized = True
                 game_structures.AREA_QUEUE[i].final_load()
                 break
             if game_structures.AREA_QUEUE[i].start_coordinate > game_states.CAMERA_BOTTOM + game_states.HEIGHT:
                 break
-        if game_structures.AREA_QUEUE[0].end_coordinate < game_states.CAMERA_BOTTOM:
-            removing: game_areas.GameArea = game_structures.AREA_QUEUE[0]
-            del game_structures.AREA_QUEUE[0]
-            for entity in removing.entity_list:
-                if entity.y > game_states.CAMERA_BOTTOM - 200:
-                    entity.transfer(game_structures.AREA_QUEUE[1])
-                    game_structures.AREA_QUEUE[1].entity_list.append(entity)
-            if removing.__class__.__name__ in run_start_end.GameAreaLog.areas_dict:
-                run_start_end.GameAreaLog.areas_dict[removing.__class__.__name__] += 1
-            game_states.AREAS_PASSED += 1
-            add_game_area()
         if game_states.SHAKE_DURATION > 0:
             game_states.SHAKE_DURATION -= 1
             if game_states.SHAKE_DURATION == 0:
