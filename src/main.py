@@ -45,6 +45,10 @@ if len(sys.argv) > 1:
     if sys.argv[1] == "testing":
         backdrop = (128, 128, 128)
         game_structures.SCREEN = pygame.display.set_mode((1000, 700))
+    elif sys.argv[1] == "test_images":
+        from data import images
+        images.test_images()
+        exit()
     else:
         backdrop = (0, 0, 0)
         game_structures.SCREEN = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)

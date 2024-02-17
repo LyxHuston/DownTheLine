@@ -148,7 +148,8 @@ DASH_PARTICLES: list[Image] = [
 # empty
 EMPTY: pygame.Surface = pygame.Surface((0, 0))
 
-if __name__ == "__main__":
+
+def test_images():
 
     import copy
 
