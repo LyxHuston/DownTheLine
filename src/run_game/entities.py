@@ -183,14 +183,12 @@ class Entity(game_structures.Body):
         """
         self.health -= damage
 
-    def tick(self) -> bool:
+    def tick(self):
         """
         runs a tick of the entity
-        :return: if the entity should still exist.  False to delete the entity.
-        NOTE: if there's a death animation or something, do not delete until
-        after death
+        :return: nothing.  Used to return if the entity should be deleted, no longer does.  Some artefacts may remain
         """
-        return self.health > 0
+        pass
 
     def final_load(self) -> None:
         """
@@ -256,6 +254,10 @@ def make_invulnerable_version(entity_class: Type[Entity]) -> Type[Entity]:
         new class with frozen health
         """
 
+        def __init__(self, *args, **kwargs):
+            self.__alive = True
+            super().__init__(*args, **kwargs)
+
         @property
         def health(self):
             """always return 1, setter just passes to avoid errors"""
@@ -264,6 +266,16 @@ def make_invulnerable_version(entity_class: Type[Entity]) -> Type[Entity]:
         @health.setter
         def health(self, val: int):
             pass
+
+        @property
+        def alive(self) -> bool:
+            return self.__alive
+
+        @alive.setter
+        def alive(self, val):
+            # if not val:
+                # print(f"invulnerable entity {self} killed")
+            self.__alive = val
 
     return New
 
@@ -981,6 +993,7 @@ class Lazer(InvulnerableEntity):
     """
 
     def __init__(self, y: int, charge_time: int, duration: int, area, repeats: int | None = 1, damage: int = 1):
+        # print("new lazer at:", y)
         super().__init__(images.EMPTY, 0, (0, y))
         if not hasattr(self, "ends"):
             self.ends = [
@@ -1003,7 +1016,8 @@ class Lazer(InvulnerableEntity):
             if not end.alive:
                 for kill_end in self.ends:
                     kill_end.alive = False
-                return False
+                self.alive = False
+                return
         self.cooldown += 1
         if self.firing:
             if not self.hit:
@@ -1022,7 +1036,8 @@ class Lazer(InvulnerableEntity):
                 if self.repeats is not None and self.repeats <= 0:
                     for kill_end in self.ends:
                         kill_end.alive = False
-                    return False
+                    self.alive = False
+                    return
                 self.cooldown = 0
                 self.hit = False
                 self.firing = False
@@ -1089,7 +1104,7 @@ class TrackingLazer(Lazer):
             self.y += self.velocity
             for end in self.ends:
                 end.y = self.y
-        return super().tick()
+        super().tick()
 
     @classmethod
     def make(cls, determiner: int, area):
@@ -1107,9 +1122,6 @@ class ComponentEntity(Entity):
         super().__init__(img, rotation, pos)
         self.alive = True
 
-    def tick(self):
-        return self.alive
-
 
 class Fish(Glides):
     """
@@ -1118,6 +1130,7 @@ class Fish(Glides):
 
     def __init__(self, area):
         super().__init__(images.EMPTY, 0, (30000, area.start_coordinate))
+        # print("new fish")
         self.max_health = 4
         self.state = 3
         self.health = 4
@@ -1643,6 +1656,7 @@ class DelayedDeploy(InvulnerableEntity):
 
     def __init__(self, delay, area, entity: type(Entity), args):
         super().__init__(images.EMPTY, 0, (3000, area.start_coordinate))
+        # print("delayed deploy made")
         self.delay = delay
         self.area = area
         self.entity = entity
@@ -1651,9 +1665,9 @@ class DelayedDeploy(InvulnerableEntity):
     def tick(self):
         self.delay -= 1
         if self.delay <= 0:
-            self.area.entity_list.append(self.entity(*self.args))
             # print("delayed deploy initiated")
-        return self.delay > 0
+            self.area.entity_list.append(self.entity(*self.args))
+            self.alive = False
 
 
 class MassDelayedDeploy(InvulnerableEntity):
@@ -1668,8 +1682,7 @@ class MassDelayedDeploy(InvulnerableEntity):
         self.delay -= 1
         if self.delay <= 0:
             self.area.entity_list.extend(entity(*args) for entity, args in self.entities)
-            # print("delayed deploy initiated")
-        return self.delay > 0
+            self.alive = False
 
 
 class Particle(Entity):

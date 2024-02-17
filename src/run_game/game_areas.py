@@ -476,6 +476,7 @@ class MinigameArea(GameArea):
         self.state = 0
         self.solved_entity_number = 2
         self.type = self.random.randint(0, 2)
+        # print(f"minigame area: {["fishing", "notes", "lazers"][self.type]}")
         if self.type == 0:  # obligatory fishing minigame
             self.length = game_states.HEIGHT * 2
         elif self.type == 1:  # notes
@@ -527,6 +528,7 @@ class MinigameArea(GameArea):
                     delay = 0
                     for i in range(self.difficulty // 10):
                         lazertype = self.random.randint(0, 2)
+                        # print(f"wave: {["safety zones", "trackers", "juggle"][lazertype]}")
                         if lazertype == 0:  # safety zone(s)
                             charge_bonus = 10
                             delay = ticks_to_cross + charge_bonus
