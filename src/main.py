@@ -98,9 +98,10 @@ def run():
                 utility.tick()
             game_states.PLACE.exit()
         except Exception as E:
-            if not game_states.PLACE.crash(E):
-                utility.log_error(E)
-                game_states.RUNNING = False
+            if game_states.RUNNING:
+                if not game_states.PLACE.crash(E):
+                    utility.log_error(E)
+                    game_states.RUNNING = False
 
 
 if __name__ == "__main__":
