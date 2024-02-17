@@ -94,7 +94,7 @@ def dead():
                                                     outline_color=(255, 255, 255), border_width=5, text_align=0.5,
                                                     enforce_width=600))
         game_structures.BUTTONS.add_button(game_structures.Button.make_text_button("Quit", 100, (
-            game_states.WIDTH // 2 + 800, game_states.HEIGHT - 200), exit, background_color=(0, 0, 0),
+            game_states.WIDTH // 2 + 800, game_states.HEIGHT - 200), exit_game, background_color=(0, 0, 0),
                                                                                    outline_color=(255, 255, 255),
                                                                                    border_width=5, text_align=0.5,
                                                                                    enforce_width=600))
@@ -107,18 +107,24 @@ def won():
     pass
 
 
-def exit():
+def exit_game():
     game_states.RUNNING = False
+
+
+def cleanup_game():
+    game_structures.BUTTONS.clear()
+    for area in game_structures.AREA_QUEUE:
+        area.cleanup()
 
 
 dead_screen = game_structures.Place(
     tick=dead,
     enter=die,
-    end=game_structures.BUTTONS.clear
+    end=cleanup_game
 )
 
 won_screen = game_structures.Place(
     tick=won,
     enter=utility.passing,
-    end=game_structures.BUTTONS.clear
+    end=cleanup_game
 )

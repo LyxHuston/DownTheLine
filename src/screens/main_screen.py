@@ -43,7 +43,7 @@ def setup_main_screen():
                                                                                game_structures.PLACES.in_game.value.start, background_color=(0, 0, 0, 0), outline_color=(255, 255, 255),
                                                                                border_width=0, text_align=0.5, x_align=0.5, y_align=1))
     game_structures.BUTTONS.add_button(game_structures.Button.make_text_button("Quit", 50, (
-        game_states.WIDTH // 2, game_states.HEIGHT), other_screens.exit, background_color=(0, 0, 0, 0),
+        game_states.WIDTH // 2, game_states.HEIGHT), other_screens.exit_game, background_color=(0, 0, 0, 0),
                                                                                outline_color=(255, 255, 255), border_width=0, text_align=0.5, x_align=0.5, y_align=1))
     game_structures.BUTTONS.add_button(game_structures.Button.make_text_button("Logs", 75, (
         game_states.WIDTH, game_states.HEIGHT), log_screen.screen.start, background_color=(0, 0, 0, 0), outline_color=(

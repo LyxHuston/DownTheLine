@@ -96,7 +96,7 @@ def run():
                 game_structures.SCREEN.fill(backdrop)
                 game_states.PLACE.tick()
                 utility.tick()
-            game_states.PLACE.exit()
+            game_states.PLACE.exit_game()
         except Exception as E:
             if game_states.RUNNING:
                 if not game_states.PLACE.crash(E):

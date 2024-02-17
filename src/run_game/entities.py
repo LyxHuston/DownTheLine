@@ -69,15 +69,14 @@ class Entity(game_structures.Body):
             self.health = 0
 
     def die(self):
-        if self.track_instances:
-            if self in self.__instances:
-                print("removing:", self, (self.x, self.y))
-                self.__instances.remove(self)
-            else:
-                print("this entity was not tracked:", self, (self.x, self.y))
+        self.cleanup()
 
     def despawn(self):
         self.die()
+
+    def cleanup(self):
+        if self.track_instances:
+            self.__instances.remove(self)
 
     @property
     def health(self) -> int:
@@ -110,7 +109,6 @@ class Entity(game_structures.Body):
         self.__y_shake: int = 0
         self.__shake_limit: int = 0
         if self.track_instances:
-            print("adding to tracking:", self, (self.x, self.y))
             self.__instances.add(self)
 
     def __init_subclass__(cls, **kwargs):
@@ -125,6 +123,16 @@ class Entity(game_structures.Body):
             return []
         res = [en for en in cls.__instances]
         return res
+
+    @classmethod
+    def clear_instances(cls):
+        if cls.track_instances:
+            cls.__instances.clear()
+
+    @classmethod
+    def clean(cls):
+        cls.seen = False
+        cls.clear_instances()
 
     def first_seen(self):
         """
@@ -595,8 +603,6 @@ class Crawler(Glides):
         if not self.obstacle_in_between():
             if self.glide_speed == 0 or (
                     self.taper == 0 and self.glide_direction != (self.y < game_states.DISTANCE) * 2 - 1):
-                print("Started movement")
-                print(Obstacle.instances())
                 self.start_glide(
                     self.speed,
                     0,

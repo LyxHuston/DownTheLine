@@ -179,6 +179,10 @@ class GameArea:
         for entity in self.entity_list:
             entity.y += self.start_coordinate
 
+    def cleanup(self):
+        for entity in self.entity_list:
+            entity.cleanup()
+
 
 class BasicArea(GameArea):
     """

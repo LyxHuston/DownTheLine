@@ -21,6 +21,7 @@ import datetime
 import enum
 import math
 
+from collections import deque
 import pygame
 
 from general_use import game_structures
@@ -39,7 +40,36 @@ PAUSE_BUTTONS = game_structures.ButtonHolder(
 def quit_run():
     from screens import main_screen
     log_run(RunEndReasons.quit)
+    for area in game_structures.AREA_QUEUE:
+        area.cleanup()
     main_screen.main_screen_place.start()
+
+
+def clean_gameboard():
+    tutorials.clear_tutorial_text()
+    gameboard.heart_data.clear()
+
+    from run_game import entities
+    stack = deque()
+    stack.append(entities.Entity)
+    while stack:  # go through all Entity subclasses to clean up
+        stack[0].clean()
+        stack.extend(stack.pop().__subclasses__())
+    entities.Slime.seen = True
+    for attr_value in game_areas.GameArea.__subclasses__():
+        attr_value.seen = False
+    GameAreaLog.refresh()
+
+
+def reset_gameboard():
+    clean_gameboard()
+
+    heart_data_randomization = random.Random(game_states.SEED)
+    for i in range(game_states.HEALTH):
+        gameboard.heart_data.append(gameboard.HeartData(heart_data_randomization.random() * math.tau))
+
+    # print(sys.int_info)
+    # print(game_states.SEED)
 
 
 def start(with_seed: int = None, full: bool = True):
@@ -114,23 +144,7 @@ def start(with_seed: int = None, full: bool = True):
     if full:
         ingame.paused = False
 
-        tutorials.clear_tutorial_text()
-
-        heart_data_randomization = random.Random(game_states.SEED)
-        gameboard.heart_data.clear()
-        for i in range(game_states.HEALTH):
-            gameboard.heart_data.append(gameboard.HeartData(heart_data_randomization.random() * math.tau))
-
-        # print(sys.int_info)
-        # print(game_states.SEED)
-
-        from run_game import entities
-        for attr_value in entities.Entity.__subclasses__():
-            attr_value.seen = False
-        entities.Slime.seen = True
-        for attr_value in game_areas.GameArea.__subclasses__():
-            attr_value.seen = False
-        GameAreaLog.refresh()
+        reset_gameboard()
 
         tutorials.add_text(
             "Oh, you're awake.  Good.",
