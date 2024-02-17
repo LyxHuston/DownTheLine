@@ -42,42 +42,43 @@ def quit_run():
     main_screen.main_screen_place.start()
 
 
-def start(with_seed: int = None):
-    PAUSE_BUTTONS.clear()
-    PAUSE_BUTTONS.background = pygame.Surface((game_states.WIDTH, game_states.HEIGHT), flags=pygame.SRCALPHA)
-    PAUSE_BUTTONS.rect = PAUSE_BUTTONS.background.get_rect()
-    PAUSE_BUTTONS.add_button(game_structures.Button.make_text_button(
-        "Quit",
-        128,
-        (game_states.WIDTH // 2, game_states.HEIGHT // 3),
-        enforce_width=512,
-        text_align=0.5,
-        up_click=quit_run,
-        background_color=(0, 0, 0),
-        outline_color=(255, 255, 255),
-        border_width=5
-    ))
-    PAUSE_BUTTONS.add_button(game_structures.Button.make_text_button(
-        "Resume",
-        128,
-        (game_states.WIDTH // 2, 2 * game_states.HEIGHT // 3),
-        enforce_width=512,
-        text_align=0.5,
-        up_click=lambda: setattr(ingame, "paused", False),
-        background_color=(0, 0, 0),
-        outline_color=(255, 255, 255),
-        border_width=5
-    ))
-    game_structures.BUTTONS.clear()
-    game_structures.BUTTONS.add_button(PAUSE_BUTTONS)
+def start(with_seed: int = None, full: bool = True):
+    if full:
+        PAUSE_BUTTONS.clear()
+        PAUSE_BUTTONS.background = pygame.Surface((game_states.WIDTH, game_states.HEIGHT), flags=pygame.SRCALPHA)
+        PAUSE_BUTTONS.rect = PAUSE_BUTTONS.background.get_rect()
+        PAUSE_BUTTONS.add_button(game_structures.Button.make_text_button(
+            "Quit",
+            128,
+            (game_states.WIDTH // 2, game_states.HEIGHT // 3),
+            enforce_width=512,
+            text_align=0.5,
+            up_click=quit_run,
+            background_color=(0, 0, 0),
+            outline_color=(255, 255, 255),
+            border_width=5
+        ))
+        PAUSE_BUTTONS.add_button(game_structures.Button.make_text_button(
+            "Resume",
+            128,
+            (game_states.WIDTH // 2, 2 * game_states.HEIGHT // 3),
+            enforce_width=512,
+            text_align=0.5,
+            up_click=lambda: setattr(ingame, "paused", False),
+            background_color=(0, 0, 0),
+            outline_color=(255, 255, 255),
+            border_width=5
+        ))
+        game_structures.BUTTONS.clear()
+        game_structures.BUTTONS.add_button(PAUSE_BUTTONS)
 
-    if not game_states.CUSTOM_SEED:
-        if with_seed is None:
-            game_states.SEED = random.randrange(2 ** sys.int_info.bits_per_digit)
-        else:
-            game_states.SEED = with_seed
-    if game_states.PRINT_SEED:
-        print("The seed is:", game_states.SEED)
+        if not game_states.CUSTOM_SEED:
+            if with_seed is None:
+                game_states.SEED = random.randrange(2 ** sys.int_info.bits_per_digit)
+            else:
+                game_states.SEED = with_seed
+        if game_states.PRINT_SEED:
+            print("The seed is:", game_states.SEED)
 
     game_states.DISTANCE = 100
     game_states.BOTTOM = 0
@@ -110,47 +111,48 @@ def start(with_seed: int = None):
 
     game_structures.HANDS = [None, None]
 
-    ingame.paused = False
+    if full:
+        ingame.paused = False
 
-    tutorials.clear_tutorial_text()
+        tutorials.clear_tutorial_text()
 
-    heart_data_randomization = random.Random(game_states.SEED)
-    gameboard.heart_data.clear()
-    for i in range(game_states.HEALTH):
-        gameboard.heart_data.append(gameboard.HeartData(heart_data_randomization.random() * math.tau))
+        heart_data_randomization = random.Random(game_states.SEED)
+        gameboard.heart_data.clear()
+        for i in range(game_states.HEALTH):
+            gameboard.heart_data.append(gameboard.HeartData(heart_data_randomization.random() * math.tau))
 
-    # print(sys.int_info)
-    # print(game_states.SEED)
+        # print(sys.int_info)
+        # print(game_states.SEED)
 
-    from run_game import entities
-    for attr_value in entities.Entity.__subclasses__():
-        attr_value.seen = False
-    entities.Slime.seen = True
-    for attr_value in game_areas.GameArea.__subclasses__():
-        attr_value.seen = False
-    GameAreaLog.refresh()
+        from run_game import entities
+        for attr_value in entities.Entity.__subclasses__():
+            attr_value.seen = False
+        entities.Slime.seen = True
+        for attr_value in game_areas.GameArea.__subclasses__():
+            attr_value.seen = False
+        GameAreaLog.refresh()
 
-    tutorials.add_text(
-        "Oh, you're awake.  Good.",
-        game_structures.FONTS[100]
-    )
-    tutorials.add_text(
-        "You need to be able to defend yourself.  They won't let you live in peace.",
-        game_structures.FONTS[100]
-    )
-    tutorials.add_text(
-        "Can you go up?",
-        game_structures.FONTS[100]
-    )
-    tutorials.add_text(
-        "Use the w and s keys to move up and down.  Press d to dash in your current direction.",
-        game_structures.TUTORIAL_FONTS[90]
-    )
+        tutorials.add_text(
+            "Oh, you're awake.  Good.",
+            game_structures.FONTS[100]
+        )
+        tutorials.add_text(
+            "You need to be able to defend yourself.  They won't let you live in peace.",
+            game_structures.FONTS[100]
+        )
+        tutorials.add_text(
+            "Can you go up?",
+            game_structures.FONTS[100]
+        )
+        tutorials.add_text(
+            "Use the w and s keys to move up and down.  Press d to dash in your current direction.",
+            game_structures.TUTORIAL_FONTS[90]
+        )
 
-    game_structures.AREA_QUEUE.clear()
-    game_areas.add_game_area().join()
-    for i in range(game_states.AREA_QUEUE_MAX_LENGTH - 1):
-        game_areas.add_game_area()
+        game_structures.AREA_QUEUE.clear()
+        game_areas.add_game_area().join()
+        for i in range(game_states.AREA_QUEUE_MAX_LENGTH - 1):
+            game_areas.add_game_area()
 
 
 class GameAreaLog:
