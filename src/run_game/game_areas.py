@@ -316,6 +316,7 @@ class GiftArea(GameArea):
 
     tutorial_given = False
     first_allowed_spawn = 4
+    required_previous = [BreakThroughArea]
 
     def __init__(self, determiner, count):
         super().__init__(count, seed=determiner)
@@ -351,6 +352,7 @@ class EnslaughtArea(GameArea):
 
     tutorial_given = False
     first_allowed_spawn = 10
+    required_previous = [GiftArea]  # BreakThroughArea implicit
 
     def __init__(self, determiner, count):
         super().__init__(count, seed=determiner)
@@ -628,6 +630,7 @@ class BossArea(GameArea):
 
     tutorial_given = False
     first_allowed_spawn = 20
+    required_previous = [EnslaughtArea]  # GiftArea and BreakThroughArea implicit
 
     def __init__(self, determiner, count):
         super(BossArea, self).__init__(count, game_states.HEIGHT * 4, seed=determiner)
