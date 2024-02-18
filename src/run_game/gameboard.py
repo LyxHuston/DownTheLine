@@ -128,9 +128,9 @@ def tick(do_tick: bool = True, draw_gui: bool = True):
         3
     )
     if do_tick:
-        enforce_goal = None
-        mass = 0
-        total = 0
+        enforce_goal: int | None = None
+        mass: float = 0
+        total: int = 0
     for i in range(len(game_structures.AREA_QUEUE)):
         area = game_structures.AREA_QUEUE[i]
         if not area.initialized:

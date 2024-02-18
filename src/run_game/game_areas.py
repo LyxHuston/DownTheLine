@@ -103,7 +103,7 @@ class GameArea:
     region_length = 32000
     taper_length = 100
 
-    def tick(self) -> tuple[int, int]:
+    def tick(self) -> tuple[float, int]:
         region = 0
         while region * self.region_length + self.taper_length < self.length:  # spawn particles for middle regions
             height = self.start_coordinate + self.random.randint(0, self.region_length - 1) + region * self.region_length
@@ -132,9 +132,9 @@ class GameArea:
                 )
             ))
         # print(len(self.particle_list))
-        i = 0
-        mass = 0
-        total = 0
+        i: int = 0
+        mass: float = 0
+        total: int = 0
         while i < len(self.entity_list):
             e: entities.Entity = self.entity_list[i]
             if e.alive:
@@ -142,8 +142,11 @@ class GameArea:
                 i += 1
                 dist = e.distance_to_player()
                 if dist < game_states.HEIGHT:
-                    if dist > 100 or not e.in_view(game_states.CAMERA_THRESHOLDS[0]):
+                    if not e.in_view(game_states.CAMERA_THRESHOLDS[0]) or dist > 600:
                         mass += (game_states.DISTANCE < e.y) * 2 - 1
+                        total += 1
+                    elif dist > 300:
+                        mass += ((game_states.DISTANCE < e.y) * 2 - 1) * (dist / 300 - 1)
                         total += 1
                 # if game_states.DISTANCE + game_states.HEIGHT > e.y > game_states.DISTANCE:
                 #     mass += 1
