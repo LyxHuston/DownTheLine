@@ -59,7 +59,8 @@ class GameArea:
     def end_coordinate(self):
         return self.start_coordinate + self.length
 
-    def __init__(self, length: int = 0, seed: int = None):
+    def __init__(self, index: int, length: int = 0, seed: int = None):
+        self.index = index
         self.enforce_center = None
         self.start_coordinate = 0
         self.length = length
@@ -186,31 +187,41 @@ class GameArea:
         for entity in self.entity_list:
             entity.cleanup()
 
+    def get_allowable(self):
+        allowable_entities = []
+        for entry, threshold in BasicArea.allowable_thresh_holds:
+            if threshold > self.index:
+                return allowable_entities
+            if not isinstance(self, BasicArea):
+                if not self.previously_seen(entry):
+                    return allowable_entities
+            allowable_entities.append([entry, 0])
+        return allowable_entities
+
+    def previously_seen(self, entity: entities.Entity):
+        return entity.first_occurs or self.index < entity.first_occurs
+
 
 class BasicArea(GameArea):
     """
     a basic fight area.  Fight a few monsters and continue.
     """
 
-    allowable_thresh_holds = [(entities.Slime, 0), (entities.Crawler, 5), (entities.Fencer, 10), (entities.Archer, 10), (
-    entities.Knight, 15)]
+    allowable_thresh_holds = ((entities.Slime, 0), (entities.Crawler, 5), (entities.Fencer, 10), (entities.Archer, 10),
+                              (entities.Knight, 15))
     # allowable_thresh_holds = [(entities.Knight, 0)]
 
     def __init__(self, determiner, count):
-        super().__init__(seed=determiner)
+        super().__init__(count, seed=determiner)
         self.length = 300 + math.floor(math.log2(count)) * 150
         self.difficulty = count
         allowance = count
-        allowable_entities = []
-        for entry in self.allowable_thresh_holds:
-            if entry[1] > count:
-                break
-            allowable_entities.append([entry[0], 0])
+        allowable_entities = self.get_allowable()
         num = 3
         while allowance > 0:
             index = (determiner % num) % len(allowable_entities)
             num += 1
-            entity = allowable_entities[index][0]
+            entity: entities.Entity = allowable_entities[index][0]
             if entity.seen:
                 allowance -= entity.cost + allowable_entities[index][1]
                 allowable_entities[index][1] += 1
@@ -219,6 +230,7 @@ class BasicArea(GameArea):
                 self.entity_list.clear()
                 self.length = 1500
                 add = entity.make(determiner, self)
+                entity.first_occurs = count
                 add.y = self.length // 2
                 self.entity_list.append(add)
                 self.entity_list.append(entities.Obstacle(pos=(0, self.length), health=5))
@@ -242,8 +254,8 @@ class BreakThroughArea(GameArea):
 
     tutorial_given = False
 
-    def __init__(self, determiner, count):
-        super().__init__(seed=determiner)
+    def __init__(self, determiner: int, count: int):
+        super().__init__(count, seed=determiner)
         self.difficulty = count
         self.length = game_states.HEIGHT // 2 + math.floor(math.log2(count)) * 150
         allowance = count
@@ -255,11 +267,7 @@ class BreakThroughArea(GameArea):
             else:
                 allowance -= 2 * (spawner.limit + 1) * spawner.entity.cost ** 2
         allowance = count // 3
-        allowable_entities = []
-        for entry in BasicArea.allowable_thresh_holds:
-            if entry[1] > count or not entry[0].seen:
-                break
-            allowable_entities.append([entry[0], 0])
+        allowable_entities = self.get_allowable()
         num = 3
         while allowance > 0:
             index = (determiner % num) % len(allowable_entities)
@@ -296,7 +304,7 @@ class GiftArea(GameArea):
     tutorial_given = False
 
     def __init__(self, determiner, count):
-        super().__init__(seed=determiner)
+        super().__init__(count, seed=determiner)
         self.difficulty = count
         self.length = 1500
         spawn = entities.Spawner.make(determiner, self)
@@ -330,7 +338,7 @@ class EnslaughtArea(GameArea):
     tutorial_given = False
 
     def __init__(self, determiner, count):
-        super().__init__(seed=determiner)
+        super().__init__(count, seed=determiner)
         self.difficulty = count
         self.current_difficulty = count
         self.length = game_states.HEIGHT * 4
@@ -421,11 +429,7 @@ class EnslaughtArea(GameArea):
                 self.current_difficulty += 2
         elif target_change < 30:
             # print("Spawning")
-            allowable_entities = []
-            for entry in BasicArea.allowable_thresh_holds:
-                if entry[1] > self.difficulty or not entry[0].seen:
-                    break
-                allowable_entities.append([entry[0], 0])
+            allowable_entities = self.get_allowable()
             num = 3
             determiner = self.random.randint(0, 2 ** 31)
             while target_change > 0:
@@ -474,7 +478,7 @@ class MinigameArea(GameArea):
     tutorial_given = False
 
     def __init__(self, determiner, count):
-        super().__init__(seed=determiner)
+        super().__init__(count, seed=determiner)
         self.difficulty = count
         self.state = 0
         self.solved_entity_number = 2
@@ -609,9 +613,9 @@ class BossArea(GameArea):
     tutorial_given = False
 
     def __init__(self, determiner, count):
-        super(BossArea, self).__init__(game_states.HEIGHT * 4, seed=determiner)
+        super(BossArea, self).__init__(count, game_states.HEIGHT * 4, seed=determiner)
         self.difficulty = count
-        self.boss: bosses.Boss = None  # TODO make boss options
+        self.boss: bosses.Boss | None = None  # TODO make boss options
         self.state = 0
         self.entity_list.append(entities.InvulnerableObstacle(pos=(0, self.length), health=1))
         self.entity_list.append(self.boss)
@@ -681,7 +685,7 @@ def add_game_area():
                 game_structures.FONTS[100],
             )
 
-        area = GameArea(300, determinator)
+        area = GameArea(0, 300, determinator)
         area.cross_boundary = first_area_tutorial
         area.entity_list.append(entities.Obstacle(pos=(0, 170)))
         area.entity_list.append(entities.ItemEntity(items.simple_stab(
@@ -691,7 +695,7 @@ def add_game_area():
             (0, 60)
         )))
     elif game_states.LAST_AREA == 1:
-        area = GameArea(450, determinator)
+        area = GameArea(1, 450, determinator)
         area.entity_list.append(entities.Obstacle(pos=(0, area.length), health=5))
         area.entity_list.append(entities.Slime((0, area.length // 2), area.random.randint(0, 2 ** 32 - 1)))
     elif game_states.LAST_AREA == 2:
@@ -707,7 +711,7 @@ def add_game_area():
                 game_structures.FONTS[100],
             )
 
-        area = GameArea(750, determinator)
+        area = GameArea(2, 750, determinator)
         area.cross_boundary = last_tutorial_area
         area.entity_list.append(entities.Obstacle(pos=(0, + area.length), health=5))
         area.entity_list.append(entities.Slime((0, area.length // 3), area.random.randint(0, 2 ** 32 - 1)))

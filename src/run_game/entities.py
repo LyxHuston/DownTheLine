@@ -44,6 +44,7 @@ class Entity(game_structures.Body):
 
     __instances: set | None = None
     seen: bool = False
+    first_occurs: int = 0
     tutorial_given: bool = False
     tutorial_text: str = ""
 
@@ -132,6 +133,7 @@ class Entity(game_structures.Body):
     @classmethod
     def clean(cls):
         cls.seen = False
+        cls.first_occurs = 0
         cls.clear_instances()
 
     def first_seen(self):
@@ -755,7 +757,7 @@ class Projectile(Entity):
         super().__init__(img, rotation, pos)
         self.max_health = health
         self.health = health
-        self.move = (round(speed * math.sin(rotation)), -round(speed * math.cos(rotation)))
+        self.move = (round(speed * math.sin(math.radians(rotation))), -round(speed * math.cos(math.radians(rotation))))
         self.destruct_on_collision = destruct_on_collision
         self.damage = damage
         self.expiration_date = expiry
@@ -1346,14 +1348,12 @@ class Spawner(Entity):
     def make(cls, determiner: int, area):
         index = 0
         while index < len(cls.allowable) - 1:
-            if area.difficulty < cls.allowable[index][1] or not cls.allowable[index][0].seen:
+            if area.difficulty < cls.allowable[index][1] or not area.previously_seen(cls.allowable[index][0]):
                 index -= 1
                 break
             if area.random.randint(0, 1):
                 break
             index += 1
-        if area.difficulty < cls.allowable[index][1] or not cls.allowable[index][0].seen:
-            index -= 1
         entity = cls.allowable[index][0]
         if area.random.randint(0, area.difficulty) > 20 + area.difficulty // 2 + entity.cost ** 2:
             limit = None
