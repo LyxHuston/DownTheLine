@@ -48,13 +48,14 @@ if len(sys.argv) > 1:
     elif sys.argv[1] == "test_images":
         from data import images
         images.test_images()
-        exit()
+        sys.exit()
     else:
         backdrop = (0, 0, 0)
         game_structures.SCREEN = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
-    flag = check_flags(["--autosave", "-a"])
+    flag = check_flags(["--with_interactive_console", "-c"])
     if flag:
-        game_states.AUTOSAVE = True
+        import code
+        utility.make_async(code.InteractiveConsole().interact, daemon=True)(banner="Interactive console for Down The Line", exitmsg="Ending interactive console")
     flag = check_flags(["--invulnerable", "-i"])
     if flag:
         game_states.INVULNERABLE = True
