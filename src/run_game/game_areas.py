@@ -23,7 +23,7 @@ import pygame
 
 from data import game_states, images
 from run_game import tutorials, entities, bosses, items
-from general_use.utility import make_async, add_error_checking
+from general_use.utility import make_async, add_error_checking, make_simple_always
 from general_use import game_structures
 import math
 from collections import deque
@@ -72,10 +72,12 @@ class GameArea:
         )
         self.particle_list = set()
         if seed is None:
-            self.random = random.Random()
+            raise ValueError("I cry non-deterministic from set seed (every random call needs to be deterministic from"
+                             "the original seed)")
         else:
             self.random = random.Random(seed)
         self.spawn_end = 0  # track which end to spawn a particle on
+        self.__class__.last_spawned = index
 
     seen = False
 
@@ -85,6 +87,16 @@ class GameArea:
             self.start_tutorial()
         for entity in self.entity_list:
             entity.final_load()
+
+    first_allowed_spawn = 0
+    last_spawned = 0
+    required_wait_interval = 0
+    required_previous = []
+    @classmethod
+    def allowed_at(cls, index: int) -> bool:
+        if cls.first_allowed_spawn > index or cls.last_spawned + cls.required_wait_interval >= index:
+            return False
+        return all(map(lambda area_type: area_type.last_spawned > 0, cls.required_previous))
 
     def start_tutorial(self):
         pass
@@ -253,6 +265,7 @@ class BreakThroughArea(GameArea):
     """
 
     tutorial_given = False
+    first_allowed_spawn = 4
 
     def __init__(self, determiner: int, count: int):
         super().__init__(count, seed=determiner)
@@ -302,6 +315,7 @@ class GiftArea(GameArea):
     """
 
     tutorial_given = False
+    first_allowed_spawn = 4
 
     def __init__(self, determiner, count):
         super().__init__(count, seed=determiner)
@@ -336,6 +350,7 @@ class EnslaughtArea(GameArea):
     """
 
     tutorial_given = False
+    first_allowed_spawn = 10
 
     def __init__(self, determiner, count):
         super().__init__(count, seed=determiner)
@@ -476,6 +491,7 @@ class EnslaughtArea(GameArea):
 
 class MinigameArea(GameArea):
     tutorial_given = False
+    first_allowed_spawn = 10
 
     def __init__(self, determiner, count):
         super().__init__(count, seed=determiner)
@@ -611,6 +627,7 @@ class BossArea(GameArea):
     """
 
     tutorial_given = False
+    first_allowed_spawn = 20
 
     def __init__(self, determiner, count):
         super(BossArea, self).__init__(count, game_states.HEIGHT * 4, seed=determiner)
@@ -728,40 +745,28 @@ def add_game_area():
         # print(determinator, game_states.SEED + game_states.LAST_AREA)
         area = None
         typ = determinator % 64
-        if typ < 2 and game_states.LAST_AREA < 40:
-            typ = 2
-        if typ < 4 and game_states.LAST_AREA < 20:
-            typ = 4
-        if typ < 13 and game_states.LAST_AREA < 10:
-            typ = 13
-        if typ < 33 and game_states.LAST_AREA < 4:
-            typ = 33
-        if typ == 0:  # 1/64
-            # GOD room
-            pass
-        elif typ <= 1:  # 1/64
-            # player room
-            pass
-        elif typ <= 3:  # 3/64
-            # boss room
-            pass
-        elif typ <= 6:  # 3/64
-            area = MinigameArea(determinator, game_states.LAST_AREA)
-        elif typ <= 12:  # 6/64
-            area = EnslaughtArea(determinator, game_states.LAST_AREA)
-        elif typ <= 18:  # 6/64
-            area = GiftArea(determinator, game_states.LAST_AREA)
-        elif typ <= 32:  # 14/64
-            area = BreakThroughArea(determinator, game_states.LAST_AREA)
-        else:  # 32/64
-            area = BasicArea(determinator, game_states.LAST_AREA)
+        for area_type, threshold in area_thresholds:
+            if typ <= threshold and area_type.allowed_at(game_states.LAST_AREA):
+                area = area_type(determinator, game_states.LAST_AREA)
         if area is None:
-            area = GameArea(400)
+            area = GameArea(game_states.LAST_AREA, length=400)
     game_states.LAST_AREA += 1
     area.finalize()
     # print(game_states.LAST_AREA_END)
     game_structures.AREA_QUEUE.append(area)
     game_structures.make_save()
+
+
+area_thresholds = (
+    (make_simple_always(None), 0),  # GOD room (40+) TODO
+    (make_simple_always(None), 1),  # player room (20+) TODO
+    (make_simple_always(None), 3),  # boss room (20+) TODO
+    (MinigameArea, 6),  # minigame area (10+)
+    (EnslaughtArea, 12),  # enslaught area (10+)
+    (GiftArea, 18),  # gift area (4+)
+    (BreakThroughArea, 32),  # breakthrough area (4+)
+    (BasicArea, 64)  # basic area (0+)
+)
 
 
 if __name__ == "__main__":
