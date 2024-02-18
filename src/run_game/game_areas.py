@@ -234,7 +234,7 @@ class BasicArea(GameArea):
             index = (determiner % num) % len(allowable_entities)
             num += 1
             entity: entities.Entity = allowable_entities[index][0]
-            if entity.seen:
+            if entity.first_occurs:
                 allowance -= entity.cost + allowable_entities[index][1]
                 allowable_entities[index][1] += 1
                 self.entity_list.append(entity.make(determiner, self))
