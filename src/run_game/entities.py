@@ -757,6 +757,7 @@ class Projectile(Entity):
         super().__init__(img, rotation, pos)
         self.max_health = health
         self.health = health
+        # convert to radians
         self.move = (round(speed * math.sin(math.radians(rotation))), -round(speed * math.cos(math.radians(rotation))))
         self.destruct_on_collision = destruct_on_collision
         self.damage = damage
