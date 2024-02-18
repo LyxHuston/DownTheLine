@@ -112,8 +112,8 @@ class Entity(game_structures.Body):
         if self.track_instances:
             self.__instances.add(self)
 
-    def __init_subclass__(cls, **kwargs):
-        if kwargs.get("track_instances", False):
+    def __init_subclass__(cls, track_instances=False):
+        if track_instances:
             cls.track_instances = True
             cls.__instances = set()
         super().__init_subclass__()
@@ -122,8 +122,13 @@ class Entity(game_structures.Body):
     def instances(cls) -> list[Self]:
         if not cls.track_instances:
             return []
-        res = [en for en in cls.__instances]
-        return res
+        return list(cls.__instances)
+
+    @classmethod
+    def instance_count(cls) -> int:
+        if not cls.track_instances:
+            return 0
+        return len(cls.__instances)
 
     @classmethod
     def clear_instances(cls):
@@ -1147,7 +1152,7 @@ class ComponentEntity(Entity):
         self.__alive = val
 
 
-class Fish(Glides):
+class Fish(Glides, track_instances=True):
     """
     fish entity that leaps from the void
     """
@@ -1175,12 +1180,15 @@ class Fish(Glides):
                 self.rotation = 90 - 90 * self.direction
                 self.target_flight = 15 * self.random.randint(3, 5) // round(math.sqrt(self.speed))
                 self.state = 1
-                if self.random.randint(0, 1):  # go on the player
+                if self.random.randint(0, 1 + 5 // self.instance_count()) and self.instance_count() > 1:
+                    # be pretty... elsewhere
+                    self.y = game_states.DISTANCE + self.random.randint(-400, 400)
+                    self.x = (self.random.randint(0, 1) * 2 - 1) * (
+                                100 + self.target_flight * self.speed // 2 + self.random.randint(0, 400))
+                else:
+                    # go on the player
                     self.y = game_states.DISTANCE
                     self.x = 0
-                else:
-                    self.y = game_states.DISTANCE + self.random.randint(-400, 400)
-                    self.x = (self.random.randint(0, 1) * 2 - 1) * (100 + self.target_flight * self.speed // 2 + self.random.randint(0, 400))
                 self.x -= self.direction * (self.target_flight * self.speed // 2 + 20)
                 self.wait = 5 * self.frame_change_ticks
         elif self.state == 1:  # surfacing
