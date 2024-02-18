@@ -242,7 +242,7 @@ class Entity(game_structures.Body):
 EntityType = Type[Entity]
 
 
-def make_invulnerable_version(entity_class: Type[Entity]) -> Type[Entity]:
+def make_invulnerable_version(entity_class):
     """
     make invulnerable subclass of an entity class
     :param entity_class: an entity subclass
@@ -276,6 +276,9 @@ def make_invulnerable_version(entity_class: Type[Entity]) -> Type[Entity]:
             # if not val:
                 # print(f"invulnerable entity {self} killed")
             self.__alive = val
+
+    New.__name__ = "Invulnerable" + entity_class.__name__
+    New.__qualname__ = ".".join(entity_class.__qualname__.split(".")[:-1] + [New.__name__])
 
     return New
 
@@ -440,6 +443,9 @@ class Glides(Entity):
         self.glide_direction = direction
 
 
+InvulnerableGlides: Type[Glides] = make_invulnerable_version(Glides)
+
+
 class Obstacle(Entity, track_instances=True):
     """
     harmless obstacles on path.
@@ -494,7 +500,7 @@ class Obstacle(Entity, track_instances=True):
         self.hit(0, None)
 
 
-InvulnerableObstacle = make_invulnerable_version(Obstacle)
+InvulnerableObstacle: Type[Obstacle] = make_invulnerable_version(Obstacle)
 
 
 class Slime(Glides):
@@ -1603,7 +1609,7 @@ class Note(InvulnerableEntity):
         return self.alive
 
 
-class Bomb(Glides):
+class Bomb(InvulnerableGlides):
 
     def __init__(self, pos, rotation, img, speed, taper, glide_duration, delay, size, damage, from_player=False):
         super().__init__(img, rotation, pos)
@@ -1612,7 +1618,7 @@ class Bomb(Glides):
         self.damage = damage
         self.flash_delay = 0
         self.allied_with_player = from_player
-        self.start_glide(speed, glide_duration, taper, -math.cos(math.radians(rotation)))
+        self.start_glide(speed, glide_duration, taper, int(-math.cos(math.radians(rotation))))
         # print(self.glide_direction, self.glide_speed, self.glide_duration)
 
     def tick(self):
@@ -1620,6 +1626,7 @@ class Bomb(Glides):
         # print(self.y)
         self.life -= 1
         if self.life <= 0:
+            self.alive = False
             # print("exploding")
             colliding = pygame.Rect(
                 self.x - self.size // 2, self.y - self.size // 2,
@@ -1653,7 +1660,6 @@ class Bomb(Glides):
             if self.flash_delay <= 0:
                 self.flash_delay = self.life // 6 + 8
                 self.flashing = 8
-        return self.life > 0
 
     @staticmethod
     def find_range(img, speed, taper, glide_duration, delay, size, damage, from_player=False):
