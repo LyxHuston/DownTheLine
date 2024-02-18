@@ -760,28 +760,31 @@ class Projectile(Entity):
         self.damage = damage
         self.expiration_date = expiry
 
-    def tick(self) -> bool:
+    def tick(self):
         self.freeze_y(False)
         self.freeze_x(False)
         self.x += self.move[0]
         self.y += self.move[1]
         if self.expiration_date == 0:
-            return False
+            self.alive = False
+            return
         if self.expiration_date is not None:
             self.expiration_date -= 1
         if self.y < game_states.BOTTOM:
-            return False
+            self.alive = False
+            return
         if self.y > game_states.LAST_AREA_END + 1000:
-            return False
+            self.alive = False
+            return
         rect = self.rect
         if rect.right > -32 and rect.left < 32 and rect.bottom < game_states.DISTANCE + 32 and rect.top > game_states.DISTANCE - 32:
             if game_structures.deal_damage(self.damage, self):
                 glide_player(self.damage * 2, 10, 1, (self.y < game_states.DISTANCE) * 2 - 1)
             if self.destruct_on_collision:
-                return False
+                self.alive = False
+                return
         self.freeze_y(True)
         self.freeze_x(True)
-        return self.health > 0
 
 
 class Archer(Glides):
