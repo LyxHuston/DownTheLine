@@ -296,10 +296,10 @@ class ItemEntity(InvulnerableEntity):
     @property
     def pos(self):
         if isinstance(self.item.pos, int):
-            return 0, 0
+            return 0, game_states.DISTANCE
         if isinstance(self.item.pos[0], int):
             return self.item.pos
-        return 0, 0
+        return self.item.pos[0].pos
 
     @pos.setter
     def pos(self, val: tuple[int, int]):
@@ -357,18 +357,22 @@ class ItemEntity(InvulnerableEntity):
         if self.picked_up:
             return None
         self.picked_up = True
+        self.alive = False
         self.item.pos = hand
         return self.item
 
-    def tick(self) -> bool:
+    def tick(self):
         if self.picked_up:
-            return False
+            self.alive = False
+            return
         held = isinstance(self.item.pos, int)
         if not held:
             held = not isinstance(self.item.pos[0], int)
         if held:
-            return False
-        return self.item.tick(self.item)
+            self.alive = False
+            return
+        if not self.item.tick(self.item):
+            self.alive = False
 
     def draw(self):
         self.item.draw(self.item)
@@ -1379,6 +1383,14 @@ class SpawnerHolder(Entity):
         self.img = val
 
     @property
+    def alive(self) -> bool:
+        return self.holding.alive
+
+    @alive.setter
+    def alive(self, val: bool):
+        self.holding.alive = val
+
+    @property
     def health(self):
         return self.holding.health
 
@@ -1429,13 +1441,12 @@ class SpawnerHolder(Entity):
 
     __id = 0
 
-    def __init__(self, holding: Entity, holder: Spawner, index, destiny = (None, None)):
+    def __init__(self, holding: Entity, holder: Spawner, index, destiny=(None, None)):
         self.last_moved = 0
         self.holding: Entity = holding
         self.holder: Spawner = holder
         self.index = index
         self.deployed = False
-        self.alive = True
         self.id = SpawnerHolder.__id
         self.destiny = destiny
         SpawnerHolder.__id += 1
@@ -1445,15 +1456,11 @@ class SpawnerHolder(Entity):
         # print(f"{self.pos}, {self.health}, {self.deployed}")
         self.holding.hit(damage, source)
 
-    def tick(self) -> bool:
+    def tick(self):
         self.last_moved += 1
         if self.deployed:
-            res = self.holding.tick()
-            if not res:
-                self.alive = False
-                # print("Dying", self.index)
-                self.holder.lose(self.index)
-            return res
+            self.holding.tick()
+            return
         if self.holder.spawning is not self:
             if self.holder.spawning is None:
                 self.deployed = True
@@ -1470,11 +1477,7 @@ class SpawnerHolder(Entity):
         dist = abs(x_dist) + abs(y_dist)
         if dist < 5:
             self.deployed = True
-        if self.health <= 0:
-            self.alive = False
-            self.holder.lose(-1)
-            return False
-        return True
+        return
 
     def draw(self):
         self.holding.draw()
@@ -1483,10 +1486,16 @@ class SpawnerHolder(Entity):
         self.holding.final_load()
 
     def die(self):
+        self.holder.lose(self.index)
         self.holding.die()
 
     def despawn(self):
+        self.holder.lose(self.index)
         self.holding.despawn()
+
+    def cleanup(self):
+        self.holder.lose(self.index)
+        self.holding.cleanup()
 
 
 note_speed = 15
