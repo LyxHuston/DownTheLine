@@ -803,8 +803,8 @@ class Archer(Glides):
 
     def __init__(self, pos: tuple[int, int], difficulty: int, area):
         super().__init__(images.ARCHER_RELAXED.img, 0, pos)
-        self.max_health = 4
-        self.health = 4
+        self.max_health = 1
+        self.health = 1
         self.area = area
         self.cooldown_length = max(240 - difficulty * 6, 60)
         self.cooldown = self.cooldown_length
