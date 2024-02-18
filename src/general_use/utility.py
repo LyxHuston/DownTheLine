@@ -76,10 +76,10 @@ class ThreadWithResult(threading.Thread):
         return self.__result
 
     def __init__(self, group=None, target=None, name=None,
-                 args=(), kwargs=None):
+                 args=(), kwargs=None, daemon=False):
         if kwargs is None:
             kwargs = dict()
-        threading.Thread.__init__(self, group, target, name, args, kwargs)
+        threading.Thread.__init__(self, group, target, name, args, kwargs, daemon=daemon)
         self.__result = None
         self.__finished = False
 
@@ -96,11 +96,12 @@ class ThreadWithResult(threading.Thread):
         return self.__result
 
 
-def make_async(*args, with_lock: Union[threading.Lock, bool] = None, singular: bool = False) -> Callable:
+def make_async(*args, with_lock: Union[threading.Lock, bool] = None, singular: bool = False, daemon: bool = False) -> Callable:
     """
     makes a function asynchronous
     :param with_lock: if multiple calls of the function can't overlap
     :param singular: if there can only be one call of the function active at a time
+    :param daemon: if the thread should be a daemon thread
     :return:
     """
 
@@ -131,7 +132,7 @@ def make_async(*args, with_lock: Union[threading.Lock, bool] = None, singular: b
             res_func = func
 
         def async_func(*args, **kwargs) -> threading.Thread:
-            thread = ThreadWithResult(target=res_func, args=args, kwargs=kwargs)
+            thread = ThreadWithResult(target=res_func, args=args, kwargs=kwargs, daemon=daemon)
             thread.start()
             return thread
 
