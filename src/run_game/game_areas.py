@@ -246,6 +246,7 @@ class BasicArea(GameArea):
                 add.y = self.length // 2
                 self.entity_list.append(add)
                 self.entity_list.append(entities.Obstacle(pos=(0, self.length), health=5))
+                self.entity_list.append(entities.Obstacle(pos=(0, self.length // 4), health=5))
 
                 def first_see_of_entity():
                     if not entity.tutorial_given:
