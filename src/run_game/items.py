@@ -23,7 +23,7 @@ This is going to be full of factory functions, huh.  Factories of factories of f
 from dataclasses import dataclass
 from typing import Callable, Union, Any
 import pygame
-from run_game import entities, tutorials, abilities
+from run_game import entities, tutorials, abilities, ingame
 import math
 import enum
 from data import draw_constants, game_states, images
@@ -668,6 +668,7 @@ def simple_throwable_action(item: Item):
         rot = game_states.LAST_DIRECTION * 90 + 90
         # print(rot)
         game_structures.HANDS[item.pos] = None  # remove from hands of entity throwing
+        ingame.pickup_to_hand(item.pos)  # refill player hands
     else:
         pos = item.pos[0].pos
         rot = item.pos[0].rotation
