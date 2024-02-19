@@ -351,7 +351,9 @@ class AlertHolder:
         self.speak.add(text)
         text_img = self.draw(
             text,
-            self.text_size,
+            TUTORIAL_FONTS[self.text_size],
+            background_color=(0, 0, 0),
+            outline_color=(255, 255, 255),
             max_line_pixels=self.width - width - self.border_buffer * 2,
             max_width=self.width - width - self.border_buffer * 2,
             text_align=0.5,
@@ -550,13 +552,13 @@ def init() -> None:
     VOICE_CHANNEL = utility.make_reserved_audio_channel()
     tutorials.TUTORIAL_VOICE_CHANNEL = utility.make_reserved_audio_channel()
     ALERTS = AlertHolder(
-        width=512,
-        size=20,
+        width=game_states.WIDTH // 2,
+        size=60,
         max_alerts=5,
         speed=10,
         speak=speak,
         draw=ButtonHolder.draw_text,
-        border_buffer=5,
+        border_buffer=20,
         lifespan=300
     )
 

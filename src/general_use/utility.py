@@ -258,7 +258,7 @@ def tick() -> None:
     if alert_img is not None:
         game_structures.SCREEN.blit(
             alert_img,
-            (240 * 2 - game_structures.ALERTS.width / 2, 0)
+            (game_states.WIDTH // 2 - game_structures.ALERTS.width // 2, 0)
         )
 
     if keyed_down:
