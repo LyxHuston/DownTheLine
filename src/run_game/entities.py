@@ -714,7 +714,9 @@ class Fencer(Glides):
             if self.cooldown > 0:
                 self.cooldown -= 1
             return self.health > 0
-        if self.cooldown > 0 or self.obstacle_in_between():
+        if self.obstacle_in_between():
+            self.cooldown = self.cooldown_length // 2
+        if self.cooldown > 0:
             self.cooldown = max(0, self.cooldown - 1)
             if dist < 400:
                 self.y += 5 * ((self.y > game_states.DISTANCE) * 2 - 1)
