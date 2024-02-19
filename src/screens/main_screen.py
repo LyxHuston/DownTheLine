@@ -29,7 +29,7 @@ def setup_main_screen():
     :return:
     """
 
-    run_start_end.start()
+    run_start_end.start(full=False)
 
     game_states.CAMERA_BOTTOM = game_states.DISTANCE - game_states.CAMERA_THRESHOLDS[0]
 

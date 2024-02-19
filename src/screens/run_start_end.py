@@ -116,34 +116,36 @@ def start(with_seed: int = None, full: bool = True):
 
     game_states.DISTANCE = 100
     game_states.BOTTOM = 0
-    game_states.RECORD_DISTANCE = 0
-    game_states.LAST_AREA_END = 0
-    # player state management
-    game_states.HEALTH = 5
-    game_states.LAST_DIRECTION = 1
-    game_states.GLIDE_SPEED = 0
-    game_states.GLIDE_DIRECTION = 0
-    game_states.GLIDE_DURATION = 0
-    game_states.TAPER_AMOUNT = 0
-    # screen shake management
-    game_states.X_DISPLACEMENT = 0
-    game_states.Y_DISPLACEMENT = 0
-    game_states.SHAKE_DURATION = 0
-    game_states.X_LIMIT = 0
-    game_states.Y_LIMIT = 0
-    game_states.X_CHANGE = 0
-    game_states.Y_CHANGE = 0
+    if full:
+        game_states.RECORD_DISTANCE = 0
+        game_states.LAST_AREA_END = 0
+        # player state management
+        game_states.HEALTH = 5
+        game_states.LAST_DIRECTION = 1
+        game_states.GLIDE_SPEED = 0
+        game_states.GLIDE_DIRECTION = 0
+        game_states.GLIDE_DURATION = 0
+        game_states.TAPER_AMOUNT = 0
+        # screen shake management
+        game_states.X_DISPLACEMENT = 0
+        game_states.Y_DISPLACEMENT = 0
+        game_states.SHAKE_DURATION = 0
+        game_states.X_LIMIT = 0
+        game_states.Y_LIMIT = 0
+        game_states.X_CHANGE = 0
+        game_states.Y_CHANGE = 0
     # screen
     game_states.CAMERA_BOTTOM = game_states.DISTANCE - game_states.CAMERA_THRESHOLDS[0]
-    # area management
-    game_states.AREAS_PASSED = 0
-    game_states.LAST_AREA = 0
-    # times
-    game_states.RUN_START = datetime.datetime.now()
+    if full:
+        # area management
+        game_states.AREAS_PASSED = 0
+        game_states.LAST_AREA = 0
+        # times
+        game_states.RUN_START = datetime.datetime.now()
 
-    abilities.last_dash_time = -1 - abilities.dash_cooldown
+        abilities.last_dash_time = -1 - abilities.dash_cooldown
 
-    game_structures.HANDS = [None, None]
+        game_structures.HANDS = [None, None]
 
     if full:
         ingame.paused = False
