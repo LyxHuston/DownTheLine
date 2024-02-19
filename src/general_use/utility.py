@@ -76,12 +76,13 @@ class ThreadWithResult(threading.Thread):
         return self.__result
 
     def __init__(self, group=None, target=None, name=None,
-                 args=(), kwargs=None, daemon=False):
+                 args=(), kwargs=None, daemon=False, log_errors=True):
         if kwargs is None:
             kwargs = dict()
         threading.Thread.__init__(self, group, target, name, args, kwargs, daemon=daemon)
         self.__result = None
         self.__finished = False
+        self.log = True
 
     def run(self):
         if self._target is None:
@@ -89,19 +90,24 @@ class ThreadWithResult(threading.Thread):
         try:
             self.__result = self._target(*self._args, **self._kwargs)
         except Exception as exc:
-            log_error(exc)
+            if self.log:
+                log_error(exc)
 
     def join(self, *args):
         super(ThreadWithResult, self).join(*args)
         return self.__result
 
 
-def make_async(*args, with_lock: Union[threading.Lock, bool] = None, singular: bool = False, daemon: bool = False) -> Callable:
+def make_async(
+        *args, with_lock: Union[threading.Lock, bool] = None, singular: bool = False, daemon: bool = False,
+        log_errors: bool = True
+) -> Callable:
     """
     makes a function asynchronous
     :param with_lock: if multiple calls of the function can't overlap
     :param singular: if there can only be one call of the function active at a time
     :param daemon: if the thread should be a daemon thread
+    :param log_errors: whether or not to log errors
     :return:
     """
 

@@ -55,7 +55,7 @@ if len(sys.argv) > 1:
     flag = check_flags(["--with_interactive_console", "-c"])
     if flag:
         import code
-        utility.make_async(code.InteractiveConsole().interact, daemon=True)(banner="Interactive console for Down The Line", exitmsg="Ending interactive console")
+        utility.make_async(code.InteractiveConsole().interact, daemon=True, log_errors=False)(banner="Interactive console for Down The Line", exitmsg="Ending interactive console")
     flag = check_flags(["--invulnerable", "-i"])
     if flag:
         game_states.INVULNERABLE = True
