@@ -770,9 +770,9 @@ def add_game_area():
 
 
 area_thresholds = (
-    (make_simple_always(None), 0),  # GOD room (40+) TODO
-    (make_simple_always(None), 1),  # player room (20+) TODO
-    (make_simple_always(None), 3),  # boss room (20+) TODO
+    (BasicArea, 0),  # GOD room (40+) TODO
+    (BasicArea, 1),  # player room (20+) TODO
+    (BasicArea, 3),  # boss room (20+) TODO
     (MinigameArea, 6),  # minigame area (10+)
     (EnslaughtArea, 12),  # enslaught area (10+)
     (GiftArea, 18),  # gift area (4+)
