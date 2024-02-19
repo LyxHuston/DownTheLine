@@ -757,9 +757,12 @@ def add_game_area():
         # print(determinator, game_states.SEED + game_states.LAST_AREA)
         area = None
         typ = determinator % 64
+        area_type: Type[GameArea]
+        threshold: int
         for area_type, threshold in area_thresholds:
             if typ <= threshold and area_type.allowed_at(game_states.LAST_AREA):
                 area = area_type(determinator, game_states.LAST_AREA)
+                break
         if area is None:
             area = GameArea(game_states.LAST_AREA, length=400)
     game_states.LAST_AREA += 1
