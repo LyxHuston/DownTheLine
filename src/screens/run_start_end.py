@@ -29,6 +29,7 @@ from data import game_states
 from run_game import game_areas, gameboard, ingame, tutorials, abilities
 import random
 import sys
+from typing import Type
 
 PAUSE_BUTTONS = game_structures.ButtonHolder(
     background=None,
@@ -53,8 +54,10 @@ def clean_gameboard():
     stack = deque()
     stack.append(entities.Entity)
     while stack:  # go through all Entity subclasses to clean up
-        stack[0].clean()
-        stack.extend(stack.pop().__subclasses__())
+        on: Type[entities.Entity] = stack.pop()
+        on.clean()
+        stack.extend(on.__subclasses__())
+        # print(on.__name__, [sub.__name__ for sub in on.__subclasses__()])
     entities.Slime.seen = True
     for attr_value in game_areas.GameArea.__subclasses__():
         attr_value.seen = False
