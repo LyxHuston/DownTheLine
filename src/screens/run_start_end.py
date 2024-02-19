@@ -46,6 +46,10 @@ def quit_run():
     main_screen.main_screen_place.start()
 
 
+def end():
+    game_structures.BUTTONS.remove(PAUSE_BUTTONS)
+
+
 def clean_gameboard():
     tutorials.clear_tutorial_text()
     gameboard.heart_data.clear()

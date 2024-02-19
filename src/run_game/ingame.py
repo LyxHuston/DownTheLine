@@ -157,6 +157,7 @@ def crash(e: Exception):
 screen = game_structures.Place(
     tick=tick,
     enter=run_start_end.start,
+    end=run_start_end.end,
     catcher=event_catcher,
     exit_on=lambda: run_start_end.log_run(run_start_end.RunEndReasons.close),
     crash_on=crash
