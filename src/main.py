@@ -55,7 +55,14 @@ if len(sys.argv) > 1:
     flag = check_flags(["--with_interactive_console", "-c"])
     if flag:
         import code
-        utility.make_async(code.InteractiveConsole().interact, daemon=True, log_errors=False)(banner="Interactive console for Down The Line", exitmsg="Ending interactive console")
+        print("Warning: the interactive console causes the interpreter"
+              "\nto error on shutdown, which may cause improper closing"
+              "\nof resources, potentially leading to memory issues."
+              "\nIt is not recommended to use this option in regular use."
+              "\nTo prevent any errors, use exit() prior to shutting down"
+              "\nthe game.", flush=True)
+        utility.make_async(code.InteractiveConsole().interact, daemon=True, log_errors=False)(
+            banner="Interactive console for Down The Line", exitmsg="Ending interactive console")
     flag = check_flags(["--invulnerable", "-i"])
     if flag:
         game_states.INVULNERABLE = True
