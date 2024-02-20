@@ -138,7 +138,7 @@ def make_async(
             res_func = func
 
         def async_func(*args, **kwargs) -> threading.Thread:
-            thread = ThreadWithResult(target=res_func, args=args, kwargs=kwargs, daemon=daemon)
+            thread = ThreadWithResult(target=res_func, args=args, kwargs=kwargs, daemon=daemon, log_errors=log_errors)
             thread.start()
             return thread
 
