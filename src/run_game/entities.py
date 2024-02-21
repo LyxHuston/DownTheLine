@@ -1219,15 +1219,15 @@ class Fish(Glides, track_instances=True):
                 self.rotation = 90 - 90 * self.direction
                 self.target_flight = 15 * self.random.randint(3, 5) // round(math.sqrt(self.speed))
                 self.state = 1
-                if self.random.randint(0, 1 + 5 // self.instance_count()) and self.instance_count() > 1:
-                    # be pretty... elsewhere
-                    self.y = game_states.DISTANCE + self.random.randint(-400, 400)
-                    self.x = (self.random.randint(0, 1) * 2 - 1) * (
-                                100 + self.target_flight * self.speed // 2 + self.random.randint(0, 400))
-                else:
+                if self.random.randint(0, 1 + 5 // self.instance_count()) or self.instance_count() == 1:
                     # go on the player
                     self.y = game_states.DISTANCE
                     self.x = 0
+                else:
+                    # be pretty... elsewhere
+                    self.y = game_states.DISTANCE + self.random.randint(-400, 400)
+                    self.x = (self.random.randint(0, 1) * 2 - 1) * (
+                            100 + self.target_flight * self.speed // 2 + self.random.randint(0, 400))
                 self.x -= self.direction * (self.target_flight * self.speed // 2 + 20)
                 self.wait = 5 * self.frame_change_ticks
         elif self.state == 1:  # surfacing
