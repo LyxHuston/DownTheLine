@@ -27,7 +27,7 @@ from data import game_states, images
 from general_use import game_structures, utility
 import random
 import math
-from typing import Type, Iterable, Self, Callable
+from typing import Type, Iterable, Self, Callable, Literal
 
 
 def glide_player(speed: int, duration: int, taper: int, direction: int):
@@ -1154,7 +1154,14 @@ class TrackingLazer(Lazer):
     lazer subclass that chases the player while not firing
     """
 
-    def __init__(self, y: int, charge_time: int, duration: int, area, repeats: int | None = 1, damage: int = 1):
+    TOP = object()
+    BOTTOM = object()
+
+    def __init__(self, y: int | Literal[TOP, BOTTOM], charge_time: int, duration: int, area, repeats: int | None = 1, damage: int = 1):
+        if y is TrackingLazer.BOTTOM:
+            y = game_states.BOTTOM - 20
+        if y is TrackingLazer.TOP:
+            y = game_states.BOTTOM + game_states.HEIGHT + 20
         super().__init__(y, charge_time, duration, area, repeats, damage)
         self.velocity = 0
 

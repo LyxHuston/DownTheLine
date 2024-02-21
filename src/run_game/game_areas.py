@@ -444,7 +444,7 @@ class EnslaughtArea(GameArea):
                     self,
                     entities.TrackingLazer,
                     (
-                        self.end_coordinate,
+                        (entities.TrackingLazer.TOP, entities.TrackingLazer.BOTTOM)[i % 2],
                         60,
                         60,
                         self
