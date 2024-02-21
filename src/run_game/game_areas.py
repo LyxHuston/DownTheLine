@@ -22,7 +22,7 @@ import random
 import pygame
 
 from data import game_states, images
-from run_game import tutorials, entities, bosses, items
+from run_game import tutorials, entities, bosses, items, gameboard
 from general_use.utility import make_async, add_error_checking, make_simple_always
 from general_use import game_structures
 import math
@@ -78,6 +78,15 @@ class GameArea:
             self.random = random.Random(seed)
         self.spawn_end = 0  # track which end to spawn a particle on
         self.__class__.last_spawned = index
+        self.ender: entities.AreaStopper | None = None
+        if self.__have_starter:
+            self.starter: entities.AreaStarter | None = None
+
+    __have_starter = False
+
+    def __init_subclass__(cls, have_starter: bool = False):
+        super().__init_subclass__()
+        cls.__have_starter = have_starter
 
     seen = False
 
@@ -101,7 +110,7 @@ class GameArea:
     def start_tutorial(self):
         pass
 
-    def draw(self):
+    def draw_particles(self):
         remove_list = deque()
         for particle in self.particle_list:
             if particle.tick():
@@ -110,13 +119,16 @@ class GameArea:
                 remove_list.append(particle)
         for particle in remove_list:
             self.particle_list.remove(particle)
-        for entity in self.entity_list:
-            entity.draw()
+            # prevent
+            particle.reset_id_check()
+
+    def draw(self):
+        pass
 
     region_length = 32000
     taper_length = 100
 
-    def tick(self) -> tuple[float, int]:
+    def tick(self):
         region = 0
         while region * self.region_length + self.taper_length < self.length:  # spawn particles for middle regions
             height = self.start_coordinate + self.random.randint(0, self.region_length - 1) + region * self.region_length
@@ -145,34 +157,9 @@ class GameArea:
                 )
             ))
         # print(len(self.particle_list))
-        i: int = 0
-        mass: float = 0
-        total: int = 0
-        while i < len(self.entity_list):
-            e: entities.Entity = self.entity_list[i]
-            if e.alive:
-                e.tick()
-                i += 1
-                dist = e.distance_to_player()
-                if dist < game_states.HEIGHT:
-                    if not e.in_view(game_states.CAMERA_THRESHOLDS[0]) or dist > 600:
-                        mass += (game_states.DISTANCE < e.y) * 2 - 1
-                        total += 1
-                    elif dist > 300:
-                        mass += ((game_states.DISTANCE < e.y) * 2 - 1) * (dist / 300 - 1)
-                        total += 1
-                # if game_states.DISTANCE + game_states.HEIGHT > e.y > game_states.DISTANCE:
-                #     mass += 1
-                # elif game_states.DISTANCE - game_states.HEIGHT < e.y < game_states.DISTANCE:
-                #     mass -= 1
-                # total += 1
-            else:
-                e.die()
-                del self.entity_list[i]
         if not self.boundary_crossed and game_states.DISTANCE > self.start_coordinate:
             self.boundary_crossed = True
             self.cross_boundary()
-        return mass, total
 
     def cross_boundary(self):
         """
@@ -194,10 +181,19 @@ class GameArea:
         game_states.LAST_AREA_END = self.end_coordinate
         for entity in self.entity_list:
             entity.y += self.start_coordinate
+        if self.__have_starter:
+            self.starter: entities.Entity = entities.AreaStarter(self)
+            self.entity_list.insert(0, self.starter)
+        self.ender = entities.AreaStopper(self)
+        self.entity_list.append(self.ender)
+        self.entity_list.sort(key=lambda e: e.y)
 
     def cleanup(self):
-        for entity in self.entity_list:
-            entity.cleanup()
+        if self.entity_list is not None:
+            for entity in self.entity_list:
+                entity.cleanup()
+        for particle in self.particle_list:
+            particle.reset_id_check()
 
     def get_allowable(self):
         allowable_entities = []
@@ -212,6 +208,16 @@ class GameArea:
 
     def previously_seen(self, entity: entities.Entity):
         return entity.first_occurs or self.index < entity.first_occurs
+
+    def num_entities(self):
+        if not self.__have_starter:
+            return 0
+        return self.ender.index - self.starter.index - 1
+
+    def get_entity_snapshot(self) -> list:
+        if not self.__have_starter:
+            return []
+        return gameboard.ENTITY_BOARD[self.starter.index + 1: self.ender.index]
 
 
 class BasicArea(GameArea):
@@ -363,7 +369,8 @@ class EnslaughtArea(GameArea):
         self.difficulty = count
         self.current_difficulty = count
         self.length = game_states.HEIGHT * 4
-        self.entity_list.append(entities.InvulnerableObstacle(pos=(0, self.length), health=1))
+        self.end_wall = entities.InvulnerableObstacle(pos=(0, self.length), health=1)
+        self.entity_list.append(self.end_wall)
         self.state = 0  # 0: not started 1: in progress 2: finished, killing off entities
         self.timer = 30 * 60 + 120 * math.floor(math.log2(count))
         self.max = self.timer
@@ -388,9 +395,9 @@ class EnslaughtArea(GameArea):
         if self.state == 0:
             if game_states.DISTANCE > self.start_coordinate + self.length // 2:
                 self.state = 1
-                end_wall = entities.InvulnerableObstacle(pos=(0, self.start_coordinate))
-                end_wall.final_load()
-                self.entity_list.append(end_wall)
+                start_wall = entities.InvulnerableObstacle(pos=(0, self.start_coordinate))
+                start_wall.final_load()
+                gameboard.NEW_ENTITIES.append(start_wall)
                 self.cooldown_ticks = self.cooldown
         elif self.state == 1:
             self.timer -= 1
@@ -401,8 +408,8 @@ class EnslaughtArea(GameArea):
             if self.timer <= 0:
                 self.state = 2
                 self.cooldown_ticks = 0
-                self.entity_list[0].die()
-                del self.entity_list[0]
+                self.end_wall.alive = False
+                self.entity_list = self.get_entity_snapshot()
         elif self.state == 2:
             if self.cooldown_ticks <= 0:
                 self.cooldown_ticks = 30
@@ -419,7 +426,7 @@ class EnslaughtArea(GameArea):
                 self.random.randint(100, game_states.WIDTH // 2) * (self.random.randint(0, 1) * 2 - 1),
                 self.random.randint(self.start_coordinate + 100, self.end_coordinate - 100)
             )
-            self.entity_list.append(entities.Spawner(
+            gameboard.NEW_ENTITIES.append(entities.Spawner(
                 pos,
                 1,
                 self,
@@ -432,7 +439,7 @@ class EnslaughtArea(GameArea):
         elif target_change < 10:
             # print("Lazers")
             for i in range(target_change):
-                self.entity_list.append(entities.DelayedDeploy(
+                gameboard.NEW_ENTITIES.append(entities.DelayedDeploy(
                     i * 60,
                     self,
                     entities.TrackingLazer,
@@ -446,7 +453,7 @@ class EnslaughtArea(GameArea):
         elif target_change < 15:
             # print("Fishies")
             for i in range(target_change // 3):
-                self.entity_list.append(entities.Fish(self))
+                gameboard.NEW_ENTITIES.append(entities.Fish(self))
                 self.current_difficulty += 2
         elif target_change < 30:
             # print("Spawning")
@@ -467,7 +474,7 @@ class EnslaughtArea(GameArea):
                         made_entity.y = self.end_coordinate - 100
                     else:
                         made_entity.y = self.start_coordinate + 100
-                self.entity_list.append(made_entity)
+                gameboard.NEW_ENTITIES.append(made_entity)
                 # print(made_entity)
         else:
             # print("Spawners")
@@ -478,7 +485,7 @@ class EnslaughtArea(GameArea):
                 else:
                     self.current_difficulty += (spawner.limit + 1) * spawner.entity.cost ** 2
                 spawner.y += self.start_coordinate
-                self.entity_list.append(spawner)
+                gameboard.NEW_ENTITIES.append(spawner)
         # print(f"{self.current_difficulty}/{self.difficulty}")
 
     def cross_boundary(self):
@@ -532,7 +539,8 @@ class MinigameArea(GameArea):
             self.entity_list.append(entities.NoteSpawner(self, start_note))
         else:  # lazer dodge
             self.length = game_states.HEIGHT
-        self.entity_list.append(entities.InvulnerableObstacle(pos=(0, self.length), health=1))
+        self.end_wall = entities.InvulnerableObstacle(pos=(0, self.length), health=1)
+        self.entity_list.append(self.end_wall)
 
     def tick(self):
         ret = super(MinigameArea, self).tick()
@@ -541,14 +549,14 @@ class MinigameArea(GameArea):
                 self.state = 1
                 end_wall = entities.InvulnerableObstacle(pos=(0, self.start_coordinate), health=1)
                 end_wall.final_load()
-                self.entity_list.append(end_wall)
+                gameboard.NEW_ENTITIES.append(end_wall)
                 if self.type == 0:  # obligatory fishing minigame
                     wave: list[tuple[Type[entities.Entity], Iterable]] = []
                     for i in range(self.difficulty // 10):
                         for i2 in range(10):
                             wave.append((entities.Fish, [self]))
                         wave = [(entities.MassDelayedDeploy, (60 * 10, self, wave))]
-                    self.entity_list.append(entities.MassDelayedDeploy(0, wave[0][1][1], wave[0][1][2]))
+                    gameboard.NEW_ENTITIES.append(entities.MassDelayedDeploy(0, wave[0][1][1], wave[0][1][2]))
                 elif self.type == 1:  # notes
                     self.enforce_center = self.start_coordinate + self.length // 2
                 else:  # lazer dodge
@@ -593,20 +601,18 @@ class MinigameArea(GameArea):
                                 ))
                             delay = tracker_delay * (repeats + 1)
                         wave = [(entities.MassDelayedDeploy, (delay, self, wave))]
-                    self.entity_list.append(wave[0][0](*wave[0][1]))
+                    gameboard.NEW_ENTITIES.append(wave[0][0](*wave[0][1]))
         elif self.state == 1:  # in game
             if self.type == 0:
                 self.enforce_center = game_states.DISTANCE
-            if len(self.entity_list) == self.solved_entity_number:
+            if self.num_entities() == self.solved_entity_number:
                 self.state = 2
                 self.enforce_center = None
                 if self.type == 1:
                     wall = entities.Obstacle(pos=(0, self.end_coordinate))
                     wall.hit(9, self)
-                    self.entity_list[0] = wall
-                else:
-                    self.entity_list[0].die()
-                    del self.entity_list[0]
+                    gameboard.NEW_ENTITIES.append(wall)
+                self.end_wall.alive = False
 
         return ret
 
@@ -643,7 +649,8 @@ class BossArea(GameArea):
         self.difficulty = count
         self.boss: bosses.Boss | None = None  # TODO make boss options
         self.state = 0
-        self.entity_list.append(entities.InvulnerableObstacle(pos=(0, self.length), health=1))
+        self.end_wall = entities.InvulnerableObstacle(pos=(0, self.length), health=1)
+        self.entity_list.append(self.end_wall)
         self.entity_list.append(self.boss)
         self.cooldown_ticks = 0
 
@@ -651,10 +658,11 @@ class BossArea(GameArea):
         ret = super().tick()
         if self.state == 0:
             if game_states.DISTANCE > self.start_coordinate + self.length // 2:
-                self.entity_list.append(entities.InvulnerableObstacle(pos=(0, self.start_coordinate), health=1))
+                gameboard.NEW_ENTITIES.append(entities.InvulnerableObstacle(pos=(0, self.start_coordinate), health=1))
         elif self.state == 1:
             if not self.boss.alive:
-                del self.entity_list[0]
+                self.end_wall.alive = False
+                self.entity_list = self.get_entity_snapshot()
                 self.state = 2
         elif self.state == 2:
             if self.cooldown_ticks <= 0:
@@ -768,7 +776,8 @@ def add_game_area():
     game_states.LAST_AREA += 1
     area.finalize()
     # print(game_states.LAST_AREA_END)
-    game_structures.AREA_QUEUE.append(area)
+    with game_structures.AREA_QUEUE_LOCK:
+        game_structures.AREA_QUEUE.append(area)
     game_structures.make_save()
 
 

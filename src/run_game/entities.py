@@ -22,12 +22,12 @@ import weakref
 
 import pygame
 
-from run_game import abilities, game_areas, ingame
+from run_game import abilities, ingame, gameboard
 from data import game_states, images
-from general_use import game_structures
+from general_use import game_structures, utility
 import random
 import math
-from typing import Type, Iterable, Self
+from typing import Type, Iterable, Self, Callable
 
 
 def glide_player(speed: int, duration: int, taper: int, direction: int):
@@ -73,7 +73,7 @@ class Entity(game_structures.Body):
         self.cleanup()
 
     def despawn(self):
-        self.die()
+        self.cleanup()
 
     def cleanup(self):
         if self.track_instances:
@@ -99,8 +99,10 @@ class Entity(game_structures.Body):
     def in_knockback(self) -> bool:
         return self.flashing > 0
 
-    def __init__(self, img: pygame.Surface, rotation: int, pos: tuple[int, int]):
+    def __init__(self, img: pygame.Surface, rotation: int, pos: tuple[int, int] | None):
         super().__init__(img, rotation, pos)
+        self.index = 0
+        self.__offset = 0
         self.__health: int = 0
         self.max_health: int = 0
         self.flashing: int = 0
@@ -216,14 +218,6 @@ class Entity(game_structures.Body):
         """
         raise NotImplementedError(f"Attempted to use make method from generic Entity superclass: {cls.__name__} should implement it separately.")
 
-    def transfer(self, area) -> None:
-        """
-        called when transferring an entity to a new area, in case the entity needs to do something there
-        :param area:
-        :return:
-        """
-        area.entity_list.append(self)
-
     # positional utility
 
     def obstacle_in_between(self, pos: int | None = None) -> bool:
@@ -244,6 +238,62 @@ class Entity(game_structures.Body):
 
     def distance_to_player(self) -> int:
         return abs(self.y - game_states.DISTANCE)
+
+    def recenter_order(self):
+        self.__offset = 0
+
+    def next_entity_inorder(
+            self, limit: int = None, accept_func: Callable[[Self], bool] = utility.make_simple_always(True)
+    ) -> Self | None:
+        if self.index + self.__offset < 0:
+            self.__offset = self.index * -1 - 1
+        while True:
+            self.__offset += 1
+            if self.index + self.__offset >= len(gameboard.ENTITY_BOARD):
+                return None
+            entity = gameboard.ENTITY_BOARD[self.index + self.__offset]
+            if limit is not None and entity.y - self.y > limit:
+                return None
+            if accept_func(entity):
+                return entity
+
+    def prev_entity_inorder(
+            self, limit: int = None, accept_func: Callable[[Self], bool] = utility.make_simple_always(True)
+    ) -> Self | None:
+        if self.index + self.__offset > len(gameboard.ENTITY_BOARD):
+            self.__offset = len(gameboard.ENTITY_BOARD) - self.index
+        while True:
+            self.__offset -= 1
+            if self.index + self.__offset < 0:
+                return None
+            entity = gameboard.ENTITY_BOARD[self.index + self.__offset]
+            if limit is not None and self.y - entity.y > limit:
+                return None
+            if accept_func(entity):
+                return entity
+
+    def all_in_range(
+            self,
+            _range: int,
+            accept_func: Callable[[Self], bool] = utility.make_simple_always(True)
+    ) -> list[Self]:
+        collect: list[Entity] = list()
+        store_offset = self.__offset
+        self.recenter_order()
+        while True:
+            check: Entity | None = self.prev_entity_inorder(limit=_range, accept_func=accept_func)
+            if check is None:
+                break
+            collect.append(check)
+        collect.reverse()
+        self.recenter_order()
+        while True:
+            check = self.next_entity_inorder(limit=_range, accept_func=accept_func)
+            if check is None:
+                break
+            collect.append(check)
+        self.__offset = store_offset
+        return collect
 
 
 EntityType = Type[Entity]
@@ -481,19 +531,13 @@ class Obstacle(Entity, track_instances=True):
     def tick(self):
         if abs(self.x) < 128 + 32 and abs(game_states.DISTANCE - self.y) < 56:
             game_states.DISTANCE = self.y + ((game_states.DISTANCE - self.y > 0) * 2 - 1) * 56
-        rect = self.img.get_rect(center=self.pos)
-        for entity in game_structures.all_entities():
-            if entity is self:
-                continue
-            if isinstance(entity, ItemEntity):
-                continue
-            entity_rect = entity.rect
-            if rect.colliderect(entity_rect):
-                if abs(entity.y - self.y) < abs(entity.x - self.x) - 12:
-                    entity.x = self.x + (32 + entity_rect.width // 2) * ((entity.x - self.x > 0) * 2 - 1)
-                else:
-                    entity.y = self.y + (24 + entity_rect.height // 2) * ((entity.y - self.y > 0) * 2 - 1)
-        return self.health > 0
+        for entity in self.all_in_range(500, accept_func=self.collide):
+            # number arbitrarily chosen for while this is proof of concept, change limit in the future?
+            if abs(entity.y - self.y) < abs(entity.x - self.x) - 48:
+                entity.x = self.x + (128 + entity.rect.width // 2) * ((entity.x - self.x > 0) * 2 - 1)
+            else:
+                entity.y = self.y + (24 + entity.rect.height // 2) * ((entity.y - self.y > 0) * 2 - 1)
+        return
 
     def final_load(self):
         self.freeze_y(True)
@@ -825,7 +869,7 @@ class Archer(Glides):
         if self.cooldown == 0:
             if dist < 900:
                 self.cooldown = self.cooldown_length
-                self.area.entity_list.append(Projectile(images.ARROW.img, self.rotation, (self.x + self.area.random.randint(-1, 1) * 16, self.y), speed=5))
+                gameboard.NEW_ENTITIES.append(Projectile(images.ARROW.img, self.rotation, (self.x + self.area.random.randint(-1, 1) * 16, self.y), speed=5))
         elif self.in_view():
             self.cooldown -= 1
             self.img = self.imgs[3 * self.cooldown // self.cooldown_length]
@@ -836,10 +880,6 @@ class Archer(Glides):
         elif dist > 450:
             self.y += 5 * ((self.y < game_states.DISTANCE) * 2 - 1)
         return self.health > 0
-
-    def transfer(self, area):
-        super().transfer(area)
-        self.area = area
 
     def first_seen(self):
         for i in range(1, 3):
@@ -1023,8 +1063,10 @@ class Lazer(InvulnerableEntity):
                 ComponentEntity(images.LAZER_END.img, self, 90, (-game_states.WIDTH // 2 + 100, y)),
                 ComponentEntity(images.LAZER_END.img, self, 270, (game_states.WIDTH // 2 - 100, y))
             ]
-        area.entity_list.extend(self.ends)
-        self.area = area
+        if area.entity_list is None:
+            gameboard.NEW_ENTITIES.extend(self.ends)
+        else:
+            area.entity_list.extend(self.ends)
         self.random = random.Random(area.random.randint(0, 2 ** 32 - 1))
         self.charge_time = charge_time
         self.cooldown = 0
@@ -1069,7 +1111,7 @@ class Lazer(InvulnerableEntity):
             spread = round(90 * (1 - (self.cooldown / self.charge_time) ** 3))
             for end in self.ends:
                 rot = end.rotation + self.random.randint(-spread, spread)
-                self.area.particle_list.add(Particle(
+                gameboard.PARTICLE_BOARD.add(Particle(
                     images.STEAM_PARTICLES,
                     4,
                     12,
@@ -1105,11 +1147,6 @@ class Lazer(InvulnerableEntity):
                     game_structures.to_screen_pos((0, intercept)),
                     25
                 )
-
-    def transfer(self, area):
-        self.health = 0
-        for end in self.ends:
-            end.alive = False
 
 
 class TrackingLazer(Lazer):
@@ -1322,7 +1359,7 @@ class Spawner(Entity):
             self.__spawning = SpawnerHolder(self.entity.make(self.area.random.randint(0, 2 ** 16 - 1), self.area),
                                             self, self.__check, self.__destination)
             self.__spawning.final_load()
-            self.area.entity_list.append(self.__spawning)
+            gameboard.NEW_ENTITIES.append(self.__spawning)
             self.__spawning.pos = self.pos
             # print(self.__spawning.tick())
             return
@@ -1465,7 +1502,7 @@ class SpawnerHolder(Entity):
         self.last_moved = 0
         self.holding: Entity = holding
         self.holder: Spawner = holder
-        self.index = index
+        self.spawner_index = index
         self.deployed = False
         self.id = SpawnerHolder.__id
         self.destiny = destiny
@@ -1506,15 +1543,15 @@ class SpawnerHolder(Entity):
         self.holding.final_load()
 
     def die(self):
-        self.holder.lose(self.index)
+        self.holder.lose(self.spawner_index)
         self.holding.die()
 
     def despawn(self):
-        self.holder.lose(self.index)
+        self.holder.lose(self.spawner_index)
         self.holding.despawn()
 
     def cleanup(self):
-        self.holder.lose(self.index)
+        self.holder.lose(self.spawner_index)
         self.holding.cleanup()
 
 
@@ -1556,7 +1593,7 @@ class NoteSpawner(InvulnerableEntity):
         if self.cooldown_track <= 0:
             choose = self.random.randint(0, 3)
             if choose == 0:  # single note
-                self.area.entity_list.append(Note(self.last_y))
+                gameboard.NEW_ENTITIES.append(Note(self.last_y))
                 self.cooldown_track = 30 + 15 * self.random.randint(0, 2)
                 self.last_y += self.random.randint(-2, 2) * 5 * self.cooldown_track
             elif choose == 1:  # arpeggio
@@ -1565,7 +1602,7 @@ class NoteSpawner(InvulnerableEntity):
                 spacing = 9
                 for i in range(45 // spacing):
                     self.last_y += direction * 10 * spacing
-                    self.area.entity_list.append(Note(self.last_y, offscreen=offscreen))
+                    gameboard.NEW_ENTITIES.append(Note(self.last_y, offscreen=offscreen))
                     offscreen += note_speed * spacing
                 self.cooldown_track = 45
             else:
@@ -1576,7 +1613,7 @@ class NoteSpawner(InvulnerableEntity):
                     spacing = 5
                     for i in range(20 // spacing):
                         self.last_y += direction * 25 * spacing
-                        self.area.entity_list.append(Note(self.last_y, offscreen=offscreen))
+                        gameboard.NEW_ENTITIES.append(Note(self.last_y, offscreen=offscreen))
                         offscreen += note_speed * spacing
                     self.cooldown_track = 20
                 else:  # switch arpeggio
@@ -1588,7 +1625,7 @@ class NoteSpawner(InvulnerableEntity):
                             direction *= -1
                             self.last_y += direction * 64 * spacing
                         self.last_y += direction * 10 * spacing
-                        self.area.entity_list.append(Note(self.last_y, offscreen=offscreen))
+                        gameboard.NEW_ENTITIES.append(Note(self.last_y, offscreen=offscreen))
                         offscreen += note_speed * spacing
                     self.cooldown_track = 45
             self.cooldown_track += 30
@@ -1647,7 +1684,7 @@ class Bomb(InvulnerableGlides):
                 self.size, self.size
             )
             if self.allied_with_player:
-                for entity in game_structures.all_entities():
+                for entity in self.all_in_range(500 + self.size):
                     if colliding.colliderect(entity.rect):
                         game_states.TIME_SINCE_LAST_INTERACTION = 0
                         entity.hit(self.damage, self)
@@ -1695,7 +1732,6 @@ class DelayedDeploy(InvulnerableEntity):
         super().__init__(images.EMPTY, 0, (3000, area.start_coordinate))
         # print("delayed deploy made")
         self.delay = delay
-        self.area = area
         self.entity = entity
         self.args = args
 
@@ -1703,7 +1739,7 @@ class DelayedDeploy(InvulnerableEntity):
         self.delay -= 1
         if self.delay <= 0:
             # print("delayed deploy initiated")
-            self.area.entity_list.append(self.entity(*self.args))
+            gameboard.NEW_ENTITIES.append(self.entity(*self.args))
             self.alive = False
 
 
@@ -1712,13 +1748,12 @@ class MassDelayedDeploy(InvulnerableEntity):
     def __init__(self, delay, area, entities: list[tuple[Type[Entity], Iterable]]):
         super().__init__(images.EMPTY, 0, (3000, area.start_coordinate))
         self.delay = delay
-        self.area = area
         self.entities = entities
 
     def tick(self):
         self.delay -= 1
         if self.delay <= 0:
-            self.area.entity_list.extend(entity(*args) for entity, args in self.entities)
+            gameboard.NEW_ENTITIES.extend(entity(*args) for entity, args in self.entities)
             self.alive = False
 
 
@@ -1751,6 +1786,10 @@ class Particle(Entity):
         self.y += self.momentum[1]
         return self.lifespan > 0
 
+    def reset_id_check(self):
+        if self.__id == 10000:
+            Particle.__id = 0
+
     def __eq__(self, other):
         if self is other:
             return True
@@ -1759,85 +1798,36 @@ class Particle(Entity):
         return self.__id
 
 
-if __name__ == "__main__":
-    import general_use
-    import main
+class AreaEdge(InvulnerableEntity):
+    """
+    a type of entity that marks one end of an area
+    """
+    def __init__(self, area):
+        super().__init__(images.EMPTY, 0, None)
+        self.area = area
+        self.x = 0
 
-    game_states.PLACE = ingame.screen
+    def draw(self):
+        pass
 
-    game_states.DISTANCE = 100
-    game_states.BOTTOM = 0
-    game_states.RECORD_DISTANCE = 0
-    game_states.LAST_AREA_END = 0
-    # player state management
-    game_states.HEALTH = 5
-    game_states.LAST_DIRECTION = 1
-    game_states.GLIDE_SPEED = 0
-    game_states.GLIDE_DIRECTION = 0
-    game_states.GLIDE_DURATION = 0
-    game_states.TAPER_AMOUNT = 0
-    # screen shake management
-    game_states.X_DISPLACEMENT = 0
-    game_states.Y_DISPLACEMENT = 0
-    game_states.SHAKE_DURATION = 0
-    game_states.X_LIMIT = 0
-    game_states.Y_LIMIT = 0
-    game_states.X_CHANGE = 0
-    game_states.Y_CHANGE = 0
-    # screen
-    game_states.CAMERA_BOTTOM = 0
-    # area management
-    game_states.AREAS_PASSED = 0
-    game_states.LAST_AREA = 0
-    game_states.AREA_QUEUE_MAX_LENGTH = 3
+    def final_load(self) -> None:
+        self.freeze_x(True)
+        self.freeze_y(True)
 
-    game_structures.HANDS = [None, None]
 
-    # game_areas.add_game_area().join()
-    # game_structures.AREA_QUEUE[0].length += 20000
-    # game_states.LAST_AREA_END = game_structures.AREA_QUEUE[0].end_coordinate
-    area = game_areas.GameArea(10000, 20)
-    area.difficulty = 60
-    # area.entity_list.append(Knight.make(5672979812, area))
-    # area.entity_list.append(Fish(area))
-    # area.entity_list.append(ingame.entities.ItemEntity(items.simple_bomb(
-    #     (0, 4 * 128),
-    #     15,
-    #     1,
-    #     20,
-    #     240,
-    #     600,
-    #     4
-    # )))
-    # for i in range(9):
-    #     pos = (-200, i * 256)
-    #     area.entity_list.append(Spawner(
-    #         pos,
-    #         1,
-    #         area,
-    #         0,
-    #         make_item_duplicator(items.random_simple_bomb(area.random, pos)),
-    #         (0, None),
-    #         2
-    #     ))
-    area.entity_list.append(Spawner(
-        (500, 600),
-        1,
-        area,
-        0,
-        TrackingLazer,
-        (None, None),
-        2
-    ))
+class AreaStopper(AreaEdge):
+    """
+    marks the end of an area for area culling purposes
+    """
+    @property
+    def y(self):
+        return self.area.end_coordinate
 
-    area.finalize()
-    # area.enter()
-    game_states.LAST_AREA_END = area.end_coordinate
-    game_structures.AREA_QUEUE.append(area)
-    game_areas.add_game_area()
-    game_areas.add_game_area()
 
-    while game_states.RUNNING:
-        game_structures.SCREEN.fill(main.backdrop)
-        game_states.PLACE.tick()
-        general_use.tick()
+class AreaStarter(AreaEdge):
+    """
+    marks the beginning of an area for when the area needs to keep track of what entities are in it
+    """
+    @property
+    def y(self):
+        return self.area.start_coordinate

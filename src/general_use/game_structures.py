@@ -25,6 +25,7 @@ from pygame.transform import scale
 import pygame.mixer
 from pygame.event import custom_type
 from collections import deque
+from threading import Lock
 
 from general_use import utility
 from gtts import gTTS
@@ -651,15 +652,16 @@ class Body:
             self.__y_frozen = val
         return self.__y_frozen
 
-    def __init__(self, img: pygame.Surface, rotation: int, pos: tuple[int, int]):
+    def __init__(self, img: pygame.Surface, rotation: int, pos: tuple[int, int] | None):
         self.__original_img = img
         self._rotated_img = None
         self.__rotation = 0
         self.rotation = rotation
         self.__x_frozen = False
         self.__y_frozen = False
-        self.x = pos[0]
-        self.y = pos[1]
+        if pos is not None:
+            self.x = pos[0]
+            self.y = pos[1]
 
     @property
     def rect(self):
@@ -780,6 +782,7 @@ class Body:
 CUSTOM_EVENT_CATCHERS: list[Callable] = []
 PLACES = None
 AREA_QUEUE = deque()
+AREA_QUEUE_LOCK = Lock()
 
 
 def initialized_areas():
@@ -805,13 +808,6 @@ def get_last_initialized():
         if not area.initialized:
             return res
         res = area
-
-
-def all_entities():
-    res = []
-    for area in initialized_areas():
-        res.extend(area.entity_list)
-    return res
 
 
 def make_save():

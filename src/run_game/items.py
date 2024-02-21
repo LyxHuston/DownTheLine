@@ -23,7 +23,7 @@ This is going to be full of factory functions, huh.  Factories of factories of f
 from dataclasses import dataclass
 from typing import Callable, Union, Any
 import pygame
-from run_game import entities, tutorials, abilities, ingame
+from run_game import entities, tutorials, abilities, ingame, gameboard
 import math
 import enum
 from data import draw_constants, game_states, images
@@ -579,7 +579,7 @@ def simple_stab_tick(item: Item):
                 item.pos[0].rotation
             ))
         if isinstance(item.pos, int):
-            for entity in game_structures.all_entities():
+            for entity in gameboard.ENTITY_BOARD:
                 if entity in item.data_pack[-1]:
                     continue
                 if rect.colliderect(entity.rect):
@@ -614,7 +614,7 @@ def simple_shield_tick(item: Item):
             item.img.get_width()
         )
 
-        for entity in game_structures.all_entities():
+        for entity in gameboard.ENTITY_BOARD:
             if rect.colliderect(entity.rect):
                 entity.y = rect.centery + (rect.height // 2 + entity.height // 2) * game_states.LAST_DIRECTION
                 if isinstance(entity, entities.Projectile):
@@ -641,7 +641,7 @@ def simple_shield_tick(item: Item):
         )
 
         correct_distance = item.pos[0].y + item.pos[0].height // 2 * math.cos(math.radians(item.pos[0].rotation))
-        for entity in game_structures.all_entities():
+        for entity in item.pos[0].all_in_range(600):
             if not entity.allied_with_player:
                 continue
             if rect.colliderect(entity.rect):
@@ -677,7 +677,7 @@ def simple_throwable_action(item: Item):
     # print(item)
     ent = item.data_pack[0](pos, rot, *item.data_pack[1])  # create entity
     ent.allied_with_player = p
-    area.entity_list.append(ent)  # add entity to entity list
+    gameboard.NEW_ENTITIES.append(ent)  # add entity to entity list
 
 
 def simple_stab(cooldown: int, duration: int, img: pygame.Surface, pos: tuple[int, int], damage: int = 3) -> Item:

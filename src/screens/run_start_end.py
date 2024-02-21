@@ -53,8 +53,13 @@ def end():
 def clean_gameboard():
     tutorials.clear_tutorial_text()
     gameboard.heart_data.clear()
+    gameboard.ENTITY_BOARD.clear()
+    gameboard.NEW_ENTITIES.clear()
+    gameboard.PARTICLE_BOARD.clear()
 
     from run_game import entities
+    entities.Particle.__id = 0
+
     stack = deque()
     stack.append(entities.Entity)
     while stack:  # go through all Entity subclasses to clean up

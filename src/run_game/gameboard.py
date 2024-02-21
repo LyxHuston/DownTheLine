@@ -20,7 +20,7 @@ draws, loads, and unloads the game scene.
 from general_use import game_structures
 from run_game.game_areas import add_game_area
 import pygame
-from run_game import abilities, game_areas, ingame, tutorials
+from run_game import abilities, game_areas, ingame, tutorials, entities
 from data import draw_constants, game_states
 from screens import run_start_end
 import math
@@ -76,6 +76,12 @@ heart_data: list[HeartData] = []
 camera_move = 0
 
 
+ENTITY_BOARD: list[entities.Entity] = []
+NEW_ENTITIES: list[entities.Entity] = []
+
+PARTICLE_BOARD: set[entities.Particle] = set()
+
+
 def tick(do_tick: bool = True, draw_gui: bool = True):
     """
     draws the gameboard and handles checking if we need to unload and load a new
@@ -86,24 +92,28 @@ def tick(do_tick: bool = True, draw_gui: bool = True):
     global camera_move
     if do_tick:
         if game_structures.AREA_QUEUE[0].end_coordinate < game_states.CAMERA_BOTTOM:  # despawn
-            removing: game_areas.GameArea = game_structures.AREA_QUEUE[0]
-            del game_structures.AREA_QUEUE[0]
-            for entity in removing.entity_list:
-                if entity.y > game_states.CAMERA_BOTTOM - 200:
-                    entity.transfer(game_structures.AREA_QUEUE[0])
-                else:
-                    entity.despawn()
+            removing: game_areas.GameArea = game_structures.AREA_QUEUE.popleft()
+            i = 0
+            for entity in ENTITY_BOARD:
+                entity.despawn()
+                i += 1
+                if isinstance(entity, entities.AreaStopper):
+                    break
+            del ENTITY_BOARD[:i]
             if removing.__class__.__name__ in run_start_end.GameAreaLog.areas_dict:
                 run_start_end.GameAreaLog.areas_dict[removing.__class__.__name__] += 1
             game_states.AREAS_PASSED += 1
             add_game_area()
-        for i in range(len(game_structures.AREA_QUEUE)):  # load next that is becoming onscreen
-            if game_structures.AREA_QUEUE[i].start_coordinate < game_states.CAMERA_BOTTOM + game_states.HEIGHT and not game_structures.AREA_QUEUE[i].initialized:
-                game_structures.AREA_QUEUE[i].initialized = True
-                game_structures.AREA_QUEUE[i].final_load()
-                break
-            if game_structures.AREA_QUEUE[i].start_coordinate > game_states.CAMERA_BOTTOM + game_states.HEIGHT:
-                break
+        with game_structures.AREA_QUEUE_LOCK:
+            for area in game_structures.AREA_QUEUE:  # load next that is becoming onscreen
+                if area.start_coordinate < game_states.CAMERA_BOTTOM + game_states.HEIGHT and not area.initialized:
+                    area.initialized = True
+                    area.final_load()
+                    ENTITY_BOARD.extend(area.entity_list)
+                    area.entity_list = None  # so that it will be forced to error
+                    break
+                if area.start_coordinate > game_states.CAMERA_BOTTOM + game_states.HEIGHT:
+                    break
         if game_states.SHAKE_DURATION > 0:
             game_states.SHAKE_DURATION -= 1
             if game_states.SHAKE_DURATION == 0:
@@ -129,18 +139,51 @@ def tick(do_tick: bool = True, draw_gui: bool = True):
     )
     if do_tick:
         enforce_goal: int | None = None
-        mass: float = 0
-        total: int = 0
-    for i in range(len(game_structures.AREA_QUEUE)):
-        area = game_structures.AREA_QUEUE[i]
-        if not area.initialized:
-            break
-        if do_tick:
-            ret = area.tick()
-            mass += ret[0]
-            total += ret[1]
+        ENTITY_BOARD.extend(NEW_ENTITIES)
+        NEW_ENTITIES.clear()
+        i: int = 0
+        while i < len(ENTITY_BOARD):
+            e: entities.Entity = ENTITY_BOARD[i]
+            if e.alive:
+                i += 1
+            else:
+                e.die()
+                del ENTITY_BOARD[i]
+        ENTITY_BOARD.sort(key=lambda e: e.y)
+        for area in game_structures.AREA_QUEUE:
+            if not area.initialized:
+                break
+            area.tick()
             if enforce_goal is None:
                 enforce_goal = area.enforce_center
+        if enforce_goal is None:
+            mass: float = 0
+            total: int = 0
+            i = 0
+            for e in ENTITY_BOARD:
+                e.index = i
+                i += 1
+                e.tick()
+                dist = e.distance_to_player()
+                if dist < game_states.HEIGHT:
+                    if not e.in_view(game_states.CAMERA_THRESHOLDS[0]) or dist > 600:
+                        mass += (game_states.DISTANCE < e.y) * 2 - 1
+                        total += 1
+                    elif dist > 300:
+                        mass += ((game_states.DISTANCE < e.y) * 2 - 1) * (dist / 300 - 1)
+                        total += 1
+        else:
+            for e in ENTITY_BOARD:
+                e.tick()
+    # particles need to go on bottom
+    with game_structures.AREA_QUEUE_LOCK:
+        for area in game_structures.AREA_QUEUE:
+            area.draw_particles()
+    # entities over particles
+    for e in ENTITY_BOARD:
+        e.draw()
+    # whatever special effects an area needs
+    for area in game_structures.AREA_QUEUE:
         area.draw()
     # draw hands
     for item in game_structures.HANDS:
