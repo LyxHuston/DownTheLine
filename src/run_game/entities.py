@@ -1573,7 +1573,7 @@ class NoteSpawner(InvulnerableEntity):
 
     def __init__(self, area, start_track):
         super(NoteSpawner, self).__init__(images.EMPTY, 0, (0, area.length))
-        self.waves = area.difficulty // 10
+        self.waves = max(area.difficulty // 15, 1)
         self.area = area
         self.padding = 360 // round(math.sqrt(area.difficulty))
         self.last_y = 0
@@ -1594,7 +1594,7 @@ class NoteSpawner(InvulnerableEntity):
             choose = self.random.randint(0, 3)
             if choose == 0:  # single note
                 gameboard.NEW_ENTITIES.append(Note(self.last_y))
-                self.cooldown_track = 30 + 15 * self.random.randint(0, 2)
+                self.cooldown_track = 60 + 30 * self.random.randint(0, 2)
                 self.last_y += self.random.randint(-2, 2) * 5 * self.cooldown_track
             elif choose == 1:  # arpeggio
                 direction = self.random.randint(0, 1) * 2 - 1
@@ -1610,16 +1610,16 @@ class NoteSpawner(InvulnerableEntity):
                     self.last_dash_arpeggio = 0
                     direction = self.random.randint(0, 1) * 2 - 1
                     offscreen = 0
-                    spacing = 5
+                    spacing = 10
                     for i in range(20 // spacing):
                         self.last_y += direction * 25 * spacing
                         gameboard.NEW_ENTITIES.append(Note(self.last_y, offscreen=offscreen))
                         offscreen += note_speed * spacing
-                    self.cooldown_track = 20
+                    self.cooldown_track = 40
                 else:  # switch arpeggio
                     direction = self.random.randint(0, 1) * 2 - 1
                     offscreen = 0
-                    spacing = 9
+                    spacing = 15
                     for i in range(45 // spacing):
                         if self.random.random() < 0.125:
                             direction *= -1
@@ -1628,6 +1628,7 @@ class NoteSpawner(InvulnerableEntity):
                         gameboard.NEW_ENTITIES.append(Note(self.last_y, offscreen=offscreen))
                         offscreen += note_speed * spacing
                     self.cooldown_track = 45
+            self.cooldown_track *= 2
             self.cooldown_track += 30
             self.waves -= 1
             self.last_y = min(self.area.end_coordinate - 128, max(self.area.start_coordinate + 128, self.last_y))
