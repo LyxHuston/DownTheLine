@@ -60,13 +60,13 @@ class GameArea:
         return self.start_coordinate + self.length
 
     def __init__(self, index: int, length: int = 0, seed: int = None):
-        self.index = index
-        self.enforce_center = None
-        self.start_coordinate = 0
-        self.length = length
-        self.initialized = False
-        self.boundary_crossed = False
-        self.entity_list = []
+        self.index: int = index
+        self.enforce_center: int | None = None
+        self.start_coordinate: int = 0
+        self.length: int = length
+        self.initialized: bool = False
+        self.boundary_crossed: bool = False
+        self.entity_list: list[entities.Entity] | None = []
         self.particle_args: tuple[list[images.Image] | list[pygame.Surface], int, int] = (
             images.VOID_PARTICLES, 30, 120
         )
@@ -78,6 +78,7 @@ class GameArea:
             self.random = random.Random(seed)
         self.spawn_end = 0  # track which end to spawn a particle on
         self.__class__.last_spawned = index
+        self.remove_preceding_obstacle: bool = False
         self.ender: entities.AreaStopper | None = None
         if self.__have_starter:
             self.starter: entities.AreaStarter | None = None
@@ -91,6 +92,12 @@ class GameArea:
     seen = False
 
     def final_load(self):
+        if self.remove_preceding_obstacle:
+            i = -1
+            if isinstance(gameboard.ENTITY_BOARD[-1], entities.AreaStopper):
+                i -= 1
+            if isinstance(gameboard.ENTITY_BOARD[i], entities.Obstacle):
+                gameboard.ENTITY_BOARD[i].alive = False
         if not self.__class__.seen:
             self.__class__.seen = True
             self.start_tutorial()
@@ -245,6 +252,7 @@ class BasicArea(GameArea):
                 allowable_entities[index][1] += 1
                 self.entity_list.append(entity.make(determiner, self))
             else:
+                self.remove_preceding_obstacle = True
                 self.entity_list.clear()
                 self.length = 1500
                 add = entity.make(determiner, self)
@@ -329,6 +337,7 @@ class GiftArea(GameArea):
 
     def __init__(self, determiner, count):
         super().__init__(count, seed=determiner)
+        self.remove_preceding_obstacle = True
         self.difficulty = count
         self.length = 1500
         spawn = entities.Spawner.make(determiner, self)
