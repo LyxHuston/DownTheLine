@@ -91,7 +91,7 @@ def tick(do_tick: bool = True, draw_gui: bool = True):
     """
     global camera_move
     if do_tick:
-        if game_structures.AREA_QUEUE[0].end_coordinate < game_states.CAMERA_BOTTOM:  # despawn
+        if game_structures.AREA_QUEUE[0].end_coordinate < game_states.CAMERA_BOTTOM - game_states.HEIGHT:  # despawn
             removing: game_areas.GameArea = game_structures.AREA_QUEUE.popleft()
             i = 0
             for entity in ENTITY_BOARD:
@@ -106,7 +106,7 @@ def tick(do_tick: bool = True, draw_gui: bool = True):
             add_game_area()
         with game_structures.AREA_QUEUE_LOCK:
             for area in game_structures.AREA_QUEUE:  # load next that is becoming onscreen
-                if area.start_coordinate < game_states.CAMERA_BOTTOM + game_states.HEIGHT and not area.initialized:
+                if area.start_coordinate < game_states.CAMERA_BOTTOM + 2 * game_states.HEIGHT and not area.initialized:
                     area.initialized = True
                     area.final_load()
                     ENTITY_BOARD.extend(area.entity_list)
