@@ -229,10 +229,11 @@ class Entity(game_structures.Body):
         """
         if pos is None:
             pos = game_states.DISTANCE
-        for e in entity_type.instances():
-            if (e.y < pos) == (e.y > self.y):
-                return True
-        return False
+        return any((e.y < pos) == (e.y > self.y) for e in entity_type.instances())
+        # for e in entity_type.instances():
+        #     if (e.y < pos) == (e.y > self.y):
+        #         return True
+        # return False
 
     def in_view(self, margin: int = 0) -> bool:
         return game_states.CAMERA_BOTTOM + margin < self.y < game_states.CAMERA_BOTTOM + game_states.HEIGHT - margin
