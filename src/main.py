@@ -108,12 +108,14 @@ def run():
                 game_structures.SCREEN.fill(backdrop)
                 game_states.PLACE.tick()
                 utility.tick()
-            game_states.PLACE.exit_game()
+            game_states.PLACE.exit()
         except Exception as E:
             if game_states.RUNNING:
                 if not game_states.PLACE.crash(E):
                     utility.log_error(E)
                     game_states.RUNNING = False
+
+    pygame.quit()
 
 
 if __name__ == "__main__":
