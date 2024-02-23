@@ -220,16 +220,17 @@ class Entity(game_structures.Body):
 
     # positional utility
 
-    def obstacle_in_between(self, pos: int | None = None) -> bool:
+    def entity_in_between(self, entity_type: Type[Self], pos: int | None = None) -> bool:
         """
         checks if there's an obstacle in between this and a target location
+        :param entity_type:
         :param pos:
         :return:
         """
         if pos is None:
             pos = game_states.DISTANCE
-        for obstacle in Obstacle.instances():
-            if (obstacle.y < pos) == (obstacle.y > self.y):
+        for e in entity_type.instances():
+            if (e.y < pos) == (e.y > self.y):
                 return True
         return False
 
@@ -642,7 +643,7 @@ class Slime(Glides):
         return new_slime
 
 
-class Crawler(Glides):
+class Crawler(Glides, track_instances=True):
     """
     crawls towards the player.  Slow, sometimes, but always a threat.
     """
@@ -673,7 +674,7 @@ class Crawler(Glides):
     def tick(self) -> bool:
         # print(self.y, self.health)
         self.glide_tick()
-        if not self.obstacle_in_between():
+        if not self.entity_in_between(Obstacle):
             if self.glide_speed == 0 or (
                     self.taper == 0 and self.glide_direction != (self.y < game_states.DISTANCE) * 2 - 1):
                 self.start_glide(
@@ -758,7 +759,7 @@ class Fencer(Glides):
             if self.cooldown > 0:
                 self.cooldown -= 1
             return self.health > 0
-        if self.obstacle_in_between():
+        if self.entity_in_between(Obstacle):
             self.cooldown = self.cooldown_length // 2
         if self.cooldown > 0:
             self.cooldown = max(0, self.cooldown - 1)
@@ -962,7 +963,7 @@ class Knight(Glides):
         dist = abs(self.y - game_states.DISTANCE)
         desired_dist = 300
         triggerable = None
-        wall_in_between = self.obstacle_in_between()
+        wall_in_between = self.entity_in_between(Obstacle)
         for hand in self.hands:
             if hand is None:
                 continue
