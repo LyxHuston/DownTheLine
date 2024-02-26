@@ -31,7 +31,7 @@ from setuptools.extension import Extension
 
 from Cython.Build import cythonize
 from Cython.Distutils import build_ext
-
+from Cython.Compiler import Options
 
 # these files had some sort of issue with compiling in Cython
 # (currently 1, it was an issue with default arguments)
@@ -68,6 +68,8 @@ for dir_name in dirs:
         if file_name.strip() not in exclude and file_name.endswith(".py")
     )
 # works everywhere
+
+Options.docstrings = False
 
 setup(
     name="DownTheLine",
