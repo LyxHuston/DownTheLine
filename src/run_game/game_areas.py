@@ -511,7 +511,7 @@ class EnslaughtArea(GameArea, have_starter=True):
             )
 
 
-class MinigameArea(GameArea):
+class MinigameArea(GameArea, have_starter=True):
     tutorial_given = False
     first_allowed_spawn = 10
     required_wait_interval = 7
