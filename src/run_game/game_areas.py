@@ -363,7 +363,7 @@ class GiftArea(GameArea):
             )
 
 
-class EnslaughtArea(GameArea):
+class EnslaughtArea(GameArea, have_starter=True):
     """
     game area that is just surviving a bunch of enemies
     """
