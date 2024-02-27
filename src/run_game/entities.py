@@ -237,7 +237,10 @@ class Entity(game_structures.Body):
         # return False
 
     def in_view(self, margin: int = 0) -> bool:
-        return game_states.CAMERA_BOTTOM + margin < self.y < game_states.CAMERA_BOTTOM + game_states.HEIGHT - margin
+        return self.distance_to_view_edge() > margin
+
+    def distance_to_view_edge(self):
+        return min(self.y - game_states.CAMERA_BOTTOM, game_states.CAMERA_BOTTOM + game_states.HEIGHT - self.y)
 
     def distance_to_player(self) -> int:
         return abs(self.y - game_states.DISTANCE)

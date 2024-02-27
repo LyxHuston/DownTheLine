@@ -168,11 +168,16 @@ def tick(do_tick: bool = True, draw_gui: bool = True):
                 e.tick()
                 dist = e.distance_to_player()
                 if dist < game_states.HEIGHT:
+                    direction = (game_states.DISTANCE < e.y) * 2 - 1
                     if not e.in_view(game_states.CAMERA_THRESHOLDS[0]) or dist > 600:
-                        mass += (game_states.DISTANCE < e.y) * 2 - 1
+                        mass += direction
                         total += 1
-                    elif dist > 300:
-                        mass += ((game_states.DISTANCE < e.y) * 2 - 1) * (dist / 300 - 1)
+                    else:
+                        mass += direction * max(
+                            1 / (math.exp(5 * (dist / 300 - 0.5)) + 1) if dist > 300 else 0,
+                            1 / (math.exp(5 * (e.distance_to_view_edge() / game_states.CAMERA_THRESHOLDS[0] - 0.5)) + 1
+                                 ) if not e.in_view(game_states.CAMERA_THRESHOLDS[0] * 2) else 0
+                        )
                         total += 1
         else:
             for e in ENTITY_BOARD:
