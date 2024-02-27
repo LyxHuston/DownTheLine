@@ -1612,7 +1612,7 @@ class NoteSpawner(InvulnerableEntity):
             if not self.start_track.alive:
                 self.last_y = self.area.length // 2 + self.area.start_coordinate
                 self.start_track = None
-            return True
+            return
         self.cooldown_track -= 1
         self.last_dash_arpeggio += 1
         if self.cooldown_track <= 0:
@@ -1657,7 +1657,9 @@ class NoteSpawner(InvulnerableEntity):
             self.cooldown_track += 30
             self.waves -= 1
             self.last_y = min(self.area.end_coordinate - 128, max(self.area.start_coordinate + 128, self.last_y))
-        return self.waves > 0
+        if self.waves <= 0:
+            self.alive = False
+        return
 
 
 class Note(InvulnerableEntity):
