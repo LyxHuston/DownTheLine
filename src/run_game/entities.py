@@ -140,6 +140,7 @@ class Entity(game_structures.Body):
     @classmethod
     def clean(cls):
         cls.seen = False
+        cls.tutorial_given = False
         cls.first_occurs = 0
         cls.clear_instances()
 
@@ -672,7 +673,7 @@ class Crawler(Glides, track_instances=True):
         else:
             self.start_glide(damage, 90, 1, ((self.y - source.pos[0]) > 0) * 2 - 1)
 
-    def tick(self) -> bool:
+    def tick(self):
         # print(self.y, self.health)
         self.glide_tick()
         if not self.entity_in_between(Obstacle):
@@ -700,7 +701,19 @@ class Crawler(Glides, track_instances=True):
                 game_structures.begin_shake(6, (10, 10), (7, 5))
             self.y -= self.glide_speed * self.glide_direction
             game_states.DISTANCE = self.y + 66 * (((self.y - game_states.DISTANCE) < 0) * 2 - 1)
-        return self.health > 0
+        collide_list: list[Entity] = self.all_in_range(200, lambda en: not en.freeze_y() and self.collide(en))
+        if self.glide_direction != 0 and collide_list:
+            push_factor: float = 0
+            e: Entity
+            for e in collide_list:
+                if self.y != e.y:
+                    push_factor += 1 / (self.y - e.y)
+            self.y += push_factor
+        e: Entity
+        for e in collide_list:
+            if self.collide(e):
+                e.y = self.y + (self.rect.height // 2 + e.rect.height // 2) * ((e.y - self.y > 0) * 2 - 1)
+        return
 
     def first_seen(self):
         self.__class__.imgs = [
@@ -981,12 +994,12 @@ class Knight(Glides):
                 triggerable.action(triggerable)
                 # print(self is triggerable.pos[0], self.pos == triggerable.pos[0].pos)
         if dist < desired_dist - 100:  # back up
-            self.frame = (self.frame - 1) % (self.frame_change_frequency * 6)
+            self.frame = (self.frame - 1) % (self.frame_change_frequency * len(self.imgs))
             self.step = self.imgs[self.frame // self.frame_change_frequency]
             self.y += 5 * ((self.y > game_states.DISTANCE) * 2 - 1)
         elif (dist > desired_dist + 100) or (triggerable is not None and dist > desired_dist):  # go towards
             self.y += 5 * ((self.y < game_states.DISTANCE) * 2 - 1)
-            self.frame = (self.frame + 1) % (self.frame_change_frequency * 6)
+            self.frame = (self.frame + 1) % (self.frame_change_frequency * len(self.imgs))
             self.step = self.imgs[self.frame // self.frame_change_frequency]
         else:
             self.frame = 0

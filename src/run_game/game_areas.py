@@ -87,6 +87,7 @@ class GameArea:
 
     def __init_subclass__(cls, have_starter: bool = False):
         super().__init_subclass__()
+        cls.tutorial_given = False
         cls.__have_starter = have_starter
 
     seen = False
@@ -279,7 +280,6 @@ class BreakThroughArea(GameArea):
     destroy the wall at the end
     """
 
-    tutorial_given = False
     first_allowed_spawn = 4
     required_wait_interval = 2
 
@@ -330,7 +330,6 @@ class GiftArea(GameArea):
     gives player a new item and area to practice it with.
     """
 
-    tutorial_given = False
     first_allowed_spawn = 4
     required_previous = [BreakThroughArea]
     required_wait_interval = 6
@@ -368,7 +367,6 @@ class EnslaughtArea(GameArea, have_starter=True):
     game area that is just surviving a bunch of enemies
     """
 
-    tutorial_given = False
     first_allowed_spawn = 10
     required_previous = [GiftArea]  # BreakThroughArea implicit
     required_wait_interval = 5
@@ -512,7 +510,6 @@ class EnslaughtArea(GameArea, have_starter=True):
 
 
 class MinigameArea(GameArea, have_starter=True):
-    tutorial_given = False
     first_allowed_spawn = 10
     required_wait_interval = 7
 
@@ -648,7 +645,6 @@ class BossArea(GameArea):
     fight a boss!
     """
 
-    tutorial_given = False
     first_allowed_spawn = 20
     required_previous = [EnslaughtArea]  # GiftArea and BreakThroughArea implicit
     required_wait_interval = 15

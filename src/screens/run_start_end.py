@@ -70,6 +70,7 @@ def clean_gameboard():
     entities.Slime.seen = True
     for attr_value in game_areas.GameArea.__subclasses__():
         attr_value.seen = False
+        attr_value.tutorial_given = False
         attr_value.last_spawned = 0
     GameAreaLog.refresh()
 
