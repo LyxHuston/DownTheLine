@@ -145,6 +145,7 @@ def tick(do_tick: bool = True, draw_gui: bool = True):
         while i < len(ENTITY_BOARD):
             e: entities.Entity = ENTITY_BOARD[i]
             if e.alive:
+                e.index = i
                 i += 1
             else:
                 e.die()
@@ -159,10 +160,7 @@ def tick(do_tick: bool = True, draw_gui: bool = True):
         if enforce_goal is None:
             mass: float = 0
             total: int = 0
-            i = 0
             for e in ENTITY_BOARD:
-                e.index = i
-                i += 1
                 e.tick()
                 dist = e.distance_to_player()
                 if dist < game_states.HEIGHT:
