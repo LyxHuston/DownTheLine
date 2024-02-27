@@ -161,6 +161,10 @@ def tick(do_tick: bool = True, draw_gui: bool = True):
             mass: float = 0
             total: int = 0
             for e in ENTITY_BOARD:
+                if isinstance(e, entities.AreaStopper):
+                    continue
+                if isinstance(e, entities.AreaStarter):
+                    continue
                 e.tick()
                 dist = e.distance_to_player()
                 if dist < game_states.HEIGHT:
@@ -172,6 +176,10 @@ def tick(do_tick: bool = True, draw_gui: bool = True):
                         total += 1
         else:
             for e in ENTITY_BOARD:
+                if isinstance(e, entities.AreaStopper):
+                    continue
+                if isinstance(e, entities.AreaStarter):
+                    continue
                 e.tick()
     # particles need to go on bottom
     with game_structures.AREA_QUEUE_LOCK:
