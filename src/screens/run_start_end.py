@@ -56,6 +56,7 @@ def clean_gameboard():
     gameboard.ENTITY_BOARD.clear()
     gameboard.NEW_ENTITIES.clear()
     gameboard.PARTICLE_BOARD.clear()
+    game_structures.AREA_QUEUE.clear()
 
     from run_game import entities
     entities.Particle.__id = 0
@@ -76,8 +77,6 @@ def clean_gameboard():
 
 
 def reset_gameboard():
-    clean_gameboard()
-
     heart_data_randomization = random.Random(game_states.SEED)
     for i in range(game_states.HEALTH):
         gameboard.heart_data.append(gameboard.HeartData(heart_data_randomization.random() * math.tau))
@@ -157,6 +156,8 @@ def start(with_seed: int = None, full: bool = True):
 
         game_structures.HANDS = [None, None]
 
+    clean_gameboard()
+
     if full:
         ingame.paused = False
 
@@ -179,7 +180,6 @@ def start(with_seed: int = None, full: bool = True):
             game_structures.TUTORIAL_FONTS[90]
         )
 
-        game_structures.AREA_QUEUE.clear()
         game_areas.add_game_area().join()
         for i in range(game_states.AREA_QUEUE_MAX_LENGTH - 1):
             game_areas.add_game_area()
