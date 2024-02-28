@@ -42,9 +42,38 @@ class Image:
                 return EMPTY
         return self.__img
 
+    @property
+    def outlined_img(self) -> pygame.Surface:
+        if self.__outlined_img is None:
+            buffer: int = 2
+            scale: int = 4
+            width: int = self.img.get_width() // scale
+            height: int = self.img.get_height() // scale
+            outlining: pygame.Surface = pygame.Surface((
+                self.img.get_width() + 2 * scale * buffer, self.img.get_height() + 2 * scale * buffer
+            ), pygame.SRCALPHA)
+            outlining.blit(self.img, (buffer * scale, buffer * scale))
+            coord: int
+            for coord in range((width + buffer) * (height + buffer)):
+                x: int = (coord % (width + buffer) + 1) * scale
+                y: int = (coord // (width + buffer) + 1) * scale
+                offset_x: int
+                offset_y: int
+                if outlining.get_at((x, y)).a == 0:
+                    if any(
+                            outlining.get_at((x + offset_x * scale, y + offset_y * scale)).r == 255
+                            for offset_x, offset_y in
+                            ((0, 1), (1, 1), (1, 0), (1, -1), (0, -1), (-1, -1), (-1, 0), (-1, 1))
+                    ):
+                        for offset_x, offset_y in [(i % 4, i // 4) for i in range(16)]:
+                            outlining.set_at((x + offset_x, y + offset_y), (0, 0, 0, 255))
+            self.__outlined_img = outlining
+        return self.__outlined_img
+
     def __init__(self, path: str):
         self.path: str = path
         self.__img: pygame.Surface | None = None
+        self.__outlined_img: pygame.Surface | None = None
 
 
 # there is no case where a player image is not required on startup of the game, so it is not registered here
@@ -149,22 +178,32 @@ DASH_PARTICLES: list[Image] = [
 EMPTY: pygame.Surface = pygame.Surface((0, 0))
 
 
+def test_image(name: str, image: Image):
+    img: pygame.Surface
+
+    try:
+        img = image.img
+        print(f"Image {name} loaded.  {img.get_pitch() * img.get_height()} bytes.")
+        try:
+            img = image.outlined_img
+            print(f"Outlined image {name} loaded.  {img.get_pitch() * img.get_height()} bytes.")
+        except Exception:
+            print(f"Loading outlined image {name} failed.")
+    except Exception:
+        print(f"Loading image {name} failed.")
+
+
 def test_images():
 
-    import copy
-
-    for name, val in copy.copy(globals()).items():
+    for name, val in globals().items():
         if isinstance(val, Image):
-            try:
-                img: pygame.Surface = val.img
-                print(f"Image {name} loaded.  {img.get_pitch() * img.get_height()} bytes.")
-            except Exception:
-                print(f"Loading image {name} failed.")
+            test_image(name, val)
         elif isinstance(val, list):
+            i: int = 0
             for nest_val in val:
-                if isinstance(val, Image):
-                    try:
-                        img = val.img
-                        print(f"Image {name} loaded.  {img.get_pitch() * img.get_height()} bytes.")
-                    except Exception:
-                        print(f"Loading image {name} failed.")
+                test_image(name + f"_{i}", nest_val)
+                i += 1
+
+
+if __name__ == "__main__":
+    test_images()

@@ -47,6 +47,7 @@ class Item:
     action: Callable
     tick: Callable
     img: pygame.Surface
+    ground_img: pygame.Surface
     pos: Union[int, tuple[entities.Entity, int], tuple[int, int]]
     draw: Callable
     icon: pygame.Surface
@@ -54,7 +55,7 @@ class Item:
     type: ItemTypes
 
 
-def deepcopy_datapack_factory(item) -> tuple[Callable, Callable, pygame.Surface, Any, Callable, pygame.Surface, Callable, ItemTypes]:
+def deepcopy_datapack_factory(item) -> tuple[Callable, Callable, pygame.Surface, pygame.Surface, Any, Callable, pygame.Surface, Callable, ItemTypes]:
     """
     makes a factory function that returns duplicates of the item datapack for separate use
     :param item: any item
@@ -70,7 +71,7 @@ def deepcopy_datapack_factory(item) -> tuple[Callable, Callable, pygame.Surface,
     def factory():
         return list(contents)
 
-    return item.action, item.tick, item.img, item.pos, item.draw, item.icon, factory, item.type
+    return item.action, item.tick, item.img, item.ground_img, item.pos, item.draw, item.icon, factory, item.type
 
 
 def offset_point_rotated(origin: tuple[int, int], offset: tuple[int, int], rotation: int) -> tuple[int, int]:
@@ -390,7 +391,7 @@ def draw_on_ground(item):
     :return:
     """
     game_structures.SCREEN.blit(
-        item.img,
+        item.ground_img,
         (
             game_structures.to_screen_x(item.pos[0]) - item.img.get_width() // 2,
             game_structures.to_screen_y(item.pos[1]) - item.img.get_height() // 2
@@ -673,14 +674,14 @@ def simple_throwable_action(item: Item):
         pos = item.pos[0].pos
         rot = item.pos[0].rotation
         item.pos[0].hands[item.pos[1]] = None  # remove from hands of entity throwing
-    area = game_structures.AREA_QUEUE[0]
     # print(item)
     ent = item.data_pack[0](pos, rot, *item.data_pack[1])  # create entity
     ent.allied_with_player = p
     gameboard.NEW_ENTITIES.append(ent)  # add entity to entity list
 
 
-def simple_stab(cooldown: int, duration: int, img: pygame.Surface, pos: tuple[int, int], damage: int = 3) -> Item:
+def simple_stab(cooldown: int, duration: int, img: pygame.Surface, ground_img: pygame.Surface, pos: tuple[int, int],
+                damage: int = 3) -> Item:
     """
     generate an item that uses a simple stab item
     """
@@ -688,6 +689,7 @@ def simple_stab(cooldown: int, duration: int, img: pygame.Surface, pos: tuple[in
         simple_cooldown_action,
         simple_stab_tick,
         img,
+        ground_img,
         pos,
         simple_stab_draw,
         images.SIMPLE_STAB_ICON.img,
@@ -701,7 +703,8 @@ simple_stab_imgs = [images.SIMPLE_SWORD, images.SIMPLE_SPEAR]
 
 
 def random_simple_stab(strength: int, random, pos=None):
-    img = random.choice(simple_stab_imgs).img
+    image = random.choice(simple_stab_imgs)
+    img = image.img
 
     damage = max(3 - img.get_height() // 100, 0)
 
@@ -719,17 +722,18 @@ def random_simple_stab(strength: int, random, pos=None):
     if cooldown < 30:
         cooldown = 30
 
-    return simple_stab(cooldown, duration, img, pos, damage)
+    return simple_stab(cooldown, duration, img, image.outlined_img, pos, damage)
 
 
-def simple_shield(img: pygame.Surface, pos: tuple[int, int]) -> Item:
+def simple_shield(pos: tuple[int, int]) -> Item:
     """
-    generate a simple stab item
+    generate a simple shield item
     """
     return Item(
         simple_toggle_action,
         simple_shield_tick,
-        img,
+        images.SIMPLE_SHIELD.img,
+        images.SIMPLE_SHIELD.outlined_img,
         pos,
         simple_shield_draw,
         images.SIMPLE_SHIELD_ICON.img,
@@ -740,7 +744,7 @@ def simple_shield(img: pygame.Surface, pos: tuple[int, int]) -> Item:
 
 def random_simple_shield(random, pos=None):
 
-    return simple_shield(images.SIMPLE_SHIELD.img, pos)
+    return simple_shield(pos)
 
 
 def make_random_reusable(random, pos):
@@ -756,7 +760,7 @@ def make_random_reusable(random, pos):
         return random_simple_shield(random, pos)
 
 
-def simple_throwable(img, pos, creates, args):
+def simple_throwable(img, ground_img, pos, creates, args):
     """
     makes a throwable object that creates an entity when thrown with given arguments
     :param img:
@@ -769,6 +773,7 @@ def simple_throwable(img, pos, creates, args):
         simple_throwable_action,
         passing,
         img,
+        ground_img,
         pos,
         simple_draw,
         images.SIMPLE_THROWABLE_ICON.img,
@@ -780,6 +785,7 @@ def simple_throwable(img, pos, creates, args):
 def simple_bomb(pos, speed, taper, glide_duration, delay, size, damage):
     return simple_throwable(
         images.SIMPLE_BOMB.img,
+        images.SIMPLE_BOMB.outlined_img,
         pos,
         entities.Bomb,
         (images.SIMPLE_BOMB.img, speed, taper, glide_duration, delay, size, damage)

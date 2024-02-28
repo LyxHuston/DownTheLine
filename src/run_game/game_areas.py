@@ -529,6 +529,7 @@ class MinigameArea(GameArea, have_starter=True):
                 10,
                 60,
                 images.BATON.img,
+                images.BATON.outlined_img,
                 (5, self.length - 200),
                 0
             )))
@@ -536,6 +537,7 @@ class MinigameArea(GameArea, have_starter=True):
                 10,
                 60,
                 images.BATON.img,
+                images.BATON.outlined_img,
                 (-5, self.length - 400),
                 0
             )))
@@ -731,7 +733,8 @@ def add_game_area():
             50,
             35,
             images.SIMPLE_SWORD.img,
-            (0, 60)
+            images.SIMPLE_SWORD.outlined_img,
+            (-images.SIMPLE_SWORD.outlined_img.get_width() // 4, 60)
         )))
     elif game_states.LAST_AREA == 1:
         area = GameArea(1, 450, determinator)
@@ -762,7 +765,8 @@ def add_game_area():
             100,
             10,
             images.SIMPLE_SPEAR.img,
-            (15, 180),
+            images.SIMPLE_SPEAR.outlined_img,
+            (-images.SIMPLE_SPEAR.outlined_img.get_width() // 4, 180),
             2
         )))
         game_states.AREA_QUEUE_MAX_LENGTH = 3

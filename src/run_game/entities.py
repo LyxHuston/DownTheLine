@@ -451,7 +451,7 @@ def make_item_duplicator(item: items.Item):
     :return:
     """
 
-    action, tick, img, pos, draw, icon, data_pack_factory, typ = items.deepcopy_datapack_factory(item)
+    action, tick, img, outline_img, pos, draw, icon, data_pack_factory, typ = items.deepcopy_datapack_factory(item)
 
     class ItemDuplicator(ItemEntity):
 
@@ -461,6 +461,7 @@ def make_item_duplicator(item: items.Item):
                 action,
                 tick,
                 img,
+                outline_img,
                 pos,
                 draw,
                 icon,
@@ -887,7 +888,7 @@ class Archer(Glides):
         if self.cooldown == 0:
             if dist < 900:
                 self.cooldown = self.cooldown_length
-                gameboard.NEW_ENTITIES.append(Projectile(images.ARROW.img, self.rotation, (self.x + self.area.random.randint(-1, 1) * 16, self.y), speed=5))
+                gameboard.NEW_ENTITIES.append(Projectile(images.ARROW.outlined_img, self.rotation, (self.x + self.area.random.randint(-1, 1) * 16, self.y), speed=5))
         elif self.in_view():
             self.cooldown -= 1
             self.img = self.imgs[3 * self.cooldown // self.cooldown_length]
