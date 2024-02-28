@@ -149,6 +149,9 @@ def crash(e: Exception):
     from general_use import utility
     run_start_end.log_run(run_start_end.RunEndReasons.error)
     utility.log_error(e)
+    game_structures.ALERTS.add_alert(
+        "An error occurred during the run that was not caught!  Check the log for details."
+    )
     main_screen.main_screen_place.start()
     return True
 
