@@ -690,7 +690,7 @@ class Crawler(Glides, track_instances=True):
                     (self.y < game_states.DISTANCE) * 2 - 1
                 )
         if self.glide_speed > 0 and self.taper == 0:
-            self.frame = (self.frame + self.glide_direction) % (8 * self.frame_change_frequency * self.switch_ticks)
+            self.frame = (self.frame + self.glide_direction) % (len(self.imgs) * self.frame_change_frequency * self.switch_ticks)
             self.img = self.imgs[self.frame // (self.frame_change_frequency * self.switch_ticks)]
         # pygame.draw.circle(
         #     game_structures.SCREEN,
@@ -707,12 +707,20 @@ class Crawler(Glides, track_instances=True):
             game_states.DISTANCE = self.y + 66 * (((self.y - game_states.DISTANCE) < 0) * 2 - 1)
         collide_list: list[Entity] = self.all_in_range(200, lambda en: not en.freeze_y() and self.collide(en))
         if self.glide_direction != 0 and collide_list:
-            push_factor: float = 0
+            push_factor: float = math.inf
+            new_push_factor: float
             e: Entity
             for e in collide_list:
                 if self.y != e.y:
-                    push_factor += 1 / (self.y - e.y)
-            self.y += push_factor
+                    new_push_factor = self.y - e.y
+                    if abs(new_push_factor) < abs(push_factor):
+                        push_factor = new_push_factor
+            if math.isfinite(push_factor):
+                if abs(push_factor) > self.height // 2:
+                    push_factor -= math.copysign(self.height // 2, push_factor)
+                    self.y += self.height / (2 * push_factor)
+                else:
+                    self.y += math.copysign(self.height // 2, push_factor)
         e: Entity
         for e in collide_list:
             if self.collide(e):
