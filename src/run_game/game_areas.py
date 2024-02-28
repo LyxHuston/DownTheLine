@@ -523,7 +523,7 @@ class MinigameArea(GameArea, have_starter=True):
         if self.type == 0:  # obligatory fishing minigame
             self.length = game_states.HEIGHT * 2
         elif self.type == 1:  # notes
-            self.solved_entity_number = 4
+            self.solved_entity_number = 3
             self.length = game_states.HEIGHT
             self.entity_list.append(entities.ItemEntity(items.simple_stab(
                 10,
