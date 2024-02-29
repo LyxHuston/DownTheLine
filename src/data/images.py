@@ -167,13 +167,15 @@ STEAM_PARTICLES: list[Image] = [
     Image("particles/steam/steam_2"),
     Image("particles/steam/steam_3")]
 
+last_dash_particle = Image("particles/dash_ripples/ripple_4")
 DASH_PARTICLES: list[Image] = [
     Image("particles/dash_ripples/ripple_1"),
     Image("particles/dash_ripples/ripple_2"),
     Image("particles/dash_ripples/ripple_3"),
-    Image("particles/dash_ripples/ripple_4")
+    last_dash_particle,
+    last_dash_particle
 ]
-
+del last_dash_particle
 # empty
 EMPTY: pygame.Surface = pygame.Surface((0, 0))
 

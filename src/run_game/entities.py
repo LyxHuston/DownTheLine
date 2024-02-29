@@ -1138,10 +1138,7 @@ class Lazer(InvulnerableEntity):
             spread = round(90 * (1 - (self.cooldown / self.charge_time) ** 3))
             for end in self.ends:
                 rot = end.rotation + self.random.randint(-spread, spread)
-                gameboard.PARTICLE_BOARD.add(Particle(
-                    images.STEAM_PARTICLES,
-                    4,
-                    12,
+                gameboard.PARTICLE_BOARD.add(STEAM_PARTICLES(
                     (end.x + round(10 * math.sin(math.radians(end.rotation))), end.y - round(10 * math.cos(math.radians(end.rotation)))),
                     (round(speed * math.sin(math.radians(rot))), round(speed * -1 * math.cos(math.radians(rot)))),
                     rot
@@ -1733,10 +1730,7 @@ class Bomb(InvulnerableGlides):
             area = game_structures.AREA_QUEUE[0]
             # print("particles")
             for i in range(self.damage * self.size ** 2 // (64 ** 2) // 2 // 4 + 1):
-                area.particle_list.add(Particle(
-                    images.EXPLOSION_PARTICLES,
-                    12,
-                    36,
+                area.particle_list.add(EXPLOSION_PARTICLES(
                     (
                         area.random.randint(self.x - self.size // 2 + 32, self.x + self.size // 2 - 32),
                         area.random.randint(self.y - self.size // 2 + 32, self.y + self.size // 2 - 32)
@@ -1833,6 +1827,15 @@ class Particle(Entity):
 
     def __hash__(self):
         return self.__id
+
+
+def particle_with_settings(imgs: list[pygame.Surface] | list[images.Image], tick_rate: int, lifespan: int):
+    return lambda pos, momentum = (0, 0), rotation = 0: Particle(imgs, tick_rate, lifespan, pos, momentum, rotation)
+
+
+DASH_RIPPLE_PARTICLES = particle_with_settings(list(images.DASH_PARTICLES), 10, 50)
+STEAM_PARTICLES = particle_with_settings(list(images.STEAM_PARTICLES), 4, 12)
+EXPLOSION_PARTICLES = particle_with_settings(list(images.EXPLOSION_PARTICLES), 12, 36)
 
 
 class AreaEdge(InvulnerableEntity):

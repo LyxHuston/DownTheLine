@@ -119,16 +119,8 @@ class GameArea:
         pass
 
     def draw_particles(self):
-        remove_list = deque()
         for particle in self.particle_list:
-            if particle.tick():
-                particle.draw()
-            else:
-                remove_list.append(particle)
-        for particle in remove_list:
-            self.particle_list.remove(particle)
-            # prevent
-            particle.reset_id_check()
+            particle.draw()
 
     def draw(self):
         pass
@@ -164,6 +156,7 @@ class GameArea:
                     ) // 2
                 )
             ))
+        gameboard.particle_set_tick(self.particle_list)
         # print(len(self.particle_list))
         if not self.boundary_crossed and game_states.DISTANCE > self.start_coordinate:
             self.boundary_crossed = True

@@ -18,6 +18,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 draws, loads, and unloads the game scene.
 """
 from general_use import game_structures
+from collections import deque
 from run_game.game_areas import add_game_area
 import pygame
 from run_game import abilities, game_areas, ingame, tutorials, entities
@@ -82,6 +83,16 @@ NEW_ENTITIES: list[entities.Entity] = []
 PARTICLE_BOARD: set[entities.Particle] = set()
 
 
+def particle_set_tick(particle_set: set[entities.Particle]):
+    remove_list = deque()
+    for particle in particle_set:
+        if not particle.tick():
+            remove_list.append(particle)
+    for particle in remove_list:
+        particle_set.remove(particle)
+        particle.reset_id_check()
+
+
 def tick(do_tick: bool = True, draw_gui: bool = True):
     """
     draws the gameboard and handles checking if we need to unload and load a new
@@ -123,12 +134,12 @@ def tick(do_tick: bool = True, draw_gui: bool = True):
                 game_states.X_DISPLACEMENT += game_states.X_CHANGE
                 if abs(game_states.X_DISPLACEMENT) > abs(game_states.X_LIMIT):
                     game_states.X_DISPLACEMENT += 2 * (abs(game_states.X_DISPLACEMENT) - abs(game_states.X_LIMIT)) * ((
-                                                                                                                                  game_states.X_DISPLACEMENT < 0) * 2 - 1)
+                                                                            game_states.X_DISPLACEMENT < 0) * 2 - 1)
                     game_states.X_CHANGE *= -1
                 game_states.Y_DISPLACEMENT += game_states.Y_CHANGE
                 if abs(game_states.Y_DISPLACEMENT) > abs(game_states.Y_LIMIT):
                     game_states.Y_DISPLACEMENT += 2 * (abs(game_states.Y_DISPLACEMENT) - abs(game_states.Y_LIMIT)) * ((
-                                                                                                                                  game_states.Y_DISPLACEMENT < 0) * 2 - 1)
+                                                                            game_states.Y_DISPLACEMENT < 0) * 2 - 1)
                     game_states.Y_CHANGE *= -1
     pygame.draw.line(
         game_structures.SCREEN,
@@ -190,6 +201,11 @@ def tick(do_tick: bool = True, draw_gui: bool = True):
     with game_structures.AREA_QUEUE_LOCK:
         for area in game_structures.AREA_QUEUE:
             area.draw_particles()
+    # handle global particle board
+    for particle in PARTICLE_BOARD:
+        particle.draw()
+    if do_tick:
+        particle_set_tick(PARTICLE_BOARD)
     # entities over particles
     for e in ENTITY_BOARD:
         e.draw()
@@ -225,7 +241,7 @@ def tick(do_tick: bool = True, draw_gui: bool = True):
             game_structures.SCREEN.blit(
                 heart_img,
                 heart_data[i].generate_pos((game_states.WIDTH // 2 - (game_states.HEALTH / 2) * (
-                            draw_constants.icon_size + 4) + i * (draw_constants.icon_size + 4), draw_constants.hearts_y - tutorials.display_height))
+                        draw_constants.icon_size + 4) + i * (draw_constants.icon_size + 4), draw_constants.hearts_y - tutorials.display_height))
             )
     # draw player
     game_structures.SCREEN.blit(
