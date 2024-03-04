@@ -161,6 +161,7 @@ def tick(do_tick: bool = True, draw_gui: bool = True):
             else:
                 e.die()
                 del ENTITY_BOARD[i]
+        entities.Entity.biggest_radius = max([e.radius() for e in ENTITY_BOARD])
         ENTITY_BOARD.sort(key=lambda e: e.y)
         for area in game_structures.AREA_QUEUE:
             if not area.initialized:

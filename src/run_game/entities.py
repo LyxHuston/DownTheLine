@@ -42,6 +42,8 @@ class Entity(game_structures.Body):
     base entity class that describes a few things most entities need to do
     """
 
+    biggest_radius: int = 0
+
     __instances: set | None = None
     seen: bool = False
     first_occurs: int = 0
@@ -301,6 +303,9 @@ class Entity(game_structures.Body):
         self.__offset = store_offset
         return collect
 
+    def radius(self) -> int:
+        return math.isqrt(self.rect.width ** 2 + self.rect.height ** 2) // 2
+
 
 EntityType = Type[Entity]
 
@@ -538,7 +543,7 @@ class Obstacle(Entity, track_instances=True):
     def tick(self):
         if abs(self.x) < 128 + 32 and abs(game_states.DISTANCE - self.y) < 56:
             game_states.DISTANCE = self.y + ((game_states.DISTANCE - self.y > 0) * 2 - 1) * 56
-        for entity in self.all_in_range(500, accept_func=self.collide):
+        for entity in self.all_in_range(self.height // 2 + Entity.biggest_radius, accept_func=self.collide):
             # number arbitrarily chosen for while this is proof of concept, change limit in the future?
             if abs(entity.y - self.y) < abs(entity.x - self.x) - 48:
                 entity.x = self.x + (128 + entity.rect.width // 2) * ((entity.x - self.x > 0) * 2 - 1)
@@ -705,7 +710,7 @@ class Crawler(Glides, track_instances=True):
                 game_structures.begin_shake(6, (10, 10), (7, 5))
             self.y -= self.glide_speed * self.glide_direction
             game_states.DISTANCE = self.y + 66 * (((self.y - game_states.DISTANCE) < 0) * 2 - 1)
-        collide_list: list[Entity] = self.all_in_range(200, lambda en: not en.freeze_y() and self.collide(en))
+        collide_list: list[Entity] = self.all_in_range(self.height // 2 + Entity.biggest_radius, lambda en: not en.freeze_y() and self.collide(en))
         if self.glide_direction != 0 and collide_list:
             push_factor: float = math.inf
             new_push_factor: float
