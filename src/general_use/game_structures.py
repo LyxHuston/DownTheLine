@@ -116,7 +116,7 @@ def deal_damage(damage: int, source):
         return False
     if hasattr(source, "in_knockback"):
         if source.in_knockback:
-            return
+            return False
     if game_states.INVULNERABILITY_LEFT == 0:
         for hand in HANDS:
             if hand is None:
@@ -621,9 +621,6 @@ class Body:
     def screen_pos(self):
         return to_screen_pos(self.pos)
 
-    def get_pos(self):
-        return self.pos
-
     @property
     def x(self):
         return self._x
@@ -808,26 +805,6 @@ def get_last_initialized():
         if not area.initialized:
             return res
         res = area
-
-
-def make_save():
-    if game_states.AUTOSAVE:
-        import copy
-        import collections
-        game_states.SAVE_DATA = None
-        game_states.QUEUE_SAVE = collections.deque()
-        for area in AREA_QUEUE:
-            copying = copy.copy(area)
-            i = 0
-            while i < len(copying.entity_list):
-                copying.entity_list[i] = copy.copy(copying.entity_list[i])
-                i += 1
-            game_states.QUEUE_SAVE.append(copying)
-        game_states.HANDS_SAVE = [
-            copy.copy(HANDS[0]),
-            copy.copy(HANDS[1])
-        ]
-        game_states.SAVE_DATA = game_states.__dict__
 
 
 from run_game import ingame, items, entities, tutorials
