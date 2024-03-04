@@ -1838,7 +1838,7 @@ def particle_with_settings(imgs: list[pygame.Surface] | list[images.Image], tick
     return lambda pos, momentum = (0, 0), rotation = 0: Particle(imgs, tick_rate, lifespan, pos, momentum, rotation)
 
 
-DASH_RIPPLE_PARTICLES = particle_with_settings(list(images.DASH_PARTICLES), 10, 50)
+DASH_RIPPLE_PARTICLES = particle_with_settings(list(images.DASH_PARTICLES), 4, 20)
 STEAM_PARTICLES = particle_with_settings(list(images.STEAM_PARTICLES), 4, 12)
 EXPLOSION_PARTICLES = particle_with_settings(list(images.EXPLOSION_PARTICLES), 12, 36)
 
