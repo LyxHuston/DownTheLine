@@ -781,6 +781,10 @@ class Fencer(Glides):
         self.rotation = 180 * (self.y < game_states.DISTANCE)
         if self.glide_speed > 0:
             self.glide_tick()
+            if (self.glide_duration + self.glide_speed // self.taper) % 2 == 1:
+                gameboard.PARTICLE_BOARD.add(DASH_RIPPLE_PARTICLES(
+                    self.pos
+                ))
             if abs(self.x) < 40 and abs(self.y - game_states.DISTANCE) < 56:
                 if game_structures.deal_damage(2, self):
                     glide_player(1, 20, 10, (self.y < game_states.DISTANCE) * 2 - 1)
