@@ -780,7 +780,6 @@ def add_game_area():
     # print(game_states.LAST_AREA_END)
     with game_structures.AREA_QUEUE_LOCK:
         game_structures.AREA_QUEUE.append(area)
-    game_structures.make_save()
 
 
 area_thresholds = (
