@@ -115,6 +115,10 @@ class GameArea:
             return False
         return all(map(lambda area_type: area_type.last_spawned > 0, cls.required_previous))
 
+    @classmethod
+    def required_at(cls, index: int) -> bool:
+        return cls.last_spawned + cls.required_wait_interval * 2 <= index
+
     def start_tutorial(self):
         pass
 
@@ -267,6 +271,16 @@ class BasicArea(GameArea):
                 break
 
 
+    # methods to keep rarer/more interesting areas from getting overshadowed
+    @classmethod
+    def allowed_at(cls, index: int) -> bool:
+        return True
+
+    @classmethod
+    def required_at(cls, index: int) -> bool:
+        return False
+
+
 class BreakThroughArea(GameArea):
     """
     area that continually spawns monsters, objective to break through them and
@@ -362,7 +376,7 @@ class EnslaughtArea(GameArea, have_starter=True):
 
     first_allowed_spawn = 10
     required_previous = [GiftArea]  # BreakThroughArea implicit
-    required_wait_interval = 5
+    required_wait_interval = 4
 
     def __init__(self, determiner, count):
         super().__init__(count, seed=determiner)
@@ -504,7 +518,7 @@ class EnslaughtArea(GameArea, have_starter=True):
 
 class MinigameArea(GameArea, have_starter=True):
     first_allowed_spawn = 10
-    required_wait_interval = 7
+    required_wait_interval = 6
 
     def __init__(self, determiner, count):
         super().__init__(count, seed=determiner)
@@ -770,7 +784,7 @@ def add_game_area():
         area_type: Type[GameArea]
         threshold: int
         for area_type, threshold in area_thresholds:
-            if typ <= threshold and area_type.allowed_at(game_states.LAST_AREA):
+            if area_type.allowed_at(game_states.LAST_AREA) and (typ <= threshold or area_type.required_at(game_states.LAST_AREA)):
                 area = area_type(determinator, game_states.LAST_AREA)
                 break
         if area is None:
