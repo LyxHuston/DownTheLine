@@ -306,6 +306,9 @@ class Entity(game_structures.Body):
     def radius(self) -> int:
         return math.isqrt(self.rect.width ** 2 + self.rect.height ** 2) // 2
 
+    def __repr__(self):
+        return f"<{self.__class__.__name__}: {self.pos}>"
+
 
 EntityType = Type[Entity]
 
