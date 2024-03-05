@@ -794,8 +794,8 @@ class Fencer(Glides):
             if self.cooldown > 0:
                 self.cooldown -= 1
             return self.health > 0
-        if self.entity_in_between(Obstacle):
-            self.cooldown = self.cooldown_length // 2
+        if self.entity_in_between(Obstacle) or self.entity_in_between(Crawler):
+            self.cooldown = self.cooldown_length // 3
         if self.cooldown > 0:
             self.cooldown = max(0, self.cooldown - 1)
             if dist < 400:
