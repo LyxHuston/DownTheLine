@@ -1454,7 +1454,7 @@ class Spawner(Entity):
             )
             delay = area.random.randint(5, 8) * 20
         y = area.random.randint(area.length // 3, area.length - 100)
-        return cls((area.random.randint(100, game_states.WIDTH // 2) * (area.random.randint(0, 1) * 2 - 1), y), limit,
+        return cls((area.random.randint(200, game_states.WIDTH // 2) * (area.random.randint(0, 1) * 2 - 1), y), limit,
                    area, delay, entity, (0, None), area.difficulty // 10 + 1)
 
     def first_seen(self):
