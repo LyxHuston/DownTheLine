@@ -41,12 +41,14 @@ PAUSE_BUTTONS = game_structures.ButtonHolder(
 def quit_run():
     from screens import main_screen
     log_run(RunEndReasons.quit)
-    for area in game_structures.AREA_QUEUE:
-        area.cleanup()
     main_screen.main_screen_place.start()
 
 
 def end():
+    for area in game_structures.AREA_QUEUE:
+        area.cleanup()
+    for entity in gameboard.ENTITY_BOARD:
+        entity.cleanup()
     game_structures.BUTTONS.remove(PAUSE_BUTTONS)
 
 

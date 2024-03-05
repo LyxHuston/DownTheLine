@@ -77,9 +77,15 @@ class Entity(game_structures.Body):
     def despawn(self):
         self.cleanup()
 
+    cleanup_already_called: bool = False
+
     def cleanup(self):
         if self.track_instances:
-            self.__instances.remove(self)
+            if not self.cleanup_already_called:
+                self.__instances.remove(self)
+                self.cleanup_already_called = True
+            else:
+                print("Redundant cleanup!")
 
     @property
     def health(self) -> int:
