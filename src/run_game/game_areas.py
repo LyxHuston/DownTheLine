@@ -530,7 +530,7 @@ class MinigameArea(GameArea, have_starter=True):
         if self.type == 0:  # obligatory fishing minigame
             self.length = game_states.HEIGHT * 2
         elif self.type == 1:  # notes
-            self.solved_entity_number = 3
+            self.solved_entity_number = 4
             self.length = game_states.HEIGHT
             self.entity_list.append(entities.ItemEntity(items.simple_stab(
                 10,
@@ -562,7 +562,7 @@ class MinigameArea(GameArea, have_starter=True):
         if self.state == 0:  # setup game
             if game_states.DISTANCE > self.start_coordinate + self.length // 2:
                 self.state = 1
-                end_wall = entities.InvulnerableObstacle(pos=(0, self.start_coordinate), health=1)
+                end_wall = entities.InvulnerableObstacle(pos=(0, self.start_coordinate + 1), health=1)
                 end_wall.final_load()
                 gameboard.NEW_ENTITIES.append(end_wall)
                 if self.type == 0:  # obligatory fishing minigame
