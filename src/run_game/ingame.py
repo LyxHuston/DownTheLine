@@ -124,8 +124,7 @@ def pickup_to_hand(num: int):
             continue
         if not isinstance(entity.pos[0], int):
             continue
-        if not entity.rect.colliderect(
-                pygame.Rect(-32, game_states.DISTANCE - 10, 64, 20)):
+        if not (abs(entity.x) < 60 and abs(entity.y - game_states.DISTANCE) < entity.height // 2 + 10):
             continue
         if game_structures.HANDS[num] is None:
             game_structures.HANDS[num] = entity.pick_up(num)
