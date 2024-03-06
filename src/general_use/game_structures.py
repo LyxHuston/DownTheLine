@@ -597,8 +597,17 @@ class Body:
     def img(self, val: Surface):
         if isinstance(val, images.Image):
             val = val.img
+        self.__radius = Body.__calc_radius(val.get_width(), val.get_height())
         self.__original_img = val
         self._rotated_img = None
+
+    @utility.memoize
+    @staticmethod
+    def __calc_radius(w: int, h: int) -> int:
+        return math.isqrt(w ** 2 + h ** 2) // 2
+
+    def radius(self) -> int:
+        return self.__radius
 
     @property
     def width(self):
@@ -650,6 +659,7 @@ class Body:
         return self.__y_frozen
 
     def __init__(self, img: pygame.Surface, rotation: int, pos: tuple[int, int] | None):
+        self.__radius = 0
         self.__original_img = img
         self._rotated_img = None
         self.__rotation = 0

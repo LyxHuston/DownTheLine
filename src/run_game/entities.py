@@ -309,9 +309,6 @@ class Entity(game_structures.Body):
         self.__offset = store_offset
         return collect
 
-    def radius(self) -> int:
-        return math.isqrt(self.rect.width ** 2 + self.rect.height ** 2) // 2
-
     def __repr__(self):
         return f"<{self.__class__.__name__}: {self.pos}>"
 
@@ -1845,6 +1842,16 @@ class Particle(Entity):
 
     def __hash__(self):
         return self.__id
+
+    @property
+    def img(self):
+        return self._rotated_img
+
+    @img.setter
+    def img(self, val: pygame.Surface):
+        if isinstance(val, images.Image):
+            val = val.img
+        self._rotated_img = pygame.transform.rotate(val, self.rotation)
 
 
 def particle_with_settings(imgs: list[pygame.Surface] | list[images.Image], tick_rate: int, lifespan: int):
