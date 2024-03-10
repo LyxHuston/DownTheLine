@@ -257,7 +257,7 @@ def tick(do_tick: bool = True, draw_gui: bool = True):
     )
     # camera movement
     if do_tick:
-        camera_move = camera_move // 2
+        camera_move //= 2
         if enforce_goal is not None:
             goal = enforce_goal
             total = 2
@@ -290,11 +290,10 @@ def tick(do_tick: bool = True, draw_gui: bool = True):
                 game_states.JITTER_PROTECTION_CAMERA - game_states.CAMERA_BOTTOM
             )
 
-        if enforce_goal is None:
-            if game_states.DISTANCE < game_states.CAMERA_BOTTOM + game_states.CAMERA_THRESHOLDS[0] + tutorials.display_height:
-                game_states.CAMERA_BOTTOM = game_states.DISTANCE - game_states.CAMERA_THRESHOLDS[0] - tutorials.display_height
-                game_states.JITTER_PROTECTION_CAMERA = game_states.CAMERA_BOTTOM
-            if game_states.DISTANCE > game_states.CAMERA_BOTTOM + game_states.HEIGHT - game_states.CAMERA_THRESHOLDS[1]:
-                game_states.CAMERA_BOTTOM = game_states.DISTANCE + game_states.CAMERA_THRESHOLDS[1] - game_states.HEIGHT
-                game_states.JITTER_PROTECTION_CAMERA = game_states.CAMERA_BOTTOM
+        if game_states.DISTANCE < game_states.CAMERA_BOTTOM + game_states.CAMERA_THRESHOLDS[0] + tutorials.display_height:
+            game_states.CAMERA_BOTTOM = game_states.DISTANCE - game_states.CAMERA_THRESHOLDS[0] - tutorials.display_height
+            game_states.JITTER_PROTECTION_CAMERA = game_states.CAMERA_BOTTOM
+        if game_states.DISTANCE > game_states.CAMERA_BOTTOM + game_states.HEIGHT - game_states.CAMERA_THRESHOLDS[1]:
+            game_states.CAMERA_BOTTOM = game_states.DISTANCE + game_states.CAMERA_THRESHOLDS[1] - game_states.HEIGHT
+            game_states.JITTER_PROTECTION_CAMERA = game_states.CAMERA_BOTTOM
     tutorials.tick(do_tick)
