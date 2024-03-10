@@ -248,7 +248,7 @@ class Entity(game_structures.Body):
         return self.distance_to_view_edge() > margin
 
     def distance_to_view_edge(self):
-        return min(self.y - game_states.CAMERA_BOTTOM, game_states.CAMERA_BOTTOM + game_states.HEIGHT - self.y)
+        return min(self.y - game_states.JITTER_PROTECTION_CAMERA, game_states.JITTER_PROTECTION_CAMERA + game_states.HEIGHT - self.y)
 
     def distance_to_player(self) -> int:
         return abs(self.y - game_states.DISTANCE)

@@ -75,7 +75,7 @@ heart_data: list[HeartData] = []
 
 
 camera_move = 0
-
+liminal_mass_factor = 1 / (2 * (1 / (math.exp(-2.5) + 1) - 0.5))
 
 ENTITY_BOARD: list[entities.Entity] = []
 NEW_ENTITIES: list[entities.Entity] = []
@@ -185,11 +185,11 @@ def tick(do_tick: bool = True, draw_gui: bool = True):
                         mass += direction
                         total += 1
                     else:
-                        mass += direction * max(
-                            1 / (math.exp(5 * (dist / 300 - 0.5)) + 1) if dist > 300 else 0,
-                            1 / (math.exp(5 * (e.distance_to_view_edge() / game_states.CAMERA_THRESHOLDS[0] - 0.5)) + 1
+                        mass += direction * (max(
+                            1 / (math.exp(5 * (1.5 - dist / 300)) + 1) if dist > 300 else 0,
+                            1 / (math.exp(5 * (1.5 - e.distance_to_view_edge() / game_states.CAMERA_THRESHOLDS[0])) + 1
                                  ) if not e.in_view(game_states.CAMERA_THRESHOLDS[0] * 2) else 0
-                        )
+                        ) - 0.5) * liminal_mass_factor + 0.5
                         total += 1
         else:
             for e in ENTITY_BOARD:
@@ -260,7 +260,8 @@ def tick(do_tick: bool = True, draw_gui: bool = True):
             goal = enforce_goal
             total = 2
         elif total > 0:
-            goal = game_states.DISTANCE + game_states.HEIGHT / 2 * (abs(mass) * mass / total ** 2)
+            tolerance = min(total - abs(mass), 3)
+            goal = game_states.DISTANCE + math.copysign((3 - tolerance) ** 2 * game_states.HEIGHT / 18, mass)
         else:
             goal = game_states.DISTANCE + game_states.HEIGHT * game_states.LAST_DIRECTION
         goal -= game_states.HEIGHT // 2
@@ -269,14 +270,29 @@ def tick(do_tick: bool = True, draw_gui: bool = True):
             goal -= 2 * tutorials.display.get_height()
             total *= 3
 
-        camera_move += (min(total, 2) + 2) / 324 * (goal - game_states.CAMERA_BOTTOM)
-        if enforce_goal is not None and camera_move < 1 and goal != game_states.CAMERA_BOTTOM:
-            game_states.CAMERA_BOTTOM += goal - game_states.CAMERA_BOTTOM > 0
-        game_states.CAMERA_BOTTOM += round(camera_move)
+        camera_move += (min(total, 2) + 2) / 324 * (goal - game_states.JITTER_PROTECTION_CAMERA)
+        if enforce_goal is not None and camera_move < 1 and goal != game_states.JITTER_PROTECTION_CAMERA:
+            game_states.JITTER_PROTECTION_CAMERA = goal
+        game_states.JITTER_PROTECTION_CAMERA += round(camera_move)
+
+        # move actual camera now
+        if abs(game_states.JITTER_PROTECTION_CAMERA - game_states.CAMERA_BOTTOM
+               ) > game_states.JITTER_PROTECTION_DISTANCE:
+            game_states.CAMERA_BOTTOM = game_states.JITTER_PROTECTION_CAMERA + math.copysign(
+                game_states.JITTER_PROTECTION_DISTANCE,
+                game_states.CAMERA_BOTTOM - game_states.JITTER_PROTECTION_CAMERA
+            )
+        elif camera_move == 0 and game_states.JITTER_PROTECTION_CAMERA != game_states.CAMERA_BOTTOM:
+            game_states.CAMERA_BOTTOM += math.copysign(
+                1,
+                game_states.JITTER_PROTECTION_CAMERA - game_states.CAMERA_BOTTOM
+            )
 
         if enforce_goal is None:
             if game_states.DISTANCE < game_states.CAMERA_BOTTOM + game_states.CAMERA_THRESHOLDS[0] + tutorials.display_height:
                 game_states.CAMERA_BOTTOM = game_states.DISTANCE - game_states.CAMERA_THRESHOLDS[0] - tutorials.display_height
+                game_states.JITTER_PROTECTION_CAMERA = game_states.CAMERA_BOTTOM
             if game_states.DISTANCE > game_states.CAMERA_BOTTOM + game_states.HEIGHT - game_states.CAMERA_THRESHOLDS[1]:
                 game_states.CAMERA_BOTTOM = game_states.DISTANCE + game_states.CAMERA_THRESHOLDS[1] - game_states.HEIGHT
+                game_states.JITTER_PROTECTION_CAMERA = game_states.CAMERA_BOTTOM
     tutorials.tick(do_tick)

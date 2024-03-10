@@ -51,6 +51,8 @@ HEIGHT: int = 0
 WIDTH: int = 0
 CAMERA_THRESHOLDS: tuple[int, int] = (0, 0)
 CAMERA_BOTTOM: int = 0
+JITTER_PROTECTION_DISTANCE: int = 5
+JITTER_PROTECTION_CAMERA: int = 0
 # area management
 AREAS_PASSED: int = 0
 LAST_AREA: int = 0
