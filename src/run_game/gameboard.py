@@ -163,12 +163,13 @@ def tick(do_tick: bool = True, draw_gui: bool = True):
                 e.die()
                 del ENTITY_BOARD[i]
         entities.Entity.biggest_radius = max(ENTITY_BOARD, key=entities.Entity.radius).radius()
-        for area in game_structures.AREA_QUEUE:
-            if not area.initialized:
-                break
-            area.tick()
-            if enforce_goal is None:
-                enforce_goal = area.enforce_center
+        with game_structures.AREA_QUEUE_LOCK:
+            for area in game_structures.AREA_QUEUE:
+                if not area.initialized:
+                    break
+                area.tick()
+                if enforce_goal is None:
+                    enforce_goal = area.enforce_center
         if enforce_goal is None:
             mass: float = 0
             total: int = 0
