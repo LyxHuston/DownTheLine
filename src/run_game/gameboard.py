@@ -172,7 +172,7 @@ def tick(do_tick: bool = True, draw_gui: bool = True):
                     enforce_goal = area.enforce_center
         if enforce_goal is None:
             mass: float = 0
-            total: int = 0
+            total: float = 0
             for e in ENTITY_BOARD:
                 if isinstance(e, entities.AreaStopper):
                     continue
@@ -182,16 +182,17 @@ def tick(do_tick: bool = True, draw_gui: bool = True):
                 dist = e.distance_to_player()
                 if dist < game_states.HEIGHT:
                     direction = (game_states.DISTANCE < e.y) * 2 - 1
-                    if not e.in_view(game_states.CAMERA_THRESHOLDS[0]) or dist > 600:
+                    if not e.in_view(game_states.CAMERA_THRESHOLDS[0]) or dist > 1200:
                         mass += direction
                         total += 1
                     else:
-                        mass += direction * (max(
-                            1 / (math.exp(5 * (1.5 - dist / 300)) + 1) if dist > 300 else 0,
+                        diff: float = (max(
+                            1 / (math.exp(5 * (1.5 - dist / 600)) + 1) if dist > 600 else 0,
                             1 / (math.exp(5 * (1.5 - e.distance_to_view_edge() / game_states.CAMERA_THRESHOLDS[0])) + 1
                                  ) if not e.in_view(game_states.CAMERA_THRESHOLDS[0] * 2) else 0
                         ) - 0.5) * liminal_mass_factor + 0.5
-                        total += 1
+                        mass += direction * diff
+                        total += diff
         else:
             for e in ENTITY_BOARD:
                 if isinstance(e, entities.AreaStopper):
@@ -261,7 +262,7 @@ def tick(do_tick: bool = True, draw_gui: bool = True):
             goal = enforce_goal
             total = 2
         elif total > 0:
-            tolerance = min(total - abs(mass), 3)
+            tolerance: float = min(total - abs(mass), 3)
             goal = game_states.DISTANCE + math.copysign((3 - tolerance) ** 2 * game_states.HEIGHT / 18, mass)
         else:
             goal = game_states.DISTANCE + game_states.HEIGHT * game_states.LAST_DIRECTION
