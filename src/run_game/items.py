@@ -26,7 +26,7 @@ import pygame
 from run_game import entities, tutorials, abilities, ingame, gameboard
 import math
 import enum
-from data import draw_constants, game_states, images
+from data import draw_constants, game_states, images, switches
 from general_use import utility, game_structures
 
 
@@ -316,7 +316,8 @@ def draw_by_side_if_not_used(func: Callable, item: Item):
 
 spread = lambda: 384 - 32 * min(max(0, 4 - game_states.HEALTH), 3)
 get_icon_x = lambda hand: game_states.WIDTH // 2 - spread() // 2 + spread() * hand - 64
-get_icon_y = lambda: game_states.HEIGHT - 2 * draw_constants.row_separation - tutorials.display_height + 16 * min(max(3 - game_states.HEALTH, 0), 2) ** 2
+get_icon_y = lambda: (game_states.HEIGHT - 2 * draw_constants.row_separation - tutorials.display_height *
+                      switches.TUTORIAL_TEXT_POSITION + 16 * min(max(3 - game_states.HEALTH, 0), 2) ** 2)
 
 
 @make_conditional_wrapper

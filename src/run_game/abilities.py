@@ -18,7 +18,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import pygame
 from general_use import game_structures
-from data import draw_constants, game_states
+from data import draw_constants, game_states, switches
 from run_game import tutorials
 
 dash_img = pygame.image.load("./resources/abilities/ability_icons/dash_icon.png")
@@ -69,7 +69,8 @@ def draw_dash_icon(tick_counter) -> None:
         1 - min((tick_counter - last_dash_time) / dash_cooldown, 1),
         (
             game_states.WIDTH // 2 - dash_img.get_width() // 2,
-            game_states.HEIGHT - 2 * draw_constants.row_separation - tutorials.display_height
+            game_states.HEIGHT - 2 * draw_constants.row_separation - tutorials.display_height *
+                switches.TUTORIAL_TEXT_POSITION
         )
     )
 

@@ -18,7 +18,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 handles the tutorial
 """
 
-from data import game_states
+from data import game_states, switches
 from general_use import game_structures
 from collections import deque
 from dataclasses import dataclass
@@ -81,9 +81,16 @@ def tick(do_tick):
         display_height = 0
     else:
         display_height = display.get_height()
-        game_structures.SCREEN.blit(display, (0, game_states.HEIGHT - display.get_height()))
-        pygame.draw.line(game_structures.SCREEN, (255, 255, 255), (0, game_states.HEIGHT - display.get_height()),
-                         (game_states.WIDTH, game_states.HEIGHT - display.get_height()), 10)
+        game_structures.SCREEN.blit(display, (0, (game_states.HEIGHT - display_height) *
+                                              switches.TUTORIAL_TEXT_POSITION))
+        line_y: int = game_states.HEIGHT - display_height if switches.TUTORIAL_TEXT_POSITION else display_height
+        pygame.draw.line(
+            game_structures.SCREEN,
+            (255, 255, 255),
+            (0, line_y),
+            (game_states.WIDTH, line_y),
+            10
+        )
     if not do_tick:
         return
     if typing:

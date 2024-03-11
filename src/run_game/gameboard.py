@@ -22,7 +22,7 @@ from collections import deque
 from run_game.game_areas import add_game_area
 import pygame
 from run_game import abilities, game_areas, ingame, tutorials, entities
-from data import draw_constants, game_states
+from data import draw_constants, game_states, switches
 from screens import run_start_end
 import math
 
@@ -231,7 +231,7 @@ def tick(do_tick: bool = True, draw_gui: bool = True):
                 False,
                 (255, 255, 255)
             ),
-            (0, 0)
+            (0, (1 - switches.TUTORIAL_TEXT_POSITION) * tutorials.display_height)
         )
         # draw dash
         abilities.draw_dash_icon(ingame.tick_counter)
@@ -244,7 +244,9 @@ def tick(do_tick: bool = True, draw_gui: bool = True):
             game_structures.SCREEN.blit(
                 heart_img,
                 heart_data[i].generate_pos((game_states.WIDTH // 2 - (game_states.HEALTH / 2) * (
-                        draw_constants.icon_size + 4) + i * (draw_constants.icon_size + 4), draw_constants.hearts_y - tutorials.display_height))
+                        draw_constants.icon_size + 4) + i * (draw_constants.icon_size + 4),
+                        draw_constants.hearts_y - tutorials.display_height * switches.TUTORIAL_TEXT_POSITION)
+                )
             )
     # draw player
     game_structures.SCREEN.blit(
@@ -290,8 +292,8 @@ def tick(do_tick: bool = True, draw_gui: bool = True):
                 game_states.JITTER_PROTECTION_CAMERA - game_states.CAMERA_BOTTOM
             )
 
-        if game_states.DISTANCE < game_states.CAMERA_BOTTOM + game_states.CAMERA_THRESHOLDS[0] + tutorials.display_height:
-            game_states.CAMERA_BOTTOM = game_states.DISTANCE - game_states.CAMERA_THRESHOLDS[0] - tutorials.display_height
+        if game_states.DISTANCE < game_states.CAMERA_BOTTOM + game_states.CAMERA_THRESHOLDS[0] + tutorials.display_height * switches.TUTORIAL_TEXT_POSITION:
+            game_states.CAMERA_BOTTOM = game_states.DISTANCE - game_states.CAMERA_THRESHOLDS[0] - tutorials.display_height * switches.TUTORIAL_TEXT_POSITION
             game_states.JITTER_PROTECTION_CAMERA = game_states.CAMERA_BOTTOM
         if game_states.DISTANCE > game_states.CAMERA_BOTTOM + game_states.HEIGHT - game_states.CAMERA_THRESHOLDS[1]:
             game_states.CAMERA_BOTTOM = game_states.DISTANCE + game_states.CAMERA_THRESHOLDS[1] - game_states.HEIGHT
