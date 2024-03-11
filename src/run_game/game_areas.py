@@ -568,7 +568,7 @@ class MinigameArea(GameArea, have_starter=True):
                 if self.type == 0:  # obligatory fishing minigame
                     wave: list[tuple[Type[entities.Entity], Iterable]] = []
                     for i in range(self.difficulty // 10):
-                        for i2 in range(10):
+                        for i2 in range(i + 7):
                             wave.append((entities.Fish, [self]))
                         wave = [(entities.MassDelayedDeploy, (60 * 10, self, wave))]
                     gameboard.NEW_ENTITIES.append(entities.MassDelayedDeploy(0, wave[0][1][1], wave[0][1][2]))
@@ -587,7 +587,7 @@ class MinigameArea(GameArea, have_starter=True):
                             delay = ticks_to_cross + charge_bonus
                             pre_safe_creation = [
                                 (entities.Lazer, (y, ticks_to_cross + charge_bonus, charge_bonus, self))
-                                for y in range(self.start_coordinate + 64, self.end_coordinate, 64)
+                                for y in range(self.start_coordinate + 96, self.end_coordinate, 96)
                             ]
                             del pre_safe_creation[self.random.randint(0, len(pre_safe_creation) - 1)]
                             wave.extend(pre_safe_creation)
@@ -783,12 +783,13 @@ def add_game_area():
         typ = determinator % 64
         area_type: Type[GameArea]
         threshold: int
-        for area_type, threshold in area_thresholds:
-            if area_type.allowed_at(game_states.LAST_AREA) and (typ <= threshold or area_type.required_at(game_states.LAST_AREA)):
-                area = area_type(determinator, game_states.LAST_AREA)
-                break
-        if area is None:
-            area = GameArea(game_states.LAST_AREA, length=400)
+        area = MinigameArea(determinator, 20)
+        # for area_type, threshold in area_thresholds:
+        #     if area_type.allowed_at(game_states.LAST_AREA) and (typ <= threshold or area_type.required_at(game_states.LAST_AREA)):
+        #         area = area_type(determinator, game_states.LAST_AREA)
+        #         break
+        # if area is None:
+        #     area = GameArea(game_states.LAST_AREA, length=400)
     game_states.LAST_AREA += 1
     area.finalize()
     # print(game_states.LAST_AREA_END)
