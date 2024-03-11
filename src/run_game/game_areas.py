@@ -783,13 +783,13 @@ def add_game_area():
         typ = determinator % 64
         area_type: Type[GameArea]
         threshold: int
-        area = MinigameArea(determinator, 20)
-        # for area_type, threshold in area_thresholds:
-        #     if area_type.allowed_at(game_states.LAST_AREA) and (typ <= threshold or area_type.required_at(game_states.LAST_AREA)):
-        #         area = area_type(determinator, game_states.LAST_AREA)
-        #         break
-        # if area is None:
-        #     area = GameArea(game_states.LAST_AREA, length=400)
+        # area = MinigameArea(determinator, 20)
+        for area_type, threshold in area_thresholds:
+            if area_type.allowed_at(game_states.LAST_AREA) and (typ <= threshold or area_type.required_at(game_states.LAST_AREA)):
+                area = area_type(determinator, game_states.LAST_AREA)
+                break
+        if area is None:
+            area = GameArea(game_states.LAST_AREA, length=400)
     game_states.LAST_AREA += 1
     area.finalize()
     # print(game_states.LAST_AREA_END)
