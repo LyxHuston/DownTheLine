@@ -587,9 +587,10 @@ class MinigameArea(GameArea, have_starter=True):
                             delay = ticks_to_cross + charge_bonus
                             pre_safe_creation = [
                                 (entities.Lazer, (y, ticks_to_cross + charge_bonus, charge_bonus, self))
-                                for y in range(self.start_coordinate + 96, self.end_coordinate, 96)
+                                for y in range(self.start_coordinate + 64, self.end_coordinate, 64)
                             ]
-                            del pre_safe_creation[self.random.randint(0, len(pre_safe_creation) - 1)]
+                            del_at: int = self.random.randint(0, len(pre_safe_creation) - 2)
+                            del pre_safe_creation[del_at:del_at + 2]
                             wave.extend(pre_safe_creation)
                         elif lazertype == 1:  # a bunch of trackers
                             tracker_delay = 30
