@@ -276,7 +276,7 @@ def tick(do_tick: bool = True, draw_gui: bool = True):
 
         camera_move += (min(total, 2) + 2) / 324 * (goal - game_states.JITTER_PROTECTION_CAMERA)
         if enforce_goal is not None and camera_move < 1 and goal != game_states.JITTER_PROTECTION_CAMERA:
-            game_states.JITTER_PROTECTION_CAMERA = goal
+            game_states.JITTER_PROTECTION_CAMERA += math.copysign(1, goal - game_states.JITTER_PROTECTION_CAMERA)
         game_states.JITTER_PROTECTION_CAMERA += round(camera_move)
 
         # move actual camera now
