@@ -294,8 +294,6 @@ def tick(do_tick: bool = True, draw_gui: bool = True):
 
         if game_states.DISTANCE < game_states.CAMERA_BOTTOM + game_states.CAMERA_THRESHOLDS[0] + tutorials.display_height * switches.TUTORIAL_TEXT_POSITION:
             game_states.CAMERA_BOTTOM = game_states.DISTANCE - game_states.CAMERA_THRESHOLDS[0] - tutorials.display_height * switches.TUTORIAL_TEXT_POSITION
-            game_states.JITTER_PROTECTION_CAMERA = game_states.CAMERA_BOTTOM
         if game_states.DISTANCE > game_states.CAMERA_BOTTOM + game_states.HEIGHT - game_states.CAMERA_THRESHOLDS[1]:
             game_states.CAMERA_BOTTOM = game_states.DISTANCE + game_states.CAMERA_THRESHOLDS[1] - game_states.HEIGHT
-            game_states.JITTER_PROTECTION_CAMERA = game_states.CAMERA_BOTTOM
     tutorials.tick(do_tick)
