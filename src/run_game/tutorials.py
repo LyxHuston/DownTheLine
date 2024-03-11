@@ -54,6 +54,7 @@ up_current = 0
 display: [pygame.Surface] = None
 display_height = 0
 
+WAIT_TIMES: dict[str, int | float] = {".": 12, ",": 8}
 
 def clear_tutorial_text():
     """
@@ -96,6 +97,9 @@ def tick(do_tick):
     if typing:
         if typing_cooldown <= 0:
             current_text = on.text[0:len(current_text) + 1]
+            while current_text[-1] == " ":
+                current_text = on.text[0:len(current_text) + 1]
+            typing_cooldown = WAIT_TIMES.get(current_text[-1], 1) * typing_delay
             display = game_structures.BUTTONS.draw_text(
                 current_text,
                 on.font,
@@ -104,10 +108,6 @@ def tick(do_tick):
                 max_line_pixels=game_states.WIDTH,
                 enforce_width=game_states.WIDTH
             )
-            if current_text[-1] == ".":
-                typing_cooldown = 3 * typing_delay
-            else:
-                typing_cooldown = typing_delay
             if len(current_text) == len(on.text):
                 typing = False
                 up_current = 0
@@ -118,7 +118,7 @@ def tick(do_tick):
             if len(TUTORIAL_TEXTS) > 0:
                 on = TUTORIAL_TEXTS.popleft()
                 game_structures.speak(on.text)
-                current_text = ""
+                current_text = on.text[0]
                 typing = True
             else:
                 display = None
