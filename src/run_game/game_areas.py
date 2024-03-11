@@ -777,7 +777,6 @@ def add_game_area():
             (-images.SIMPLE_SPEAR.outlined_img.get_width() // 4, 180),
             2
         )))
-        game_states.AREA_QUEUE_MAX_LENGTH = 3
     else:
         # print(determinator, game_states.SEED + game_states.LAST_AREA)
         area = None
