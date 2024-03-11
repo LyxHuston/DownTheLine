@@ -71,12 +71,12 @@ def tick(do_tick: bool = None):
                     game_states.GLIDE_SPEED = 0
             else:
                 game_states.GLIDE_DURATION -= 1
-            game_states.DISTANCE += game_states.GLIDE_SPEED * game_states.GLIDE_DIRECTION
             # spawn dash ripples
             if (game_states.GLIDE_DURATION + game_states.GLIDE_SPEED // game_states.TAPER_AMOUNT) % 2 == 1:
                 gameboard.PARTICLE_BOARD.add(entities.DASH_RIPPLE_PARTICLES(
                     (0, game_states.DISTANCE)
                 ))
+            game_states.DISTANCE += game_states.GLIDE_SPEED * game_states.GLIDE_DIRECTION
         elif do_tick is None:
             pressed = pygame.key.get_pressed()
             direction = pressed[Inputs.up_input] - pressed[Inputs.down_input]
