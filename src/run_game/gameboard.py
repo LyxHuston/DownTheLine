@@ -25,6 +25,7 @@ from run_game import abilities, game_areas, ingame, tutorials, entities
 from data import draw_constants, game_states, switches
 from screens import run_start_end
 import math
+from typing import Callable, Any
 
 
 player_img = pygame.image.load("./resources/player/player.png")
@@ -93,6 +94,22 @@ def particle_set_tick(particle_set: set[entities.Particle]):
         particle.reset_id_check()
 
 
+def filter_entities(lst: list[entities.Entity]) -> None:
+    """
+    filters an entity list in place
+    :param lst: a list of entities
+    :return: None
+    """
+    l: int = 0
+    for u in range(len(lst)):
+        if lst[u].alive:
+            lst[l] = lst[u]
+            l += 1
+        else:
+            lst[u].die()
+    del lst[l:]
+
+
 def tick(do_tick: bool = True, draw_gui: bool = True):
     """
     draws the gameboard and handles checking if we need to unload and load a new
@@ -153,22 +170,15 @@ def tick(do_tick: bool = True, draw_gui: bool = True):
         ENTITY_BOARD.extend(NEW_ENTITIES)
         NEW_ENTITIES.clear()
         ENTITY_BOARD.sort(key=lambda e: e.y)
-        i: int = 0
-        while i < len(ENTITY_BOARD):
-            e: entities.Entity = ENTITY_BOARD[i]
-            if e.alive:
-                e.index = i
-                i += 1
-            else:
-                e.die()
-                del ENTITY_BOARD[i]
+        filter_entities(ENTITY_BOARD)
         entities.Entity.biggest_radius = max(ENTITY_BOARD, key=entities.Entity.radius).radius()
         with game_structures.AREA_QUEUE_LOCK:
+            area: game_areas.GameArea
             for area in game_structures.AREA_QUEUE:
                 if not area.initialized:
                     break
                 area.tick()
-                if enforce_goal is None:
+                if area.player_in():
                     enforce_goal = area.enforce_center
         if enforce_goal is None:
             mass: float = 0
@@ -182,17 +192,17 @@ def tick(do_tick: bool = True, draw_gui: bool = True):
                 dist = e.distance_to_player()
                 if dist < game_states.HEIGHT:
                     direction = (game_states.DISTANCE < e.y) * 2 - 1
-                    if not e.in_view(game_states.CAMERA_THRESHOLDS[0]) or dist > 1200:
+                    # if not e.in_view(game_states.CAMERA_THRESHOLDS[0]) or dist > 1200:
+                    if dist > 1200:
                         mass += direction
                         total += 1
-                    else:
-                        diff: float = (max(
-                            1 / (math.exp(5 * (1.5 - dist / 600)) + 1) if dist > 600 else 0,
-                            1 / (math.exp(5 * (1.5 - e.distance_to_view_edge() / game_states.CAMERA_THRESHOLDS[0])) + 1
-                                 ) if not e.in_view(game_states.CAMERA_THRESHOLDS[0] * 2) else 0
-                        ) - 0.5) * liminal_mass_factor + 0.5
-                        mass += direction * diff
-                        total += diff
+                    elif dist > 600:
+                        # k: float = max(e.distance_to_view_edge() / game_states.CAMERA_THRESHOLDS[0], dist / 600) - 1
+                        k = dist / 600 - 1
+                        if k:
+                            diff: float = (1 / (math.exp(5 * (2.5 - k)) + 1) - 0.5) * liminal_mass_factor + 0.5
+                            mass += direction * diff
+                            total += diff
         else:
             for e in ENTITY_BOARD:
                 if isinstance(e, entities.AreaStopper):
@@ -274,23 +284,23 @@ def tick(do_tick: bool = True, draw_gui: bool = True):
             goal -= 2 * tutorials.display.get_height()
             total *= 3
 
-        camera_move += (min(total, 2) + 2) / 324 * (goal - game_states.JITTER_PROTECTION_CAMERA)
-        if enforce_goal is not None and camera_move < 1 and goal != game_states.JITTER_PROTECTION_CAMERA:
-            game_states.JITTER_PROTECTION_CAMERA += math.copysign(1, goal - game_states.JITTER_PROTECTION_CAMERA)
-        game_states.JITTER_PROTECTION_CAMERA += round(camera_move)
+        camera_move += (min(total, 2) + 2) / 324 * (goal - game_states.CAMERA_BOTTOM)
+        if enforce_goal is not None and camera_move < 1 and goal != game_states.CAMERA_BOTTOM:
+            game_states.CAMERA_BOTTOM += math.copysign(1, goal - game_states.CAMERA_BOTTOM)
+        game_states.CAMERA_BOTTOM += round(camera_move)
 
-        # move actual camera now
-        if abs(game_states.JITTER_PROTECTION_CAMERA - game_states.CAMERA_BOTTOM
-               ) > game_states.JITTER_PROTECTION_DISTANCE:
-            game_states.CAMERA_BOTTOM = game_states.JITTER_PROTECTION_CAMERA + math.copysign(
-                game_states.JITTER_PROTECTION_DISTANCE,
-                game_states.CAMERA_BOTTOM - game_states.JITTER_PROTECTION_CAMERA
-            )
-        elif camera_move == 0 and game_states.JITTER_PROTECTION_CAMERA != game_states.CAMERA_BOTTOM:
-            game_states.CAMERA_BOTTOM += math.copysign(
-                1,
-                game_states.JITTER_PROTECTION_CAMERA - game_states.CAMERA_BOTTOM
-            )
+        # # move actual camera now
+        # if abs(game_states.JITTER_PROTECTION_CAMERA - game_states.CAMERA_BOTTOM
+        #        ) > game_states.JITTER_PROTECTION_DISTANCE:
+        #     game_states.CAMERA_BOTTOM = game_states.JITTER_PROTECTION_CAMERA + math.copysign(
+        #         game_states.JITTER_PROTECTION_DISTANCE,
+        #         game_states.CAMERA_BOTTOM - game_states.JITTER_PROTECTION_CAMERA
+        #     )
+        # elif camera_move == 0 and game_states.JITTER_PROTECTION_CAMERA != game_states.CAMERA_BOTTOM:
+        #     game_states.CAMERA_BOTTOM += math.copysign(
+        #         1,
+        #         game_states.JITTER_PROTECTION_CAMERA - game_states.CAMERA_BOTTOM
+        #     )
 
         if game_states.DISTANCE < game_states.CAMERA_BOTTOM + game_states.CAMERA_THRESHOLDS[0] + tutorials.display_height * switches.TUTORIAL_TEXT_POSITION:
             game_states.CAMERA_BOTTOM = game_states.DISTANCE - game_states.CAMERA_THRESHOLDS[0] - tutorials.display_height * switches.TUTORIAL_TEXT_POSITION

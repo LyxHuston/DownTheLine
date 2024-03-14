@@ -166,6 +166,9 @@ class GameArea:
             self.boundary_crossed = True
             self.cross_boundary()
 
+    def player_in(self) -> int:
+        return 0 <= game_states.DISTANCE - self.start_coordinate <= self.length
+
     def cross_boundary(self):
         """
         called when player actually enters an area.  Usually used for a tutorial or gods.
