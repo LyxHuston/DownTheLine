@@ -76,7 +76,8 @@ heart_data: list[HeartData] = []
 
 
 camera_move = 0
-liminal_mass_factor = 1 / (2 * (1 / (math.exp(-2.5) + 1) - 0.5))
+steepness: int = 10
+liminal_mass_factor = 1 / (2 * (1 / (math.exp(steepness * -0.5) + 1) - 0.5))
 
 ENTITY_BOARD: list[entities.Entity] = []
 NEW_ENTITIES: list[entities.Entity] = []
@@ -192,17 +193,14 @@ def tick(do_tick: bool = True, draw_gui: bool = True):
                 dist = e.distance_to_player()
                 if dist < game_states.HEIGHT:
                     direction = (game_states.DISTANCE < e.y) * 2 - 1
-                    # if not e.in_view(game_states.CAMERA_THRESHOLDS[0]) or dist > 1200:
-                    if dist > 1200:
+                    k: float = max(e.distance_to_view_edge() / game_states.CAMERA_THRESHOLDS[0], dist / 600, 1) - 1
+                    if k > 1:
                         mass += direction
                         total += 1
-                    elif dist > 600:
-                        # k: float = max(e.distance_to_view_edge() / game_states.CAMERA_THRESHOLDS[0], dist / 600) - 1
-                        k = dist / 600 - 1
-                        if k:
-                            diff: float = (1 / (math.exp(5 * (2.5 - k)) + 1) - 0.5) * liminal_mass_factor + 0.5
-                            mass += direction * diff
-                            total += diff
+                    elif k:
+                        diff: float = (1 / (math.exp(steepness * (0.5 - k)) + 1) - 0.5) * liminal_mass_factor + 0.5
+                        mass += direction * diff
+                        total += diff
         else:
             for e in ENTITY_BOARD:
                 if isinstance(e, entities.AreaStopper):
@@ -272,7 +270,7 @@ def tick(do_tick: bool = True, draw_gui: bool = True):
         camera_move //= 2
         if enforce_goal is not None:
             goal = enforce_goal
-            total = 2
+            mass = 2
         elif total > 0:
             tolerance: float = min(total - abs(mass), 3)
             goal = game_states.DISTANCE + math.copysign((3 - tolerance) ** 2 * game_states.HEIGHT / 18, mass)
@@ -280,12 +278,16 @@ def tick(do_tick: bool = True, draw_gui: bool = True):
             goal = game_states.DISTANCE + game_states.HEIGHT * game_states.LAST_DIRECTION
         goal -= game_states.HEIGHT // 2
 
-        if tutorials.display is not None:
-            goal -= 2 * tutorials.display.get_height()
-            total *= 3
+        # if tutorials.display is not None:
+        #     goal -= 2 * tutorials.display.get_height()
+        #     mass *= 3
 
-        camera_move += (min(total, 2) + 2) / 324 * (goal - game_states.CAMERA_BOTTOM)
-        if enforce_goal is not None and camera_move < 1 and goal != game_states.CAMERA_BOTTOM:
+        camera_move += min(abs(mass), 2) / 324 * (goal - game_states.CAMERA_BOTTOM)
+        if enforce_goal is None:
+            pass
+            # if abs(camera_move) < 5 and abs(mass) != total:
+            #     camera_move = 0
+        elif camera_move < 1 and goal != game_states.CAMERA_BOTTOM:
             game_states.CAMERA_BOTTOM += math.copysign(1, goal - game_states.CAMERA_BOTTOM)
         game_states.CAMERA_BOTTOM += round(camera_move)
 
