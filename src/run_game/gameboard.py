@@ -121,6 +121,14 @@ def tick(do_tick: bool = True, draw_gui: bool = True):
     """
     global camera_move
     if do_tick:
+        if game_structures.NEW_AREAS:
+            if game_structures.NEW_AREAS[0].start_coordinate < game_states.CAMERA_BOTTOM + 2 * game_states.HEIGHT:
+                area = game_structures.NEW_AREAS.popleft()
+                area.initialized = True
+                area.final_load()
+                ENTITY_BOARD.extend(area.entity_list)
+                area.entity_list = None  # so that it will be forced to error
+                game_structures.AREA_QUEUE.append(area)
         if game_structures.AREA_QUEUE[0].end_coordinate < game_states.CAMERA_BOTTOM - game_states.HEIGHT:  # despawn
             removing: game_areas.GameArea = game_structures.AREA_QUEUE.popleft()
             i = 0
@@ -134,16 +142,6 @@ def tick(do_tick: bool = True, draw_gui: bool = True):
                 run_start_end.GameAreaLog.areas_dict[removing.__class__.__name__] += 1
             game_states.AREAS_PASSED += 1
             add_game_area()
-        with game_structures.AREA_QUEUE_LOCK:
-            for area in game_structures.AREA_QUEUE:  # load next that is becoming onscreen
-                if area.start_coordinate < game_states.CAMERA_BOTTOM + 2 * game_states.HEIGHT and not area.initialized:
-                    area.initialized = True
-                    area.final_load()
-                    ENTITY_BOARD.extend(area.entity_list)
-                    area.entity_list = None  # so that it will be forced to error
-                    break
-                if area.start_coordinate > game_states.CAMERA_BOTTOM + game_states.HEIGHT:
-                    break
         if game_states.SHAKE_DURATION > 0:
             game_states.SHAKE_DURATION -= 1
             if game_states.SHAKE_DURATION == 0:
@@ -153,12 +151,12 @@ def tick(do_tick: bool = True, draw_gui: bool = True):
                 game_states.X_DISPLACEMENT += game_states.X_CHANGE
                 if abs(game_states.X_DISPLACEMENT) > abs(game_states.X_LIMIT):
                     game_states.X_DISPLACEMENT += 2 * (abs(game_states.X_DISPLACEMENT) - abs(game_states.X_LIMIT)) * ((
-                                                                            game_states.X_DISPLACEMENT < 0) * 2 - 1)
+                                                                                                                              game_states.X_DISPLACEMENT < 0) * 2 - 1)
                     game_states.X_CHANGE *= -1
                 game_states.Y_DISPLACEMENT += game_states.Y_CHANGE
                 if abs(game_states.Y_DISPLACEMENT) > abs(game_states.Y_LIMIT):
                     game_states.Y_DISPLACEMENT += 2 * (abs(game_states.Y_DISPLACEMENT) - abs(game_states.Y_LIMIT)) * ((
-                                                                            game_states.Y_DISPLACEMENT < 0) * 2 - 1)
+                                                                                                                              game_states.Y_DISPLACEMENT < 0) * 2 - 1)
                     game_states.Y_CHANGE *= -1
     pygame.draw.line(
         game_structures.SCREEN,
@@ -174,14 +172,11 @@ def tick(do_tick: bool = True, draw_gui: bool = True):
         ENTITY_BOARD.sort(key=lambda e: e.y)
         filter_entities(ENTITY_BOARD)
         entities.Entity.biggest_radius = max(ENTITY_BOARD, key=entities.Entity.radius).radius()
-        with game_structures.AREA_QUEUE_LOCK:
-            area: game_areas.GameArea
-            for area in game_structures.AREA_QUEUE:
-                if not area.initialized:
-                    break
-                area.tick()
-                if area.player_in():
-                    enforce_goal = area.enforce_center
+        area: game_areas.GameArea
+        for area in game_structures.AREA_QUEUE:
+            area.tick()
+            if area.player_in():
+                enforce_goal = area.enforce_center
         if enforce_goal is None:
             mass: float = 0
             total: float = 0
@@ -213,9 +208,8 @@ def tick(do_tick: bool = True, draw_gui: bool = True):
                 #     continue
                 e.tick()
     # particles need to go on bottom
-    with game_structures.AREA_QUEUE_LOCK:
-        for area in game_structures.AREA_QUEUE:
-            area.draw_particles()
+    for area in game_structures.AREA_QUEUE:
+        area.draw_particles()
     # handle global particle board
     for particle in PARTICLE_BOARD:
         particle.draw()

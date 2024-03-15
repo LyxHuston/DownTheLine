@@ -789,7 +789,7 @@ class Body:
 CUSTOM_EVENT_CATCHERS: list[Callable] = []
 PLACES = None
 AREA_QUEUE = deque()
-AREA_QUEUE_LOCK = Lock()
+NEW_AREAS = deque()
 
 
 def initialized_areas():

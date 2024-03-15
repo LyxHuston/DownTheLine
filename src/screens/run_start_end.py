@@ -59,6 +59,7 @@ def clean_gameboard():
     gameboard.NEW_ENTITIES.clear()
     gameboard.PARTICLE_BOARD.clear()
     game_structures.AREA_QUEUE.clear()
+    game_structures.NEW_AREAS.clear()
 
     from run_game import entities
     entities.Particle.__id = 0
