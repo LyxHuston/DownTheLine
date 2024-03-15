@@ -77,7 +77,8 @@ heart_data: list[HeartData] = []
 
 camera_move = 0
 steepness: int = 10
-liminal_mass_factor = 1 / (2 * (1 / (math.exp(steepness * -0.5) + 1) - 0.5))
+liminal_mass_factor: float = 1 / (2 * (1 / (math.exp(steepness * -0.5) + 1) - 0.5))
+max_tolerance: int = 2
 
 ENTITY_BOARD: list[entities.Entity] = []
 NEW_ENTITIES: list[entities.Entity] = []
@@ -272,8 +273,8 @@ def tick(do_tick: bool = True, draw_gui: bool = True):
             goal = enforce_goal
             mass = 2
         elif total > 0:
-            tolerance: float = min(total - abs(mass), 3)
-            goal = game_states.DISTANCE + math.copysign((3 - tolerance) ** 2 * game_states.HEIGHT / 18, mass)
+            tolerance: float = min(total - abs(mass), max_tolerance)
+            goal = game_states.DISTANCE + math.copysign((max_tolerance - tolerance) ** 2 * game_states.HEIGHT / (2 * max_tolerance ** 2), mass)
         else:
             goal = game_states.DISTANCE + game_states.HEIGHT * game_states.LAST_DIRECTION
         goal -= game_states.HEIGHT // 2
