@@ -59,6 +59,8 @@ class Entity(game_structures.Body):
 
     cost: int = 2
 
+    has_camera_mass: bool = True
+
     @property
     def alive(self) -> bool:
         return self.health > 0
@@ -370,6 +372,8 @@ class ItemEntity(InvulnerableEntity):
 
     is_item_entity = True
 
+    has_camera_mass = False
+
     @property
     def pos(self):
         if isinstance(self.item.pos, int):
@@ -527,6 +531,7 @@ class Obstacle(Entity, track_instances=True):
     """
 
     cost = 0
+    has_camera_mass = False
 
     full = images.WALL_FULL
     half = images.WALL_HALF
@@ -1332,6 +1337,8 @@ class Spawner(Entity):
 
     cost = 5
 
+    has_camera_mass = False
+
     @property
     def spawning(self):
         return self.__spawning
@@ -1609,6 +1616,8 @@ class NoteSpawner(InvulnerableEntity):
     spawns notes for minigame area
     """
 
+    has_camera_mass = False
+
     @property  # Just being lazy lol
     def last_y(self):
         return self.__last_y
@@ -1774,6 +1783,8 @@ class Bomb(InvulnerableGlides):
 
 class DelayedDeploy(InvulnerableEntity):
 
+    has_camera_mass = False
+
     def __init__(self, delay, area, entity: type(Entity), args):
         super().__init__(images.EMPTY, 0, (3000, area.start_coordinate))
         # print("delayed deploy made")
@@ -1790,6 +1801,8 @@ class DelayedDeploy(InvulnerableEntity):
 
 
 class MassDelayedDeploy(InvulnerableEntity):
+
+    has_camera_mass = False
 
     def __init__(self, delay, area, entities: list[tuple[Type[Entity], Iterable]]):
         super().__init__(images.EMPTY, 0, (3000, area.start_coordinate))
@@ -1867,6 +1880,8 @@ class AreaEdge(InvulnerableEntity):
     """
     a type of entity that marks one end of an area
     """
+
+    has_camera_mass = False
     def __init__(self, area):
         super().__init__(images.EMPTY, 0, None)
         self.area = area

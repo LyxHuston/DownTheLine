@@ -186,28 +186,31 @@ def tick(do_tick: bool = True, draw_gui: bool = True):
             mass: float = 0
             total: float = 0
             for e in ENTITY_BOARD:
-                if isinstance(e, entities.AreaStopper):
-                    continue
-                if isinstance(e, entities.AreaStarter):
-                    continue
+                # if isinstance(e, entities.AreaStopper):
+                #     continue
+                # if isinstance(e, entities.AreaStarter):
+                #     continue
                 e.tick()
+                if not e.has_camera_mass:
+                    continue
                 dist = e.distance_to_player()
-                if dist < game_states.HEIGHT:
-                    direction = (game_states.DISTANCE < e.y) * 2 - 1
-                    k: float = max(e.distance_to_view_edge() / game_states.CAMERA_THRESHOLDS[0], dist / 600, 1) - 1
-                    if k > 1:
-                        mass += direction
-                        total += 1
-                    elif k:
-                        diff: float = (1 / (math.exp(steepness * (0.5 - k)) + 1) - 0.5) * liminal_mass_factor + 0.5
-                        mass += direction * diff
-                        total += diff
+                if dist > game_states.HEIGHT:
+                    continue
+                direction = (game_states.DISTANCE < e.y) * 2 - 1
+                k: float = max(e.distance_to_view_edge() / game_states.CAMERA_THRESHOLDS[0], dist / 600, 1) - 1
+                if k > 1:
+                    mass += direction
+                    total += 1
+                elif k:
+                    diff: float = (1 / (math.exp(steepness * (0.5 - k)) + 1) - 0.5) * liminal_mass_factor + 0.5
+                    mass += direction * diff
+                    total += diff
         else:
             for e in ENTITY_BOARD:
-                if isinstance(e, entities.AreaStopper):
-                    continue
-                if isinstance(e, entities.AreaStarter):
-                    continue
+                # if isinstance(e, entities.AreaStopper):
+                #     continue
+                # if isinstance(e, entities.AreaStarter):
+                #     continue
                 e.tick()
     # particles need to go on bottom
     with game_structures.AREA_QUEUE_LOCK:
@@ -277,6 +280,7 @@ def tick(do_tick: bool = True, draw_gui: bool = True):
             goal = game_states.DISTANCE + math.copysign((max_tolerance - tolerance) ** 2 * game_states.HEIGHT / (2 * max_tolerance ** 2), mass)
         else:
             goal = game_states.DISTANCE + game_states.HEIGHT * game_states.LAST_DIRECTION
+            mass = 1.5
         goal -= game_states.HEIGHT // 2
 
         # if tutorials.display is not None:
