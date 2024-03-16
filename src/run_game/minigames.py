@@ -48,11 +48,12 @@ class Minigame:
 		self.minigames.append(self)
 
 	for name in funcs:
-		def __set(self, val: Callable, name=name):
-			setattr(self, name, val)
-			return val
-		locals()[f"set_{name}"] = __set
-	del __set
+		# def __set(self, val: Callable, name=name):
+		# 	setattr(self, name, val)
+		# 	return val
+		exec(f"def set_{name}(self, val: Callable):setattr(self, \"{name}\", val);return val")
+	# locals()[f"set_{name}"] = __set
+	# del __set
 	del name
 
 	def __repr__(self):
