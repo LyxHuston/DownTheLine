@@ -734,9 +734,9 @@ class Crawler(Glides, track_instances=True):
             if math.isfinite(push_factor):
                 if abs(push_factor) > self.height // 2:
                     push_factor -= math.copysign(self.height // 2, push_factor)
-                    self.y += self.height / (2 * push_factor)
+                    self.y += self.height // round(2 * push_factor)
                 else:
-                    self.y += math.copysign(self.height // 2, push_factor)
+                    self.y += round(math.copysign(self.height // 2, push_factor))
         e: Entity
         for e in collide_list:
             if self.collide(e):
@@ -1184,7 +1184,7 @@ class Lazer(InvulnerableEntity):
             for i in range(len(self.ends)):
                 end1 = end2
                 end2 = self.ends[i]
-                intercept = end2.y - end2.x * (end1.y - end2.y) / (end1.x - end2.x)  # hit left side
+                intercept = round(end2.y - end2.x * (end1.y - end2.y) / (end1.x - end2.x))  # hit left side
                 pygame.draw.circle(
                     game_structures.SCREEN,
                     (255, 255, 255),

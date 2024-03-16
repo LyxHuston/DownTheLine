@@ -48,7 +48,7 @@ class Item:
     tick: Callable
     img: pygame.Surface
     ground_img: pygame.Surface
-    pos: Union[int, tuple[entities.Entity, int], tuple[int, int]]
+    pos: Union[int, tuple[entities.Entity, int], tuple[int, int], None]
     draw: Callable
     icon: pygame.Surface
     data_pack: Any
@@ -681,8 +681,8 @@ def simple_throwable_action(item: Item):
     gameboard.NEW_ENTITIES.append(ent)  # add entity to entity list
 
 
-def simple_stab(cooldown: int, duration: int, img: pygame.Surface, ground_img: pygame.Surface, pos: tuple[int, int],
-                damage: int = 3) -> Item:
+def simple_stab(cooldown: int, duration: int, img: pygame.Surface, ground_img: pygame.Surface,
+                pos: tuple[int, int] | None, damage: int = 3) -> Item:
     """
     generate an item that uses a simple stab item
     """
@@ -703,7 +703,7 @@ def simple_stab(cooldown: int, duration: int, img: pygame.Surface, ground_img: p
 simple_stab_imgs = [images.SIMPLE_SWORD, images.SIMPLE_SPEAR]
 
 
-def random_simple_stab(strength: int, random, pos=None):
+def random_simple_stab(strength: int, random, pos: tuple[int, int] | None = None):
     image = random.choice(simple_stab_imgs)
     img = image.img
 

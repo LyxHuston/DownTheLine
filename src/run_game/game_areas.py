@@ -49,15 +49,15 @@ class GameArea:
         self.__enforce_center = val
 
     @property
-    def start_coordinate(self):
+    def start_coordinate(self) -> int:
         return self.__start_coordinate
 
     @start_coordinate.setter
-    def start_coordinate(self, val):
-        self.__start_coordinate = round(val)
+    def start_coordinate(self, val: int):
+        self.__start_coordinate = val
 
     @property
-    def end_coordinate(self):
+    def end_coordinate(self) -> int:
         return self.start_coordinate + self.length
 
     def __init__(self, index: int, length: int = 0, seed: int = None):
@@ -71,7 +71,7 @@ class GameArea:
         self.particle_args: tuple[list[images.Image] | list[pygame.Surface], int, int] = (
             images.VOID_PARTICLES, 30, 120
         )
-        self.particle_list = set()
+        self.particle_list: set = set()
         if seed is None:
             raise ValueError("I cry non-deterministic from set seed (every random call needs to be deterministic from"
                              "the original seed)")
@@ -167,7 +167,7 @@ class GameArea:
             self.boundary_crossed = True
             self.cross_boundary()
 
-    def player_in(self) -> int:
+    def player_in(self) -> bool:
         return 0 <= game_states.DISTANCE - self.start_coordinate <= self.length
 
     def cross_boundary(self):
