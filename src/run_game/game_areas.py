@@ -17,6 +17,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 handles making and managing game areas
 """
+import enum
 import random
 
 import pygame
@@ -519,118 +520,43 @@ class EnslaughtArea(GameArea, have_starter=True):
             )
 
 
+from run_game.minigames import Minigame
+
+
 class MinigameArea(GameArea, have_starter=True):
     first_allowed_spawn = 10
     required_wait_interval = 6
 
+    class States(enum.Enum):
+        pre_init = 0
+        running = 1
+        done = 2
+
     def __init__(self, determiner, count):
         super().__init__(count, seed=determiner)
-        self.difficulty = count
-        self.state = 0
-        self.solved_entity_number = 2
-        self.type = self.random.randint(0, 2)
-        # print(f"minigame area: {["fishing", "notes", "lazers"][self.type]}")
-        if self.type == 0:  # obligatory fishing minigame
-            self.length = game_states.HEIGHT * 2
-        elif self.type == 1:  # notes
-            self.solved_entity_number = 4
-            self.length = game_states.HEIGHT
-            self.entity_list.append(entities.ItemEntity(items.simple_stab(
-                10,
-                60,
-                images.BATON.img,
-                images.BATON.outlined_img,
-                (5, self.length - 200),
-                0
-            )))
-            self.entity_list.append(entities.ItemEntity(items.simple_stab(
-                10,
-                60,
-                images.BATON.img,
-                images.BATON.outlined_img,
-                (-5, self.length - 400),
-                0
-            )))
-            start_note = entities.Note(self.length // 2, True)
-            start_note.freeze_y(False)
-            self.entity_list.append(start_note)
-            self.entity_list.append(entities.NoteSpawner(self, start_note))
-        else:  # lazer dodge
-            self.length = game_states.HEIGHT
+        self.difficulty = max(count, 10)
+        self.state = MinigameArea.States.pre_init
+        self.entity_tracker = []
+        self.type: Minigame = self.random.choice(Minigame.minigames)
+        self.type.init(self)
         self.end_wall = entities.InvulnerableObstacle(pos=(0, self.length), health=1)
         self.entity_list.append(self.end_wall)
 
     def tick(self):
         ret = super(MinigameArea, self).tick()
-        if self.state == 0:  # setup game
+        if self.state is MinigameArea.States.pre_init:  # setup game
             if game_states.DISTANCE > self.start_coordinate + self.length // 2:
-                self.state = 1
+                self.state = MinigameArea.States.running
                 end_wall = entities.InvulnerableObstacle(pos=(0, self.start_coordinate + 1), health=1)
                 end_wall.final_load()
                 gameboard.NEW_ENTITIES.append(end_wall)
-                if self.type == 0:  # obligatory fishing minigame
-                    wave: list[tuple[Type[entities.Entity], Iterable]] = []
-                    for i in range(self.difficulty // 10):
-                        for i2 in range(i + 7):
-                            wave.append((entities.Fish, [self]))
-                        wave = [(entities.MassDelayedDeploy, (60 * 10, self, wave))]
-                    gameboard.NEW_ENTITIES.append(entities.MassDelayedDeploy(0, wave[0][1][1], wave[0][1][2]))
-                elif self.type == 1:  # notes
-                    self.enforce_center = self.start_coordinate + self.length // 2
-                else:  # lazer dodge
-                    self.enforce_center = self.start_coordinate + self.length // 2
-                    wave: list[tuple[Type[entities.Entity], Iterable]] = []
-                    ticks_to_cross = self.length // 10
-                    delay = 0
-                    for i in range(self.difficulty // 10):
-                        lazertype = self.random.randint(0, 2)
-                        # print(f"wave: {["safety zones", "trackers", "juggle"][lazertype]}")
-                        if lazertype == 0:  # safety zone(s)
-                            charge_bonus = 10
-                            delay = ticks_to_cross + charge_bonus
-                            pre_safe_creation = [
-                                (entities.Lazer, (y, ticks_to_cross + charge_bonus, charge_bonus, self))
-                                for y in range(self.start_coordinate + 64, self.end_coordinate, 64)
-                            ]
-                            del_at: int = self.random.randint(0, len(pre_safe_creation) - 2)
-                            del pre_safe_creation[del_at:del_at + 2]
-                            wave.extend(pre_safe_creation)
-                        elif lazertype == 1:  # a bunch of trackers
-                            tracker_delay = 30
-                            delay = self.random.randint(5, 8)
-                            for tracker_count in range(delay):
-                                wave.append((
-                                    entities.DelayedDeploy,
-                                    (tracker_delay * tracker_count,
-                                     self, entities.TrackingLazer,
-                                     (self.start_coordinate + self.length * (tracker_count % 2),
-                                      3 * tracker_delay, 15, self))
-                                ))
-                            delay *= tracker_delay
-                        elif lazertype == 2:  # juggle 3 trackers
-                            repeats = self.random.randint(3, 5)
-                            tracker_delay = 30
-                            for tracker_count in range(3):
-                                wave.append((
-                                    entities.DelayedDeploy,
-                                    (tracker_delay * tracker_count,
-                                     self, entities.TrackingLazer,
-                                     (self.start_coordinate + self.length * (tracker_count % 2),
-                                      3 * tracker_delay, 15, self, repeats))
-                                ))
-                            delay = tracker_delay * (repeats + 1)
-                        wave = [(entities.MassDelayedDeploy, (delay, self, wave))]
-                    gameboard.NEW_ENTITIES.append(wave[0][0](*wave[0][1]))
-        elif self.state == 1:  # in game
-            if self.type == 0:
-                self.enforce_center = game_states.DISTANCE
-            if self.num_entities() == self.solved_entity_number:
-                self.state = 2
+                self.type.setup(self)
+        elif self.state is MinigameArea.States.running:  # in game
+            self.type.tick(self)
+            if self.type.check_win(self):
+                self.state = MinigameArea.States.done
                 self.enforce_center = None
-                if self.type == 1:
-                    wall = entities.Obstacle(pos=(0, self.end_coordinate))
-                    wall.hit(9, self)
-                    gameboard.NEW_ENTITIES.append(wall)
+                self.type.finish(self)
                 self.end_wall.alive = False
 
         return ret
@@ -716,6 +642,7 @@ class BossArea(GameArea):
 @add_error_checking
 def add_game_area():
     # print(game_states.LAST_AREA)
+    area: GameArea
     determinator = hash(str(game_states.SEED + game_states.LAST_AREA))
     if game_states.LAST_AREA == 0:
         def first_area_tutorial():
@@ -782,17 +709,13 @@ def add_game_area():
         )))
     else:
         # print(determinator, game_states.SEED + game_states.LAST_AREA)
-        area = None
         typ = determinator % 64
         area_type: Type[GameArea]
         threshold: int
-        # area = MinigameArea(determinator, 20)
         for area_type, threshold in area_thresholds:
             if area_type.allowed_at(game_states.LAST_AREA) and (typ <= threshold or area_type.required_at(game_states.LAST_AREA)):
                 area = area_type(determinator, game_states.LAST_AREA)
                 break
-        if area is None:
-            area = GameArea(game_states.LAST_AREA, length=400)
     game_states.LAST_AREA += 1
     area.finalize()
     # print(game_states.LAST_AREA_END)
@@ -809,51 +732,3 @@ area_thresholds = (
     (BreakThroughArea, 32),  # breakthrough area (4+)
     (BasicArea, 64)  # basic area (0+)
 )
-
-
-if __name__ == "__main__":
-    from general_use import utility, game_structures
-    import main
-
-    game_states.PLACE = game_structures.PLACES.in_game
-
-    game_states.DISTANCE = 100
-    game_states.BOTTOM = 0
-    game_states.RECORD_DISTANCE = 0
-    game_states.LAST_AREA_END = 0
-    # player state management
-    game_states.HEALTH = 5
-    game_states.LAST_DIRECTION = 1
-    game_states.GLIDE_SPEED = 0
-    game_states.GLIDE_DIRECTION = 0
-    game_states.GLIDE_DURATION = 0
-    game_states.TAPER_AMOUNT = 0
-    # screen shake management
-    game_states.X_DISPLACEMENT = 0
-    game_states.Y_DISPLACEMENT = 0
-    game_states.SHAKE_DURATION = 0
-    game_states.X_LIMIT = 0
-    game_states.Y_LIMIT = 0
-    game_states.X_CHANGE = 0
-    game_states.Y_CHANGE = 0
-    # screen
-    game_states.CAMERA_BOTTOM = 0
-    # area management
-    game_states.AREAS_PASSED = 0
-    game_states.LAST_AREA = 0
-    game_states.AREA_QUEUE_MAX_LENGTH = 3
-
-    game_structures.HANDS = [None, None]
-
-    add_game_area()
-    add_game_area()
-    add_game_area().join()
-    area = MinigameArea(90230923, 20)
-    area.finalize()
-    game_states.LAST_AREA_END = area.end_coordinate
-    game_structures.AREA_QUEUE.append(area)
-
-    while game_states.RUNNING:
-        game_structures.SCREEN.fill(main.backdrop)
-        game_states.PLACE.tick()
-        utility.tick()

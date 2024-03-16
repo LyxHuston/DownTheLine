@@ -1626,7 +1626,7 @@ class NoteSpawner(InvulnerableEntity):
     def last_y(self, val):
         self.__last_y = max(self.area.start_coordinate, min(self.area.end_coordinate, val))
 
-    def __init__(self, area, start_track):
+    def __init__(self, area, start_track, register: Callable = None):
         super(NoteSpawner, self).__init__(images.EMPTY, 0, (0, area.length))
         self.waves = max(area.difficulty // 15, 1)
         self.area = area
@@ -1636,6 +1636,12 @@ class NoteSpawner(InvulnerableEntity):
         self.start_track = start_track
         self.cooldown_track = 0
         self.last_dash_arpeggio = 0
+        self.register = register
+
+    def __add(self, e: Entity):
+        gameboard.NEW_ENTITIES.append(e)
+        if self.register is not None:
+            self.register(e)
 
     def tick(self):
         if self.start_track is not None:
@@ -1648,7 +1654,7 @@ class NoteSpawner(InvulnerableEntity):
         if self.cooldown_track <= 0:
             choose = self.random.randint(0, 3)
             if choose == 0:  # single note
-                gameboard.NEW_ENTITIES.append(Note(self.last_y))
+                self.__add(Note(self.last_y))
                 self.cooldown_track = 60 + 30 * self.random.randint(0, 2)
                 self.last_y += self.random.randint(-2, 2) * 5 * self.cooldown_track
             elif choose == 1:  # arpeggio
@@ -1657,7 +1663,7 @@ class NoteSpawner(InvulnerableEntity):
                 spacing = 9
                 for i in range(45 // spacing):
                     self.last_y += direction * 10 * spacing
-                    gameboard.NEW_ENTITIES.append(Note(self.last_y, offscreen=offscreen))
+                    self.__add(Note(self.last_y, offscreen=offscreen))
                     offscreen += note_speed * spacing
                 self.cooldown_track = 45
             else:
@@ -1668,7 +1674,7 @@ class NoteSpawner(InvulnerableEntity):
                     spacing = 10
                     for i in range(20 // spacing):
                         self.last_y += direction * 25 * spacing
-                        gameboard.NEW_ENTITIES.append(Note(self.last_y, offscreen=offscreen))
+                        self.__add(Note(self.last_y, offscreen=offscreen))
                         offscreen += note_speed * spacing
                     self.cooldown_track = 40
                 else:  # switch arpeggio
@@ -1680,7 +1686,7 @@ class NoteSpawner(InvulnerableEntity):
                             direction *= -1
                             self.last_y += direction * 64 * spacing
                         self.last_y += direction * 10 * spacing
-                        gameboard.NEW_ENTITIES.append(Note(self.last_y, offscreen=offscreen))
+                        self.__add(Note(self.last_y, offscreen=offscreen))
                         offscreen += note_speed * spacing
                     self.cooldown_track = 45
             self.cooldown_track *= 2
@@ -1785,18 +1791,21 @@ class DelayedDeploy(InvulnerableEntity):
 
     has_camera_mass = False
 
-    def __init__(self, delay, area, entity: type(Entity), args):
+    def __init__(self, delay, area, entity: type(Entity), args, tracker: Callable = None):
         super().__init__(images.EMPTY, 0, (3000, area.start_coordinate))
         # print("delayed deploy made")
         self.delay = delay
         self.entity = entity
         self.args = args
+        self.tracker = tracker
 
     def tick(self):
         self.delay -= 1
         if self.delay <= 0:
-            # print("delayed deploy initiated")
-            gameboard.NEW_ENTITIES.append(self.entity(*self.args))
+            e = self.entity(*self.args)
+            gameboard.NEW_ENTITIES.append(e)
+            if self.tracker is not None:
+                self.tracker(e)
             self.alive = False
 
 
@@ -1804,15 +1813,20 @@ class MassDelayedDeploy(InvulnerableEntity):
 
     has_camera_mass = False
 
-    def __init__(self, delay, area, entities: list[tuple[Type[Entity], Iterable]]):
+    def __init__(self, delay, area, entities: list[tuple[Type[Entity], Iterable]], tracker: Callable = None):
         super().__init__(images.EMPTY, 0, (3000, area.start_coordinate))
         self.delay = delay
         self.entities = entities
+        self.tracker = tracker
 
     def tick(self):
         self.delay -= 1
         if self.delay <= 0:
-            gameboard.NEW_ENTITIES.extend(entity(*args) for entity, args in self.entities)
+            es = [entity(*args) for entity, args in self.entities]
+            gameboard.NEW_ENTITIES.extend(es)
+            if self.tracker is not None:
+                for e in es:
+                    self.tracker(e)
             self.alive = False
 
 
