@@ -25,7 +25,6 @@ from run_game import abilities, game_areas, ingame, tutorials, entities
 from data import draw_constants, game_states, switches
 from screens import run_start_end
 import math
-from typing import Callable, Any
 
 
 player_img = pygame.image.load("./resources/player/player.png")
@@ -233,7 +232,7 @@ def tick(do_tick: bool = True, draw_gui: bool = True):
         # draw distance record
         game_structures.SCREEN.blit(
             game_structures.FONTS[128].render(
-                str(game_states.RECORD_DISTANCE),
+                str(run_start_end.visual_distance()),
                 False,
                 (255, 255, 255)
             ),

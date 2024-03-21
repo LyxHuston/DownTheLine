@@ -31,6 +31,14 @@ import random
 import sys
 from typing import Type
 
+
+def visual_distance() -> int:
+    # if d is None:
+    #     d = game_states.RECORD_DISTANCE
+    # return d / 128
+    return game_states.RECORD_DISTANCE // 512
+
+
 PAUSE_BUTTONS = game_structures.ButtonHolder(
     background=None,
     fill_color=(0, 0, 0, 127),
@@ -225,7 +233,7 @@ def log_run(reason: RunEndReasons):
         "end_time": now.strftime("%H:%M:%S"),
         "duration": str(duration),
         "seed": game_states.SEED,
-        "furthest": game_states.RECORD_DISTANCE,
+        "furthest": visual_distance(),
         "progress": game_states.AREAS_PASSED,
         "room_record": GameAreaLog.get_result_string()
     })
