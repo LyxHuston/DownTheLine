@@ -371,6 +371,10 @@ class GiftArea(GameArea):
                 "I'm not certain if it will be more powerful than your current ones.",
                 game_structures.FONTS[100]
             )
+            tutorials.add_text(
+                "Hold space to switch items.",
+                game_structures.TUTORIAL_FONTS[90],
+            )
 
 
 class EnslaughtArea(GameArea, have_starter=True):

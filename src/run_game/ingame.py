@@ -30,7 +30,7 @@ class Inputs:
     up_input = pygame.K_w
     down_input = pygame.K_s
     dash = pygame.K_d
-    ignore_pickup = pygame.K_SPACE
+    prefer_pickup = pygame.K_SPACE
     pause = pygame.K_ESCAPE
 
 
@@ -139,11 +139,9 @@ def pickup_to_hand(num: int):
 
 
 def item_input_catch(num: int) -> None:
-    if not pygame.key.get_pressed()[Inputs.ignore_pickup]:
+    if game_structures.HANDS[num] is None or pygame.key.get_pressed()[Inputs.prefer_pickup]:
         if pickup_to_hand(num):
             return
-    if game_structures.HANDS[num] is None:
-        return
     if items.prevent_other_use(game_structures.HANDS[1 - num]):
         return
     game_structures.HANDS[num].action(game_structures.HANDS[num])
