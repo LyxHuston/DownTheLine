@@ -18,7 +18,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import pygame
 from general_use import game_structures
-from data import draw_constants, game_states, switches
+from data import draw_constants, game_states, switches, images
 from run_game import tutorials
 
 dash_img = pygame.image.load("./resources/abilities/ability_icons/dash_icon.png")
@@ -75,7 +75,7 @@ def draw_dash_icon(tick_counter) -> None:
     )
 
 
-def draw_icon(icon: pygame.Surface, disappeared: float, pos: tuple[int, int]):
+def draw_icon(icon: pygame.Surface, disappeared: float, pos: tuple[int, int], locked: bool = False):
     blit = pygame.surface.Surface(icon.get_size(), pygame.SRCALPHA)
     blit.blit(icon, (0, 0))
 
@@ -98,3 +98,9 @@ def draw_icon(icon: pygame.Surface, disappeared: float, pos: tuple[int, int]):
         blit,
         pos
     )
+
+    if locked:
+        game_structures.SCREEN.blit(
+            images.LOCKED_ICON.img,
+            pygame.Rect(pos[0] - 8, pos[1] - 8, images.LOCKED_ICON.img.get_width(), images.LOCKED_ICON.img.get_height())
+        )

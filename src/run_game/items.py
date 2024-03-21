@@ -330,7 +330,10 @@ def if_held_by_player(item: Item):
 @make_add_wrapper
 @if_held_by_player
 def draw_icon(item: Item):
-    abilities.draw_icon(item.icon, 0, (get_icon_x(item.pos), get_icon_y()))
+    abilities.draw_icon(
+        item.icon, 0, (get_icon_x(item.pos), get_icon_y()),
+        prevent_other_use(game_structures.HANDS[1 - item.pos])
+    )
 
 
 @make_add_wrapper
@@ -339,7 +342,8 @@ def draw_icon_for_simple_duration_item(item: Item):
     abilities.draw_icon(
         item.icon,
         item.data_pack[1] / item.data_pack[3] if item.data_pack[0] else 1 - item.data_pack[1] / item.data_pack[2],
-        (get_icon_x(item.pos), get_icon_y())
+        (get_icon_x(item.pos), get_icon_y()),
+        prevent_other_use(game_structures.HANDS[1 - item.pos])
     )
 
 

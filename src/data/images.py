@@ -146,6 +146,7 @@ SIMPLE_BOMB: Image = Image("items/simple_bomb")
 BATON: Image = Image("items/baton")
 
 # icons
+LOCKED_ICON: Image = Image("items/icons/locked")
 SIMPLE_STAB_ICON: Image = Image("items/icons/simple_stab")
 SIMPLE_SHIELD_ICON: Image = Image("items/icons/simple_shield")
 SIMPLE_THROWABLE_ICON: Image = Image("items/icons/simple_throwable")
