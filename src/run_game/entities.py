@@ -828,12 +828,12 @@ class Fencer(Glides):
                 self.img = self.dashing.img
             else:
                 self.y += 5 * ((self.y < game_states.DISTANCE) * 2 - 1)
-        if abs(self.x) < 40 and abs(self.y - game_states.DISTANCE) < 56:
-            if game_structures.deal_damage(1, self):
-                glide_player(1, 20, 10, (self.y < game_states.DISTANCE) * 2 - 1)
-                game_structures.begin_shake(10, (20, 20), (13, -9))
-            game_states.DISTANCE = self.y + 56 * ((self.y < game_states.DISTANCE) * 2 - 1)
-            self.start_glide(25, 10, 15, ((self.y - game_states.DISTANCE) > 0) * 2 - 1)
+        # if abs(self.x) < 40 and abs(self.y - game_states.DISTANCE) < 56:
+        #     if game_structures.deal_damage(1, self):
+        #         glide_player(1, 20, 10, (self.y < game_states.DISTANCE) * 2 - 1)
+        #         game_structures.begin_shake(10, (20, 20), (13, -9))
+        #     game_states.DISTANCE = self.y + 56 * ((self.y < game_states.DISTANCE) * 2 - 1)
+        #     self.start_glide(25, 10, 15, ((self.y - game_states.DISTANCE) > 0) * 2 - 1)
         return self.health > 0
 
     def hit(self, damage: int, source):
