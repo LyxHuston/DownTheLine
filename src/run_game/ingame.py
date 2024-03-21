@@ -140,8 +140,8 @@ def pickup_to_hand(num: int):
 
 def item_input_catch(num: int) -> None:
     if game_structures.HANDS[num] is None or pygame.key.get_pressed()[Inputs.prefer_pickup]:
-        if pickup_to_hand(num):
-            return
+        pickup_to_hand(num)
+        return
     if items.prevent_other_use(game_structures.HANDS[1 - num]):
         return
     game_structures.HANDS[num].action(game_structures.HANDS[num])
