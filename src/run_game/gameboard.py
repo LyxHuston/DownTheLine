@@ -281,7 +281,7 @@ def tick(do_tick: bool = True, draw_gui: bool = True):
         #     goal -= 2 * tutorials.display.get_height()
         #     mass *= 3
 
-        camera_move += min(abs(mass), 2) / 324 * (goal - game_states.CAMERA_BOTTOM)
+        camera_move += min(abs(mass), 2) / 180 * (goal - game_states.CAMERA_BOTTOM)
         if enforce_goal is None:
             pass
             # if abs(camera_move) < 5 and abs(mass) != total:
