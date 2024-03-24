@@ -216,7 +216,7 @@ class GameArea:
         return allowable_entities
 
     def previously_seen(self, entity: entities.Entity):
-        return entity.first_occurs or self.index < entity.first_occurs
+        return entity.first_occurs and self.index > entity.first_occurs
 
     def num_entities(self):
         if not self.__have_starter:
