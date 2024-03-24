@@ -74,7 +74,7 @@ class HeartData:
 heart_data: list[HeartData] = []
 
 
-camera_move = 0
+camera_move: int = 0
 steepness: int = 10
 liminal_mass_factor: float = 1 / (2 * (1 / (math.exp(steepness * -0.5) + 1) - 0.5))
 max_tolerance: int = 2
@@ -187,15 +187,15 @@ def tick(do_tick: bool = True, draw_gui: bool = True):
                 e.tick()
                 if not e.has_camera_mass:
                     continue
-                dist = e.distance_to_player()
+                dist: int = e.distance_to_player()
                 if dist > game_states.HEIGHT:
                     continue
-                direction = (game_states.DISTANCE < e.y) * 2 - 1
-                k: float = max(e.distance_to_view_edge() / game_states.CAMERA_THRESHOLDS[0], dist / 600, 1) - 1
+                direction: int = (game_states.DISTANCE < e.y) * 2 - 1
+                k: float = max(3 - e.distance_to_view_edge() / game_states.CAMERA_THRESHOLDS[0], dist / 600, 1) - 1
                 if k > 1:
                     mass += direction
                     total += 1
-                elif k:
+                elif k > 0:
                     diff: float = (1 / (math.exp(steepness * (0.5 - k)) + 1) - 0.5) * liminal_mass_factor + 0.5
                     mass += direction * diff
                     total += diff
@@ -266,28 +266,33 @@ def tick(do_tick: bool = True, draw_gui: bool = True):
     if do_tick:
         camera_move //= 2
         if enforce_goal is not None:
+            total = 2
             goal = enforce_goal
-            mass = 2
         elif total > 0:
             tolerance: float = min(total - abs(mass), max_tolerance)
-            goal = game_states.DISTANCE + math.copysign((max_tolerance - tolerance) ** 2 * game_states.HEIGHT / (2 * max_tolerance ** 2), mass)
+            goal = game_states.DISTANCE + math.copysign(
+                (1 - tolerance / max_tolerance) ** 2 * game_states.HEIGHT / 2,
+                mass
+            )
+            # print(total, mass, goal, game_states.CAMERA_BOTTOM)
         else:
-            goal = game_states.DISTANCE + game_states.HEIGHT * game_states.LAST_DIRECTION
-            mass = 1.5
-        goal -= game_states.HEIGHT // 2
+            goal = game_states.DISTANCE + game_states.HEIGHT * game_states.LAST_DIRECTION * 1.5
 
         # if tutorials.display is not None:
         #     goal -= 2 * tutorials.display.get_height()
         #     mass *= 3
 
-        camera_move += min(abs(mass), 2) / 180 * (goal - game_states.CAMERA_BOTTOM)
+        goal -= game_states.HEIGHT // 2
+        camera_move += round(min(total, 2) / 90 * (goal - game_states.CAMERA_BOTTOM))
+
         if enforce_goal is None:
             pass
             # if abs(camera_move) < 5 and abs(mass) != total:
             #     camera_move = 0
         elif camera_move < 1 and goal != game_states.CAMERA_BOTTOM:
             game_states.CAMERA_BOTTOM += math.copysign(1, goal - game_states.CAMERA_BOTTOM)
-        game_states.CAMERA_BOTTOM += round(camera_move)
+        game_states.CAMERA_BOTTOM += camera_move
+        # game_states.CAMERA_BOTTOM = goal
 
         # # move actual camera now
         # if abs(game_states.JITTER_PROTECTION_CAMERA - game_states.CAMERA_BOTTOM
