@@ -40,7 +40,7 @@ def die():
         game_structures.Button.make_text_button("Press Space or click to skip", 40, (game_states.WIDTH, 0), skip_wait,
                                                 background_color=(0, 0, 0), outline_color=(255, 255, 255),
                                                 border_width=5, x_align=1, y_align=0,
-                                                special_press=ingame.Inputs.ignore_pickup))
+                                                special_press=ingame.Inputs.prefer_pickup))
 
     fade_counter = 0
     tick_counter = 0
