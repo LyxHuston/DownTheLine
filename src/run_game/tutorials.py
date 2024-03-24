@@ -56,6 +56,8 @@ display_height = 0
 
 WAIT_TIMES: dict[str, int | float] = {".": 12, ",": 8}
 
+switch_ratio: float = 2/3
+
 def clear_tutorial_text():
     """
     clears the tutorial texts to let users print atop them
@@ -82,6 +84,20 @@ def tick(do_tick):
         display_height = 0
     else:
         display_height = display.get_height()
+        # if switches.TUTORIAL_TEXT_POSITION:
+        #     if game_states.DISTANCE - game_states.CAMERA_BOTTOM < (1 - switch_ratio) * game_states.HEIGHT:
+        #         switches.TUTORIAL_TEXT_POSITION = False
+        # else:
+        #     if game_states.DISTANCE - game_states.CAMERA_BOTTOM > switch_ratio * game_states.HEIGHT:
+        #         switches.TUTORIAL_TEXT_POSITION = True
+        # below is identical
+        if (
+            (game_states.DISTANCE - game_states.CAMERA_BOTTOM - game_states.HEIGHT / 2) * (switches.TUTORIAL_TEXT_POSITION * -2 + 1)
+            >
+            game_states.HEIGHT * (switch_ratio - 0.5)
+        ):
+            switches.TUTORIAL_TEXT_POSITION = not switches.TUTORIAL_TEXT_POSITION
+
         game_structures.SCREEN.blit(display, (0, (game_states.HEIGHT - display_height) *
                                               switches.TUTORIAL_TEXT_POSITION))
         line_y: int = game_states.HEIGHT - display_height if switches.TUTORIAL_TEXT_POSITION else display_height
