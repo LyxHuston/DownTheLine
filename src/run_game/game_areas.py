@@ -540,11 +540,16 @@ class MinigameArea(GameArea, have_starter=True):
         super().__init__(count, seed=determiner)
         self.difficulty = max(count, 10)
         self.state = MinigameArea.States.pre_init
-        self.entity_tracker = []
+        self.data_pack = None
         self.type: Minigame = self.random.choice(Minigame.minigames)
         self.type.init(self)
         self.end_wall = entities.InvulnerableObstacle(pos=(0, self.length), health=1)
         self.entity_list.append(self.end_wall)
+
+    def draw(self):
+        super().draw()
+        if self.state is MinigameArea.States.running:
+            self.type.draw(self)
 
     def tick(self):
         ret = super(MinigameArea, self).tick()

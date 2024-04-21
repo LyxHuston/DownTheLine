@@ -1813,11 +1813,13 @@ class MassDelayedDeploy(InvulnerableEntity):
 
     has_camera_mass = False
 
-    def __init__(self, delay, area, entities: list[tuple[Type[Entity], Iterable]], tracker: Callable = None):
+    def __init__(self, delay, area, entities: list[tuple[Type[Entity], Iterable]],
+                 tracker: Callable = None, deployed: Callable = None):
         super().__init__(images.EMPTY, 0, (3000, area.start_coordinate))
         self.delay = delay
         self.entities = entities
         self.tracker = tracker
+        self.deploy_call = deployed
 
     def tick(self):
         self.delay -= 1
@@ -1828,6 +1830,8 @@ class MassDelayedDeploy(InvulnerableEntity):
                 for e in es:
                     self.tracker(e)
             self.alive = False
+            if self.deploy_call is not None:
+                self.deploy_call()
 
 
 class Particle(Entity):
