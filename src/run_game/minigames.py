@@ -143,9 +143,10 @@ def notes_init(area):
 	start_note = entities.Note(area.length // 2, True)
 	start_note.freeze_y(False)
 	area.entity_list.append(start_note)
+	tracker = list()
+	spawner = entities.NoteSpawner(area, start_note, tracker.append)
+	preset(area, tracker, spawner)
 	entity_tracker(area).append(start_note)
-	spawner = entities.NoteSpawner(area, start_note, area.entity_tracker.append)
-	preset(area, [], spawner)
 	area.entity_list.append(spawner)
 	entity_tracker(area).append(spawner)
 
