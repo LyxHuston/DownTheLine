@@ -121,8 +121,6 @@ class Entity(game_structures.Body):
         self.__y_shake_momentum: int = 0
         self.__y_shake: int = 0
         self.__shake_limit: int = 0
-        if self.track_instances:
-            self.__instances.add(self)
 
     def __init_subclass__(cls, track_instances=False):
         if track_instances:
@@ -215,6 +213,8 @@ class Entity(game_structures.Body):
         called when an area initializes.  In most cases, starts AI/movement
         :return:
         """
+        if self.track_instances:
+            self.__instances.add(self)
         if not type(self).seen:
             type(self).seen = True
             self.first_seen()
@@ -761,9 +761,6 @@ class Crawler(Glides, track_instances=True):
             (0, area.random.randint(area.length // 3, area.length)),
             area.random.randint(1, min(max(area.difficulty // 4, 1), 5))
         )
-
-    def final_load(self):
-        super().final_load()
 
 
 class Fencer(Glides):
