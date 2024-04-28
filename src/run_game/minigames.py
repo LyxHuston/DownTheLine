@@ -102,7 +102,7 @@ def empty_area(area):
 
 @fish.set_setup
 def fish_setup(area):
-	preset(area, [])
+	preset(area, [], 0)
 	register = entity_tracker(area).append
 	wave: list[tuple[Type[entities.Entity], Iterable]] = []
 	for i in range(area.difficulty // 10):
