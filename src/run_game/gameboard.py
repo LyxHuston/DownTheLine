@@ -125,7 +125,7 @@ def tick(do_tick: bool = True, draw_gui: bool = True):
                 area = game_structures.NEW_AREAS.popleft()
                 area.initialized = True
                 area.final_load()
-                ENTITY_BOARD.extend(area.entity_list)
+                NEW_ENTITIES.extend(area.entity_list)
                 area.entity_list = None  # so that it will be forced to error
                 game_structures.AREA_QUEUE.append(area)
         if game_structures.AREA_QUEUE[0].end_coordinate < game_states.CAMERA_BOTTOM - game_states.HEIGHT:  # despawn
@@ -166,6 +166,7 @@ def tick(do_tick: bool = True, draw_gui: bool = True):
     )
     if do_tick:
         enforce_goal: int | None = None
+        [entity.final_load() for entity in NEW_ENTITIES]
         ENTITY_BOARD.extend(NEW_ENTITIES)
         NEW_ENTITIES.clear()
         ENTITY_BOARD.sort(key=lambda e: e.y)

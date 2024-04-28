@@ -44,7 +44,8 @@ class Entity(game_structures.Body):
 
     biggest_radius: int = 0
 
-    __instances: set | None = None
+    __instances: list | set | None = None
+    __add_instance: Callable[[Self], None] | None = None
     seen: bool = False
     first_occurs: int = 0
     tutorial_given: bool = False
@@ -125,7 +126,8 @@ class Entity(game_structures.Body):
     def __init_subclass__(cls, track_instances=False):
         if track_instances:
             cls.track_instances = True
-            cls.__instances = set()
+            cls.__instances = list()
+            cls.__add_instance = cls.__instances.append
         super().__init_subclass__()
 
     @classmethod
@@ -214,7 +216,7 @@ class Entity(game_structures.Body):
         :return:
         """
         if self.track_instances:
-            self.__instances.add(self)
+            self.__add_instance(self)
         if not type(self).seen:
             type(self).seen = True
             self.first_seen()
@@ -1906,6 +1908,7 @@ class AreaEdge(InvulnerableEntity):
         pass
 
     def final_load(self) -> None:
+        super().final_load()
         self.freeze_x(True)
         self.freeze_y(True)
 
