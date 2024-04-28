@@ -116,6 +116,18 @@ def event_catcher(event: pygame.event.Event) -> bool:
     return False
 
 
+pickup_points = 8
+pickup_rad = 40
+
+
+def spawn_pickup_particles():
+    for i in range(pickup_points):
+        rot = 2 * math.pi * i / pickup_points
+        gameboard.PARTICLE_BOARD.add(entities.PICKUP_SPARKLES(
+            (pickup_rad * math.cos(rot), game_states.DISTANCE + pickup_rad * math.sin(rot))
+        ))
+
+
 def pickup_to_hand(num: int):
     for entity in gameboard.ENTITY_BOARD:
         if entity.is_holder:
@@ -134,6 +146,7 @@ def pickup_to_hand(num: int):
             game_structures.HANDS[num].pos = entity.pos
             gameboard.NEW_ENTITIES.append(entities.ItemEntity(game_structures.HANDS[num]))
             game_structures.HANDS[num] = entity.pick_up(num)
+            spawn_pickup_particles()
         return True
     return False
 
