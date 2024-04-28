@@ -72,15 +72,11 @@ def clean_gameboard():
     from run_game import entities
     entities.Particle.__id = 0
 
-    stack = deque()
-    stack.append(entities.Entity)
-    while stack:  # go through all Entity subclasses to clean up
-        on: Type[entities.Entity] = stack.pop()
+    on: Type[entities.Entity]
+    for on in game_structures.recursive_subclasses(entities.Entity):
         on.clean()
-        stack.extend(on.__subclasses__())
-        # print(on.__name__, [sub.__name__ for sub in on.__subclasses__()])
     entities.Slime.seen = True
-    for attr_value in game_areas.GameArea.__subclasses__():
+    for attr_value in game_structures.recursive_subclasses(game_areas.GameArea):
         attr_value.seen = False
         attr_value.tutorial_given = False
         attr_value.last_spawned = 0
