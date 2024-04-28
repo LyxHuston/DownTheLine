@@ -60,11 +60,12 @@ class GameArea:
     def end_coordinate(self) -> int:
         return self.start_coordinate + self.length
 
-    def __init__(self, index: int, length: int = 0, seed: int = None):
+    def __init__(self, index: int, length: int = None, seed: int = None, customized: bool = False):
         self.index: int = index
         self.enforce_center: int | None = None
         self.start_coordinate: int = 0
-        self.length: int = length
+        if length is not None:
+            self.length: int = length
         self.initialized: bool = False
         self.boundary_crossed: bool = False
         self.entity_list: list[entities.Entity] | None = []
@@ -76,6 +77,7 @@ class GameArea:
             raise ValueError("I cry non-deterministic from set seed (every random call needs to be deterministic from"
                              "the original seed)")
         else:
+            self.seed = seed
             self.random = random.Random(seed)
         self.spawn_end = 0  # track which end to spawn a particle on
         self.__class__.last_spawned = index
@@ -103,8 +105,6 @@ class GameArea:
         if not self.__class__.seen:
             self.__class__.seen = True
             self.start_tutorial()
-        for entity in self.entity_list:
-            entity.final_load()
 
     first_allowed_spawn = 0
     last_spawned = 0
