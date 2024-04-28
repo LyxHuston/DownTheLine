@@ -168,6 +168,11 @@ STEAM_PARTICLES: list[Image] = [
     Image("particles/steam/steam_2"),
     Image("particles/steam/steam_3")]
 
+PICKUP_SPARKLE_PARTICLES: list[Image] = [
+    Image("particles/pickup_sparkle/sparkle_1"),
+    Image("particles/pickup_sparkle/sparkle_2")
+]
+
 last_dash_particle = Image("particles/dash_ripples/ripple_4")
 DASH_PARTICLES: list[Image] = [
     Image("particles/dash_ripples/ripple_1"),

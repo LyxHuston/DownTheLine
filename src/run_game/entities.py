@@ -1925,6 +1925,7 @@ def particle_with_settings(imgs: list[pygame.Surface] | list[images.Image], tick
 DASH_RIPPLE_PARTICLES = particle_with_settings(list(images.DASH_PARTICLES), 4, 20)
 STEAM_PARTICLES = particle_with_settings(list(images.STEAM_PARTICLES), 4, 12)
 EXPLOSION_PARTICLES = particle_with_settings(list(images.EXPLOSION_PARTICLES), 12, 36)
+PICKUP_SPARKLES = particle_with_settings(list(images.PICKUP_SPARKLE_PARTICLES), 16, 32)
 
 
 class AreaEdge(InvulnerableEntity):
