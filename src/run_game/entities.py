@@ -320,6 +320,11 @@ class Entity(game_structures.Body):
 EntityType = Type[Entity]
 
 
+invulnerable_shine_slope = 2
+invulnerable_shine_speed = 16
+invulnerable_shine_width = 20
+
+
 def make_invulnerable_version(entity_class):
     """
     make invulnerable subclass of an entity class
@@ -334,6 +339,7 @@ def make_invulnerable_version(entity_class):
 
         def __init__(self, *args, **kwargs):
             self.__alive = True
+            self.__shine = None
             super().__init__(*args, **kwargs)
 
         @property
@@ -343,7 +349,9 @@ def make_invulnerable_version(entity_class):
 
         @health.setter
         def health(self, val: int):
-            pass
+            if val < 1 and self.__shine is None:
+                self.__shine = (self.img.get_width() + self.img.get_height() // invulnerable_shine_slope +
+                                invulnerable_shine_width)
 
         @property
         def alive(self) -> bool:
@@ -354,6 +362,32 @@ def make_invulnerable_version(entity_class):
             # if not val:
                 # print(f"invulnerable entity {self} killed")
             self.__alive = val
+
+        def draw(self):
+            if self.img is None:
+                return
+            img = self.img
+            if self.__shine is not None:
+                img = img.copy()
+                if not ingame.paused:
+                    pygame.draw.line(
+                        img,
+                        (255, 255, 255),
+                        (self.__shine, 0),
+                        (self.__shine - self.img.get_height() // invulnerable_shine_slope, self.img.get_height()),
+                        invulnerable_shine_width
+                    )
+                    self.__shine -= invulnerable_shine_speed
+                    if self.__shine < 0:
+                        self.__shine = None
+            game_structures.SCREEN.blit(
+                img,
+                (
+                    game_structures.to_screen_x(self.x) - img.get_width() // 2,
+                    game_structures.to_screen_y(self.y) - img.get_height() // 2
+                )
+            )
+            return self.pos
 
     New.__name__ = "Invulnerable" + entity_class.__name__
     New.__qualname__ = ".".join(entity_class.__qualname__.split(".")[:-1] + [New.__name__])
