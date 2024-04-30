@@ -22,7 +22,7 @@ import random
 
 import pygame
 
-from data import game_states, images
+from data import game_states, images, switches
 from run_game import tutorials, entities, bosses, items, gameboard
 from general_use.utility import make_async, add_error_checking, make_simple_always
 from general_use import game_structures
@@ -460,11 +460,11 @@ class EnslaughtAreaEvent:
             while target_change > 0:
                 index = (determiner % num) % len(allowable_entities)
                 num += 1
-                entity = allowable_entities[index][0]
-                target_change -= entity.cost + allowable_entities[index][1] ** 2
-                self.change_difficulty += entity.cost + allowable_entities[index][1] ** 2
+                e = allowable_entities[index][0]
+                target_change -= e.cost + allowable_entities[index][1] ** 2
+                self.change_difficulty += e.cost + allowable_entities[index][1] ** 2
                 allowable_entities[index][1] += 1
-                made_entity = entity.make(determiner, area)
+                made_entity = e.make(determiner, area)
                 made_entity.y += area.start_coordinate
                 self.add_entities.append(made_entity)
 
@@ -507,16 +507,20 @@ class EnslaughtArea(GameArea, have_starter=True):
         self.length = game_states.HEIGHT * 4
         self.end_wall = entities.InvulnerableObstacle(pos=(0, self.length), health=1)
         self.state = 0  # 0: not started 1: in progress 2: finished, killing off entities
-        self.timer = 30 * 60 + 120 * math.floor(math.log2(count))
-        self.max = self.timer
+        self.timer = 0
+        self.num_events = 0
+        self.max = 0
         self.cooldown_ticks = 0
         self.events = deque()
         super().__init__(count, seed=determiner)
 
+    cooldown = 300
+
     def determine_parts(self):
         event_list = deque()
         current_difficulty = self.difficulty
-        for _ in range(self.timer // self.cooldown):
+        timer = 30 * 60 + 120 * math.floor(math.log2(self.difficulty))
+        for _ in range(timer // self.cooldown):
             target_change = (self.difficulty - current_difficulty) // 2 + 8 * self.random.randint(-1, 3)
             for typ in EnslaughtAreaEventType:
                 do_typ = typ
@@ -528,22 +532,51 @@ class EnslaughtArea(GameArea, have_starter=True):
         self.make(event_list)
 
     def make(self, event_list: deque[EnslaughtAreaEvent]):
+        self.timer = (len(event_list) + 1) * self.cooldown
+        self.max = self.timer
+        self.num_events = len(event_list)
         self.events = event_list
         self.entity_list.append(self.end_wall)
 
     def draw(self):
         super(EnslaughtArea, self).draw()
         if self.state == 1:
-            width = 3 * game_states.WIDTH // 4 * self.timer / self.max
+            max_size = 3 * game_states.WIDTH // 8
+            width = max_size * self.timer / self.max
+            outline = 5
+            y = 30 + outline
+            if tutorials.display is not None and not switches.TUTORIAL_TEXT_POSITION:
+                y += tutorials.display_height
             pygame.draw.line(
                 game_structures.SCREEN,
                 (255, 255, 255),
-                (game_states.WIDTH // 2 - width // 2, 20),
-                (game_states.WIDTH // 2 + width // 2, 20),
+                (game_states.WIDTH // 2 - (width + outline), y),
+                (game_states.WIDTH // 2 + (width + outline), y),
+                20 + outline * 2
+            )
+            pygame.draw.line(
+                game_structures.SCREEN,
+                (0, 0, 0),
+                (game_states.WIDTH // 2 - width, y),
+                (game_states.WIDTH // 2 + width, y),
                 20
             )
-
-    cooldown = 300
+            step = max_size / (self.num_events + 1)
+            for d in (1, -1):
+                for i in range(1, 1 + self.num_events):
+                    center = step * i
+                    pygame.draw.circle(
+                        game_structures.SCREEN,
+                        (255, 255, 255),
+                        (game_states.WIDTH // 2 + d * center, y),
+                        15 + outline
+                    )
+                    pygame.draw.circle(
+                        game_structures.SCREEN,
+                        (0, 0, 0),
+                        (game_states.WIDTH // 2 + d * center, y),
+                        15
+                    )
 
     def tick(self):
         ret = super(EnslaughtArea, self).tick()
@@ -556,10 +589,8 @@ class EnslaughtArea(GameArea, have_starter=True):
                 self.cooldown_ticks = self.cooldown
         elif self.state == 1:
             self.timer -= 1
-            if self.cooldown_ticks <= 0:
-                self.cooldown_ticks = self.cooldown
+            if (self.max - self.timer) % self.cooldown == 0:
                 self.event()
-            self.cooldown_ticks -= 1
             if self.timer <= 0:
                 self.state = 2
                 self.cooldown_ticks = 0
