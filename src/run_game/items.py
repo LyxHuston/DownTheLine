@@ -514,6 +514,18 @@ def simple_toggle_action(item: Item):
     return True
 
 
+def simple_shield_action(item: Item):
+    """
+    simple action that toggles a shield
+    :param item:
+    :return:
+    """
+    if item.data_pack[0]:
+        item.data_pack[1].clear()
+    item.data_pack[0] = not item.data_pack[0]
+    return True
+
+
 @make_add_wrapper
 def simple_duration_tick(item: Item):
     """
@@ -611,6 +623,10 @@ def simple_shield_tick(item: Item):
     :return:
     """
     if not item.data_pack[0]:
+        if item.data_pack[1]:
+            for entity in item.data_pack[1]:
+                entity.hit(1, item)
+            item.data_pack[1].clear()
         return True
     if isinstance(item.pos, int):
         rect = pygame.Rect(
@@ -629,8 +645,7 @@ def simple_shield_tick(item: Item):
             entity
             for entity in gameboard.ENTITY_BOARD
             if
-            not entity.freeze_y()
-            and ((entity.y - game_states.DISTANCE) * game_states.LAST_DIRECTION > 0)
+            ((entity.y - game_states.DISTANCE) * game_states.LAST_DIRECTION > 0)
             and entity.colliderect(rect)
         ]
 
@@ -639,6 +654,8 @@ def simple_shield_tick(item: Item):
             game_states.DISTANCE -= game_states.LAST_DIRECTION * 2
     else:
         if isinstance(item.pos[0], int):
+            if item.data_pack[1]:
+                item.data_pack[1].clear()
             return True
         e: entities.Entity | entities.Glides = item.pos[0]
         new_center = offset_point_rotated(
@@ -664,7 +681,7 @@ def simple_shield_tick(item: Item):
 
         collide_list = e.all_in_range(
             entities.Entity.biggest_radius + radius,
-            lambda en: not en.freeze_y() and en.colliderect(rect)
+            lambda ent: ent.colliderect(rect)
         )
 
     collide_list = list(filter(
@@ -673,6 +690,19 @@ def simple_shield_tick(item: Item):
         ) if isinstance(en, entities.Projectile) else True,
         collide_list
     ))
+
+    if dashing:
+        item.data_pack[1].extend(
+            entity for entity in collide_list
+            if
+            entity.allied_with_player is not player_friendly
+            and entity not in item.data_pack[1]
+        )
+    else:
+        if item.data_pack[1]:
+            for entity in item.data_pack[1]:
+                entity.hit(1, item)
+            item.data_pack[1].clear()
 
     if collide_list:  # code nearly copied from Crawler
         push_factor: float = math.inf
@@ -789,7 +819,7 @@ def simple_shield(pos: tuple[int, int]) -> Item:
         pos,
         simple_shield_draw,
         images.SIMPLE_SHIELD_ICON.img,
-        [False],
+        [False, []],
         ItemTypes.SimpleShield
     )
 
