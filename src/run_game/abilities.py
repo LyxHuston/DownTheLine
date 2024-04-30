@@ -28,6 +28,10 @@ dash_cooldown = 100
 last_dash_time = -1 - dash_cooldown
 
 
+def is_dashing():
+    return game_states.GLIDE_SPEED > 0
+
+
 def dash_input_catch(tick_counter) -> None:
     global dash_cooldown, last_dash_time
     if last_dash_time + dash_cooldown > tick_counter:

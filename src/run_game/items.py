@@ -620,23 +620,34 @@ def simple_shield_tick(item: Item):
             item.img.get_width()
         )
 
-        for entity in gameboard.ENTITY_BOARD:
-            if rect.colliderect(entity.rect):
-                entity.y = rect.centery + (rect.height // 2 + entity.height // 2) * game_states.LAST_DIRECTION
-                if isinstance(entity, entities.Projectile):
-                    entity.hit(entity.health, item)
-                game_states.TIME_SINCE_LAST_INTERACTION = 0
-                game_states.DISTANCE -= game_states.LAST_DIRECTION * 2
+        player_friendly = True
+        dashing = abilities.is_dashing()
+        center = game_states.DISTANCE
+        radius = rect.height + 20
+
+        collide_list = [
+            entity
+            for entity in gameboard.ENTITY_BOARD
+            if
+            not entity.freeze_y()
+            and ((entity.y - game_states.DISTANCE) * game_states.LAST_DIRECTION > 0)
+            and entity.colliderect(rect)
+        ]
+
+        if collide_list:
+            game_states.TIME_SINCE_LAST_INTERACTION = 0
+            game_states.DISTANCE -= game_states.LAST_DIRECTION * 2
     else:
         if isinstance(item.pos[0], int):
             return True
+        e: entities.Entity | entities.Glides = item.pos[0]
         new_center = offset_point_rotated(
-            item.pos[0].pos,
+            e.pos,
             (
                 item.pos[0].width // 4 * (item.pos[1] * 2 - 1),
                 20 + item.img.get_width() // 2
             ),
-            item.pos[0].rotation
+            e.rotation
         )
         # rect = item.img.get_rect(center=new_center)
         rect = pygame.Rect(
@@ -646,19 +657,55 @@ def simple_shield_tick(item: Item):
             item.img.get_width()
         )
 
-        correct_distance = item.pos[0].y + item.pos[0].height // 2 * math.cos(math.radians(item.pos[0].rotation))
-        for entity in item.pos[0].all_in_range(600):
-            if not entity.allied_with_player:
-                continue
-            if rect.colliderect(entity.rect):
-                entity.y = correct_distance + entity.height // 2 * math.cos(math.radians(item.pos[0].rotation))
-                if isinstance(entity, entities.Projectile):
-                    entity.hit(entity.health, item)
-                item.pos[0].y -= 2 * math.cos(math.radians(item.pos[0].rotation))
+        player_friendly = False
+        dashing = isinstance(e, entities.Glides) and e.glide_speed > 0
+        center = e.y
+        radius = e.height // 2 + rect.height
+
+        collide_list = e.all_in_range(
+            entities.Entity.biggest_radius + radius,
+            lambda en: not en.freeze_y() and en.colliderect(rect)
+        )
+
+    collide_list = list(filter(
+        lambda en: False and (
+            en.hit(en.health, item) if en.allied_with_player is not player_friendly else False
+        ) if isinstance(en, entities.Projectile) else True,
+        collide_list
+    ))
+
+    if collide_list:  # code nearly copied from Crawler
+        push_factor: float = math.inf
+        new_push_factor: float
+        en: entities.Entity
+        for en in collide_list:
+            if center != en.y:
+                new_push_factor = center - en.y
+                if abs(new_push_factor) < abs(push_factor):
+                    push_factor = new_push_factor
+        if math.isfinite(push_factor):
+            if abs(push_factor) > radius:
+                push_factor -= math.copysign(radius, push_factor)
+                change = radius // round(push_factor)
+            else:
+                change = round(math.copysign(radius, push_factor))
+
+            if isinstance(item.pos, int):
+                game_states.DISTANCE += change
+            else:
+                e.y += change
+            center += change
+
+        e: entities.Entity
+        for e in filter(lambda ent: ent.colliderect(rect), collide_list):
+            e.y = center + (radius + e.rect.height // 2) * ((e.y - center > 0) * 2 - 1)
+
+    if not player_friendly:
         if rect.colliderect(pygame.Rect(-32, game_states.DISTANCE - 32, 64, 64)):
             game_states.DISTANCE = item.pos[0].y + (item.pos[0].height // 2 + item.img.get_width()) * math.cos(
                 math.radians(item.pos[0].rotation))
             item.pos[0].y -= 2 * math.cos(math.radians(item.pos[0].rotation))
+
     return True
 
 
