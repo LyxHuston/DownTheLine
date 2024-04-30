@@ -408,7 +408,7 @@ class EnslaughtAreaEventType(enum.Enum):
     Lazers = 10
     Fish = 15
     Enemies = 30
-    Spawners = 60
+    Spawners = math.inf
 
 
 class EnslaughtAreaEvent:
@@ -416,6 +416,10 @@ class EnslaughtAreaEvent:
     def __init__(self, typ: EnslaughtAreaEventType, target_change: int, area: GameArea):
         self.change_difficulty = 0
         self.add_entities = []
+
+        def modify_entity(entity):
+            entity.y += area.start_coordinate
+
         if typ is EnslaughtAreaEventType.ItemDuplicator:
             pos = (
                 area.random.randint(100, game_states.WIDTH // 2) * (area.random.randint(0, 1) * 2 - 1),
@@ -462,12 +466,16 @@ class EnslaughtAreaEvent:
                 allowable_entities[index][1] += 1
                 made_entity = entity.make(determiner, area)
                 made_entity.y += area.start_coordinate
-                if game_states.CAMERA_BOTTOM + made_entity.height < made_entity.y < game_states.CAMERA_BOTTOM + game_states.HEIGHT - made_entity.height:
-                    if game_states.DISTANCE - area.start_coordinate < area.length // 2:
-                        made_entity.y = area.end_coordinate - 100
-                    else:
-                        made_entity.y = area.start_coordinate + 100
                 self.add_entities.append(made_entity)
+
+            def modify_entity(entity):
+                entity.y += area.start_coordinate
+                if game_states.CAMERA_BOTTOM + entity.height < entity.y < game_states.CAMERA_BOTTOM + game_states.HEIGHT - entity.height:
+                    if game_states.DISTANCE - area.start_coordinate < area.length // 2:
+                        entity.y = area.end_coordinate - 100
+                    else:
+                        entity.y = area.start_coordinate + 100
+
         elif typ is EnslaughtAreaEventType.Spawners:
             for i in range(target_change // 15):
                 spawner = entities.Spawner.make(area.random.randint(0, 2 ** 31), area)
@@ -477,6 +485,12 @@ class EnslaughtAreaEvent:
                     self.change_difficulty += (spawner.limit + 1) * spawner.entity.cost ** 2
                 spawner.y += area.start_coordinate
                 self.add_entities.append(spawner)
+        self.modify_entity = modify_entity
+
+    def get_entities(self):
+        for entity in self.add_entities:
+            self.modify_entity(entity)
+        return self.add_entities
 
 
 class EnslaughtArea(GameArea, have_starter=True):
@@ -501,17 +515,16 @@ class EnslaughtArea(GameArea, have_starter=True):
 
     def determine_parts(self):
         event_list = deque()
+        current_difficulty = self.difficulty
         for _ in range(self.timer // self.cooldown):
-            current_difficulty = self.difficulty
             target_change = (self.difficulty - current_difficulty) // 2 + 8 * self.random.randint(-1, 3)
-            do_typ = None
             for typ in EnslaughtAreaEventType:
-                if target_change < typ.value:
-                    break
                 do_typ = typ
-            new_event = EnslaughtAreaEvent(do_typ, target_change, self)
-            current_difficulty -= new_event.change_difficulty
-            event_list.append(new_event)
+                if typ.value > target_change:
+                    new_event = EnslaughtAreaEvent(do_typ, target_change, self)
+                    current_difficulty += new_event.change_difficulty
+                    event_list.append(new_event)
+                    break
         self.make(event_list)
 
     def make(self, event_list: deque[EnslaughtAreaEvent]):
@@ -562,7 +575,7 @@ class EnslaughtArea(GameArea, have_starter=True):
 
     def event(self):
         if self.events:
-            gameboard.NEW_ENTITIES.extend(self.events.popleft().add_entities)
+            gameboard.NEW_ENTITIES.extend(self.events.popleft().get_entities())
 
     def cross_boundary(self):
         if not EnslaughtArea.tutorial_given:
