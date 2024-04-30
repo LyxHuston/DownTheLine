@@ -112,7 +112,6 @@ class GameArea:
     last_spawned = 0
     required_wait_interval = 0
     required_previous = []
-
     @classmethod
     def allowed_at(cls, index: int) -> bool:
         if cls.first_allowed_spawn > index or cls.last_spawned + cls.required_wait_interval >= index:
