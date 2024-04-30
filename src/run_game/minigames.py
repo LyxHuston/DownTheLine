@@ -19,9 +19,11 @@ minigame functions
 """
 from typing import Callable, Iterable, Type
 
+import pygame
+
 from general_use import utility, game_structures
-from run_game import entities, items, gameboard, game_areas
-from data import game_states, images
+from run_game import entities, items, gameboard, tutorials
+from data import game_states, images, switches
 
 
 class Minigame:
@@ -68,6 +70,8 @@ fish = Minigame()
 notes = Minigame()
 lazers = Minigame()
 
+Minigame.minigames = [lazers]
+
 
 def entity_tracker(area): return area.data_pack[0]
 
@@ -102,7 +106,7 @@ def empty_area(area):
 
 @fish.set_setup
 def fish_setup(area):
-	preset(area, [], 0)
+	preset(area, [], 0, None, -10)
 	register = entity_tracker(area).append
 	wave: list[tuple[Type[entities.Entity], Iterable]] = []
 	for i in range(area.difficulty // 10):
@@ -145,7 +149,7 @@ def notes_init(area):
 	area.entity_list.append(start_note)
 	tracker = list()
 	spawner = entities.NoteSpawner(area, start_note, tracker.append)
-	preset(area, tracker, spawner)
+	preset(area, tracker, spawner, None, -10)
 	entity_tracker(area).append(start_note)
 	area.entity_list.append(spawner)
 	entity_tracker(area).append(spawner)
@@ -168,20 +172,28 @@ def lazers_setup(area):
 	area.enforce_center = area.start_coordinate + area.length // 2
 	wave: list[tuple[Type[entities.Entity], Iterable]] = []
 	ticks_to_cross = area.length // 10
-	rep = area.difficulty // 10
-	preset(area, [], rep)
-	register = entity_tracker(area).append
-	deploy = lambda: area.data_pack.__setitem__(1, area.data_pack[1] + 1)
+	# rep = area.difficulty // 10
+	rep = 5
+	preset(area, [], rep, None, -10)
+	register = None
+	deploy = lambda: None
 	delay = 0
+	make_register = (
+		lambda call: lambda c: lambda entity: [area.data_pack.__setitem__(1, min(c, area.data_pack[1])), call(entity)]
+	)(
+		entity_tracker(area).append
+	)
 	for i in range(rep):
+		register = make_register(i)
 		lazertype = area.random.randint(0, 2)
 		# print(f"wave: {["safety zones", "trackers", "juggle"][lazertype]}")
 		if lazertype == 0:  # safety zone(s)
 			charge_bonus = 10
 			delay = ticks_to_cross + charge_bonus
+			separation = 64
 			pre_safe_creation = [
 				(entities.Lazer, (y, ticks_to_cross + charge_bonus, charge_bonus, area))
-				for y in range(area.start_coordinate + 64, area.end_coordinate, 64)
+				for y in range(area.start_coordinate + separation, area.end_coordinate, separation)
 			]
 			del_at: int = area.random.randint(0, len(pre_safe_creation) - 2)
 			del pre_safe_creation[del_at:del_at + 2]
@@ -226,20 +238,62 @@ def lazers_setup(area):
 			delay = tracker_delay * (repeats + 1)
 		area.data_pack[1] += 1
 		wave = [(entities.MassDelayedDeploy, (delay, area, wave, register, deploy))]
+		deploy = lambda: area.data_pack.__setitem__(1, area.data_pack[1] - 1)
 	e = wave[0][0](*wave[0][1])
 	gameboard.NEW_ENTITIES.append(e)
 	register(e)
 
 
+def outline_img(img: pygame.Surface, outline: int):
+	width: int = img.get_width()
+	height: int = img.get_height()
+	outlining_width: int = width + 4 * outline
+	outlining_height: int = height + 4 * outline
+	outlining: pygame.Surface = pygame.Surface((
+		outlining_width, outlining_height
+	), pygame.SRCALPHA)
+	outlining.blit(img, (outline * 2, outline * 2))
+	coord: int
+	checks = tuple(
+		(i % (2 * outline + 1) - outline, i // (2 * outline + 1) - outline)
+		for i in range((2 * outline + 1) ** 2)
+		if (i % 5, i // 5) != (0, 0)
+	)
+	for coord in range((width + 2 * outline) * (height + 2 * outline)):
+		x: int = (coord % (width + 2 * outline) + outline)
+		y: int = (coord // (width + 2 * outline) + outline)
+		offset_x: int
+		offset_y: int
+		if outlining.get_at((x, y)).r == 0 or outlining.get_at((x, y)).a == 0:
+			if any(
+				outlining.get_at((x + offset_x, y + offset_y)).r == 255
+				and outlining.get_at((x + offset_x, y + offset_y)).a == 255
+				for offset_x, offset_y in checks
+				if 0 <= x + offset_x < outlining_width and 0 <= y + offset_y < outlining_height
+			):
+				outlining.set_at((x, y), (0, 0, 0, 255))
+			else:
+				outlining.set_at((x, y), (0, 0, 0, 0))
+	return outlining
+
+
 def draw_count(getter: Callable) -> Callable:
 	def inner(area):
-		draw = game_structures.FONTS[64].render(str(getter(area)), True, (255, 255, 255), None)
-		game_structures.SCREEN.blit(draw, (game_states.WIDTH // 2 - draw.get_width() // 2, 20), draw.get_rect())
+		count = getter(area)
+		if area.data_pack[-1] == count:
+			draw = area.data_pack[-2]
+		else:
+			draw = outline_img(game_structures.FONTS[64].render(str(getter(area)), True, (255, 255, 255), None), 2)
+			area.data_pack[-2] = draw
+		y = 30
+		if tutorials.display is not None and not switches.TUTORIAL_TEXT_POSITION:
+			y += tutorials.display_height
+		game_structures.SCREEN.blit(draw, (game_states.WIDTH // 2 - draw.get_width() // 2, y), draw.get_rect())
 	inner.__name__ = f"draw_count_{getter.__name__}"
 	inner.__qualname__ = inner.__qualname__.replace("inner", getter.__name__)
 	return inner
 
 
-fish.set_draw(draw_count(game_areas.GameArea.num_entities))
+fish.set_draw(draw_count(lambda area: area.num_entities() - 2))
 notes.set_draw(draw_count(lambda area: area.data_pack[1].waves))
 lazers.set_draw(draw_count(lambda area: area.data_pack[1]))
