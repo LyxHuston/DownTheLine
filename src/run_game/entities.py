@@ -1187,15 +1187,16 @@ class Lazer(InvulnerableEntity):
                 self.hit = False
                 self.firing = False
         else:
-            speed = 5 * self.cooldown / self.charge_time
-            spread = round(90 * (1 - (self.cooldown / self.charge_time) ** 3))
-            for end in self.ends:
-                rot = end.rotation + self.random.randint(-spread, spread)
-                gameboard.PARTICLE_BOARD.add(STEAM_PARTICLES(
-                    (end.x + round(10 * math.sin(math.radians(end.rotation))), end.y - round(10 * math.cos(math.radians(end.rotation)))),
-                    (round(speed * math.sin(math.radians(rot))), round(speed * -1 * math.cos(math.radians(rot)))),
-                    rot
-                ))
+            if self.cooldown % 2 == 0:
+                speed = 5 * self.cooldown / self.charge_time
+                spread = round(90 * (1 - (self.cooldown / self.charge_time) ** 3))
+                for end in self.ends:
+                    rot = end.rotation + self.random.randint(-spread, spread)
+                    gameboard.PARTICLE_BOARD.add(STEAM_PARTICLES(
+                        (end.x + round(10 * math.sin(math.radians(end.rotation))), end.y - round(10 * math.cos(math.radians(end.rotation)))),
+                        (round(speed * math.sin(math.radians(rot))), round(speed * -1 * math.cos(math.radians(rot)))),
+                        rot
+                    ))
             if self.cooldown >= self.charge_time:
                 self.repeats -= 1
                 self.cooldown = 0
@@ -1661,7 +1662,7 @@ class NoteSpawner(InvulnerableEntity):
 
     def __init__(self, area, start_track, register: Callable = None):
         super(NoteSpawner, self).__init__(images.EMPTY, 0, (0, area.length))
-        self.waves = max(area.difficulty // 15, 1)
+        self.waves = max(area.difficulty // 10, 1)
         self.area = area
         self.padding = 360 // round(math.sqrt(area.difficulty))
         self.last_y = 0
