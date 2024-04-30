@@ -105,6 +105,7 @@ def filter_entities(lst: list[entities.Entity]) -> None:
     for u in range(len(lst)):
         if lst[u].alive:
             lst[l] = lst[u]
+            lst[l].index = l
             l += 1
         else:
             lst[u].die()

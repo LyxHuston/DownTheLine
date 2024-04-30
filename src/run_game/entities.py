@@ -1934,6 +1934,7 @@ class AreaEdge(InvulnerableEntity):
     """
 
     has_camera_mass = False
+
     def __init__(self, area):
         super().__init__(images.EMPTY, 0, None)
         self.area = area
@@ -1944,8 +1945,6 @@ class AreaEdge(InvulnerableEntity):
 
     def final_load(self) -> None:
         super().final_load()
-        self.freeze_x(True)
-        self.freeze_y(True)
 
 
 class AreaStopper(AreaEdge):
@@ -1956,6 +1955,10 @@ class AreaStopper(AreaEdge):
     def y(self):
         return self.area.end_coordinate
 
+    @y.setter
+    def y(self, val):
+        pass
+
 
 class AreaStarter(AreaEdge):
     """
@@ -1964,3 +1967,7 @@ class AreaStarter(AreaEdge):
     @property
     def y(self):
         return self.area.start_coordinate
+
+    @y.setter
+    def y(self, val):
+        pass
