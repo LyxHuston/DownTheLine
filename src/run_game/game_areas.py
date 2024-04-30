@@ -100,7 +100,7 @@ class GameArea:
     def final_load(self):
         if self.remove_preceding_obstacle:
             i = -1
-            if isinstance(gameboard.ENTITY_BOARD[-1], entities.AreaStopper):
+            if isinstance(gameboard.ENTITY_BOARD[i], entities.AreaStopper):
                 i -= 1
             if isinstance(gameboard.ENTITY_BOARD[i], entities.Obstacle):
                 gameboard.ENTITY_BOARD[i].alive = False
@@ -112,6 +112,7 @@ class GameArea:
     last_spawned = 0
     required_wait_interval = 0
     required_previous = []
+
     @classmethod
     def allowed_at(cls, index: int) -> bool:
         if cls.first_allowed_spawn > index or cls.last_spawned + cls.required_wait_interval >= index:
@@ -130,6 +131,16 @@ class GameArea:
             particle.draw()
 
     def draw(self):
+        # if self.player_in():
+        #     render = game_structures.FONTS[128].render(
+        #         str(self.num_entities()),
+        #         False,
+        #         (255, 255, 255)
+        #     )
+        #     game_structures.SCREEN.blit(
+        #         render,
+        #         (game_states.WIDTH - render.get_width(), (1 - switches.TUTORIAL_TEXT_POSITION) * tutorials.display_height)
+        #     )
         pass
 
     region_length = 32000
