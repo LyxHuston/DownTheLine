@@ -85,8 +85,12 @@ def clean_gameboard():
 
 def reset_gameboard():
     heart_data_randomization = random.Random(game_states.SEED)
-    for i in range(game_states.HEALTH):
-        gameboard.heart_data.append(gameboard.HeartData(heart_data_randomization.random() * math.tau))
+    cutoffs = [i for i in range(game_states.HEALTH)]
+    heart_data_randomization.shuffle(cutoffs)
+    for i, index in zip(cutoffs, range(game_states.HEALTH)):
+        gameboard.heart_data.append(gameboard.HeartData(heart_data_randomization.random() * math.tau, i, index))
+    for heart in gameboard.heart_data:
+        heart.find_goals()
 
     # print(sys.int_info)
     # print(game_states.SEED)
@@ -137,6 +141,7 @@ def start(with_seed: int = None, full: bool = True):
         game_states.LAST_AREA_END = 0
         # player state management
         game_states.HEALTH = 5
+        game_states.LAST_HEAL = 20
         game_states.LAST_DIRECTION = 1
         game_states.GLIDE_SPEED = 0
         game_states.GLIDE_DIRECTION = 0

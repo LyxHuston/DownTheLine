@@ -36,42 +36,112 @@ class HeartData:
     helper class to compute heart jiggle.
     """
 
-    def __init__(self, direction):
-        self.x = 0
-        self.y = 0
-        self.x_dir = math.cos(direction)
-        self.y_dir = math.sin(direction)
-        self.since_last_direction_change = 0
+    desired_distance = draw_constants.icon_size + 4
+
+    def __init__(self, direction, health_disappear, index):
+        self.x: float = 0  # x jiggle
+        self.y: float = 0  # y jiggle
+        self.pos: int = 0  # screen pos off-center
+        self.index: int = index  # index of heart in heart_data
+        self.mom: float = 0  # horizontal momentum
+        self.bounce: int = 0  # current bounce height
+        self.bounce_mom: int = 0  # current bounce momentum
+        self.x_dir: float = math.cos(direction)  # x direction for joggle
+        self.y_dir: float = math.sin(direction)  # y direction for jiggle
+        self.since_last_direction_change: int = 0  # ticks since last direction change
+        self.health_disappear: int = health_disappear  # above this value the heart is visible.
+        self.goals: list[None | tuple[int, int]] = [None]  # where the heart wants to be based on game health
+
+    def find_goals(self):
+        for i in range(game_states.HEALTH):
+            self.goals.append(self.goal_for(i))
+        self.pos = self.goals[-1][1]
+
+    def goal_for(self, health):
+        if health < self.health_disappear:
+            return None
+        left = len(tuple(h for h in heart_data[:self.index] if h.health_disappear <= health))
+        # right = health - left - 1
+        return left, game_states.WIDTH // 2 + (left - health / 2 - 0.5) * self.desired_distance
 
     def tick(self):
-        limit = 5 * max(4 - game_states.HEALTH, 0) * max(3 - game_states.HEALTH, 1)
+        if self.goals[game_states.HEALTH] is None:
+            return
+        # jiggle management
+        factor = max(min(5 - game_states.TIME_SINCE_LAST_INTERACTION / 100, 1), 0)
+        limit = 5 * max(4 - game_states.HEALTH, 0) * max(3 - game_states.HEALTH, 1) * factor
         if limit == 0:
             self.x = 0
             self.y = 0
-            return
-        speed = (4 - game_states.HEALTH) * max(1, (3 - game_states.HEALTH))
-        self.x += self.x_dir * speed
-        if abs(self.x) > limit:
-            self.x_dir *= -1
-            self.x = 0 if abs(self.x) > 2 * limit else 2 * (abs(self.x) - limit) * ((self.x > 0) * 2 - 1)
-        self.y += self.y_dir * speed
-        if abs(self.y) > limit:
-            self.y_dir *= -1
-            self.y = 0 if abs(self.y) > 2 * limit else 2 * (abs(self.y) - limit) * ((self.y > 0) * 2 - 1)
-        if game_states.HEALTH <= 2:
-            if self.since_last_direction_change >= 30 * game_states.HEALTH + 10:
-                self.since_last_direction_change = 0
-                angle = 224 - 67 * game_states.HEALTH
-                cos, sin = math.cos(math.radians(angle)), math.sin(math.radians(angle))
-                self.x_dir, self.y_dir = self.x_dir*cos - self.y_dir*sin, self.x_dir*sin + self.y_dir*cos
-            else:
-                self.since_last_direction_change += 1
+        else:
+            speed = (4 - game_states.HEALTH) * max(1, (3 - game_states.HEALTH)) * factor
+            self.x += self.x_dir * speed
+            if abs(self.x) > limit:
+                self.x_dir *= -1
+                self.x = 0 if abs(self.x) > 2 * limit else 2 * (abs(self.x) - limit) * ((self.x > 0) * 2 - 1)
+            self.y += self.y_dir * speed
+            if abs(self.y) > limit:
+                self.y_dir *= -1
+                self.y = 0 if abs(self.y) > 2 * limit else 2 * (abs(self.y) - limit) * ((self.y > 0) * 2 - 1)
+            if game_states.HEALTH <= 2:
+                if self.since_last_direction_change >= 30 * game_states.HEALTH + 10:
+                    self.since_last_direction_change = 0
+                    angle = 224 - 67 * game_states.HEALTH
+                    cos, sin = math.cos(math.radians(angle)), math.sin(math.radians(angle))
+                    self.x_dir, self.y_dir = self.x_dir*cos - self.y_dir*sin, self.x_dir*sin + self.y_dir*cos
+                else:
+                    self.since_last_direction_change += 1
+        # bounce management
+        if (
+            250 < game_states.TIME_SINCE_LAST_INTERACTION != 600
+            and
+            (game_states.TIME_SINCE_LAST_INTERACTION - 350) % (9 * (game_states.HEALTH + 1)) == self.goals[game_states.HEALTH][0] * 9
+        ):
+            self.bounce_mom = 4
+        if game_states.LAST_HEAL == self.goals[game_states.HEALTH][0] * 4:
+            self.bounce = 0
+            self.bounce_mom = 7
+            if self.goals[game_states.HEALTH - 1] is None:
+                self.bounce_mom += 1
+        self.bounce += self.bounce_mom
+        if self.bounce < 0:
+            self.bounce = 0
+            self.bounce_mom = 0
+        else:
+            self.bounce_mom -= 1
+        # goal go-to
+        diff = self.goals[game_states.HEALTH][1] - self.pos
+        if abs(diff) < 5:
+            self.mom = 0
+            self.pos = self.goals[game_states.HEALTH][1]
+        else:
+            self.mom //= 2
+            self.mom += math.copysign(min(5 * self.desired_distance / (abs(diff) + 1), 5) + 0.5, diff)
+            self.pos += self.mom
 
     def generate_pos(self, pos: tuple[int, int]):
-        return pos[0] + self.x, pos[1] + self.y - 5 * max(4 - game_states.HEALTH, 0) ** 2 / 2
+        return pos[0] + self.x, pos[1] + self.y - 5 * max(4 - game_states.HEALTH, 0) ** 2 / 2 - self.bounce
+
+    def render(self):
+        health = game_states.HEALTH
+        if self.goals[health] is not None:
+            game_structures.SCREEN.blit(
+                heart_img,
+                self.generate_pos((
+                    self.pos,
+                    draw_constants.hearts_y - tutorials.display_height * switches.TUTORIAL_TEXT_POSITION
+                ))
+            )
 
 
 heart_data: list[HeartData] = []
+
+
+def draw_hearts(tick: bool):
+    for heart in heart_data:
+        if tick:
+            heart.tick()
+        heart.render()
 
 
 camera_move: int = 0
@@ -150,13 +220,11 @@ def tick(do_tick: bool = True, draw_gui: bool = True):
             else:
                 game_states.X_DISPLACEMENT += game_states.X_CHANGE
                 if abs(game_states.X_DISPLACEMENT) > abs(game_states.X_LIMIT):
-                    game_states.X_DISPLACEMENT += 2 * (abs(game_states.X_DISPLACEMENT) - abs(game_states.X_LIMIT)) * ((
-                                                                                                                              game_states.X_DISPLACEMENT < 0) * 2 - 1)
+                    game_states.X_DISPLACEMENT += 2 * (abs(game_states.X_DISPLACEMENT) - abs(game_states.X_LIMIT)) * ((game_states.X_DISPLACEMENT < 0) * 2 - 1)
                     game_states.X_CHANGE *= -1
                 game_states.Y_DISPLACEMENT += game_states.Y_CHANGE
                 if abs(game_states.Y_DISPLACEMENT) > abs(game_states.Y_LIMIT):
-                    game_states.Y_DISPLACEMENT += 2 * (abs(game_states.Y_DISPLACEMENT) - abs(game_states.Y_LIMIT)) * ((
-                                                                                                                              game_states.Y_DISPLACEMENT < 0) * 2 - 1)
+                    game_states.Y_DISPLACEMENT += 2 * (abs(game_states.Y_DISPLACEMENT) - abs(game_states.Y_LIMIT)) * ((game_states.Y_DISPLACEMENT < 0) * 2 - 1)
                     game_states.Y_CHANGE *= -1
     pygame.draw.line(
         game_structures.SCREEN,
@@ -243,18 +311,7 @@ def tick(do_tick: bool = True, draw_gui: bool = True):
         # draw dash
         abilities.draw_dash_icon(ingame.tick_counter)
         # draw hearts
-        for i in range(game_states.HEALTH):
-            # compute jiggle
-            # draw final
-            if do_tick:
-                heart_data[i].tick()
-            game_structures.SCREEN.blit(
-                heart_img,
-                heart_data[i].generate_pos((game_states.WIDTH // 2 - (game_states.HEALTH / 2) * (
-                        draw_constants.icon_size + 4) + i * (draw_constants.icon_size + 4),
-                        draw_constants.hearts_y - tutorials.display_height * switches.TUTORIAL_TEXT_POSITION)
-                )
-            )
+        draw_hearts(do_tick)
     # draw player
     game_structures.SCREEN.blit(
         pygame.transform.flip(
