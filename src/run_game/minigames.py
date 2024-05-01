@@ -70,8 +70,6 @@ fish = Minigame()
 notes = Minigame()
 lazers = Minigame()
 
-Minigame.minigames = [lazers]
-
 
 def entity_tracker(area): return area.data_pack[0]
 
@@ -172,8 +170,7 @@ def lazers_setup(area):
 	area.enforce_center = area.start_coordinate + area.length // 2
 	wave: list[tuple[Type[entities.Entity], Iterable]] = []
 	ticks_to_cross = area.length // 10
-	# rep = area.difficulty // 10
-	rep = 5
+	rep = area.difficulty // 10 + 1
 	preset(area, [], rep, None, -10)
 	register = None
 	deploy = lambda: None
