@@ -120,7 +120,16 @@ class HeartData:
             self.pos += self.mom
 
     def generate_pos(self, pos: tuple[int, int]):
-        return pos[0] + self.x, pos[1] + self.y - 5 * max(4 - game_states.HEALTH, 0) ** 2 / 2 - self.bounce
+        return (
+            pos[0] + self.x,
+            (
+                pos[1]
+                + self.y - 5
+                    * max(4 - game_states.HEALTH, 0) ** 2 / 2
+                    * max(min(5 - game_states.TIME_SINCE_LAST_INTERACTION / 100, 1), 0)
+                - self.bounce
+            )
+        )
 
     def render(self):
         health = game_states.HEALTH
