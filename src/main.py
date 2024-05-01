@@ -17,86 +17,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 main ran file for the game
 """
-from general_use import game_structures, utility
+import argparse
+
 import pygame
-import sys
+
 from data import draw_constants, game_states
-
-
-def check_flags(flags: list[str], error_on_duplicates: bool = False):
-    """
-    checks for if flags exist, and if so where.  If appears twice (or different versions) errors
-    :return: index of flag
-    """
-    index = 0
-    for flag in flags:
-        if flag in sys.argv:
-            if index:
-                raise SyntaxError("Duplicate flags")
-            if sys.argv.count(flag) > 1:
-                raise SyntaxError("Duplicate flags")
-            index = sys.argv.index(flag)
-            if not error_on_duplicates:
-                return index
-    return index
-
-
-if len(sys.argv) > 1:
-    if sys.argv[1] == "testing":
-        backdrop = (128, 128, 128)
-        game_structures.SCREEN = pygame.display.set_mode((1000, 700))
-    elif sys.argv[1] == "test_images":
-        from data import images
-        images.test_images()
-        sys.exit()
-    else:
-        backdrop = (0, 0, 0)
-        game_structures.SCREEN = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
-    flag = check_flags(["--with_interactive_console", "-c"])
-    if flag:
-        import code
-        print("Warning: the interactive console causes the interpreter"
-              "\nto error on shutdown, which may cause improper closing"
-              "\nof resources, potentially leading to memory issues."
-              "\nIt is not recommended to use this option in regular use."
-              "\nTo prevent any errors, use exit() prior to shutting down"
-              "\nthe game.", flush=True)
-        utility.make_async(code.InteractiveConsole().interact, daemon=True, log_errors=False)(
-            banner="Interactive console for Down The Line", exitmsg="Ending interactive console")
-    flag = check_flags(["--invulnerable", "-i"])
-    if flag:
-        game_states.INVULNERABLE = True
-    flag = check_flags(["--seed", "-s"], error_on_duplicates=True)
-    if flag:
-        game_states.CUSTOM_SEED = True
-        try:
-            game_states.SEED = int(sys.argv[flag + 1])
-        except IndexError:
-            print("Provide a seed.")
-            sys.exit(2)
-        except ValueError:
-            print("The seed must be an integer.")
-            sys.exit(2)
-    flag = check_flags(["--print_seed", "-p"])
-    if flag:
-        game_states.PRINT_SEED = True
-else:
-    backdrop = (0, 0, 0)
-    game_structures.SCREEN = pygame.display.set_mode((0, 0), pygame.FULLSCREEN + pygame.SRCALPHA)
-pygame.display.set_caption("Down the Line")
-pygame.display.set_icon(pygame.image.load("./resources/down_the_line.ico"))
-game_states.WIDTH, game_states.HEIGHT = game_structures.SCREEN.get_size()
-game_structures.determine_screen()
-# print(game_states.WIDTH, game_states.HEIGHT)
-game_states.CAMERA_THRESHOLDS = (min(400, round(game_states.HEIGHT // 5)), min(400, round(game_states.HEIGHT // 5)))
-
-pygame.init()
-game_structures.init()
-
-draw_constants.hearts_y = game_states.HEIGHT - draw_constants.row_separation
-
-
-game_structures.CUSTOM_EVENT_CATCHERS.append(lambda catch: game_states.PLACE.catcher(catch))
+from general_use import game_structures, utility
 
 
 def run():
@@ -119,4 +45,53 @@ def run():
 
 
 if __name__ == "__main__":
-    run()
+    parser = argparse.ArgumentParser(prog="Down The Line")
+    parser.add_argument("mode", default="play", choices=["testing", "test_images", "play"], nargs="?")
+    parser.add_argument("-c", "--with_interactive_console", action="store_true")
+    parser.add_argument("-p", "--print_seed", action="store_true")
+    args = parser.parse_args()
+
+    __run = True
+
+    if args.mode == "testing":
+        backdrop = (128, 128, 128)
+        game_structures.SCREEN = pygame.display.set_mode((1000, 700))
+    elif args.mode == "test_images":
+        from data import images
+        images.test_images()
+        __run = False
+    elif args.mode == "play":
+        backdrop = (0, 0, 0)
+        game_structures.SCREEN = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+
+    if __run:
+        if args.print_seed:
+            game_states.PRINT_SEED = True
+        if args.with_interactive_console:
+            import code
+
+            print("Warning: the interactive console causes the interpreter"
+                  "\nto error on shutdown, which may cause improper closing"
+                  "\nof resources, potentially leading to memory issues."
+                  "\nIt is not recommended to use this option in regular use."
+                  "\nTo prevent any errors, use exit() prior to shutting down"
+                  "\nthe game.", flush=True)
+            utility.make_async(code.InteractiveConsole().interact, daemon=True, log_errors=False)(
+                banner="Interactive console for Down The Line", exitmsg="Ending interactive console")
+
+        pygame.display.set_caption("Down the Line")
+        pygame.display.set_icon(pygame.image.load("./resources/down_the_line.ico"))
+        game_states.WIDTH, game_states.HEIGHT = game_structures.SCREEN.get_size()
+        game_structures.determine_screen()
+        # print(game_states.WIDTH, game_states.HEIGHT)
+        game_states.CAMERA_THRESHOLDS = (
+        min(400, round(game_states.HEIGHT // 5)), min(400, round(game_states.HEIGHT // 5)))
+
+        pygame.init()
+        game_structures.init()
+
+        draw_constants.hearts_y = game_states.HEIGHT - draw_constants.row_separation
+
+        game_structures.CUSTOM_EVENT_CATCHERS.append(lambda catch: game_states.PLACE.catcher(catch))
+
+        run()
