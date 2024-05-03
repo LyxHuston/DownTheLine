@@ -143,7 +143,7 @@ def pickup_to_hand(num: int):
             game_structures.HANDS[num] = entity.pick_up(num)
         elif game_structures.HANDS[1 - num] is None:
             game_structures.HANDS[1 - num] = entity.pick_up(1 - num)
-        elif not entity.picked_up:
+        elif items.swappable(game_structures.HANDS[num]):
             game_structures.HANDS[num].pos = entity.pos
             gameboard.NEW_ENTITIES.append(entities.ItemEntity(game_structures.HANDS[num]))
             game_structures.HANDS[num] = entity.pick_up(num)

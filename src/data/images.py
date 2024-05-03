@@ -141,6 +141,13 @@ SERPENT_BODY: list[Image] = [
 SIMPLE_SWORD: Image = Image("items/simple_sword")
 SIMPLE_SPEAR: Image = Image("items/simple_spear")
 SIMPLE_SHIELD: Image = Image("items/simple_shield")
+HATCHET: Image = Image("items/hatchet")
+HATCHET_THROWN: list[Image] = [
+    Image("entities/hatchet/hatchet_1"),
+    Image("entities/hatchet/hatchet_2"),
+    Image("entities/hatchet/hatchet_3")
+]
+HATCHET_BURIED: Image = Image("entities/hatchet/hatchet_buried")
 # SPIKY_SHIELD = Image("./resources/items/spiky_shield.png")
 SIMPLE_BOMB: Image = Image("items/simple_bomb")
 BATON: Image = Image("items/baton")

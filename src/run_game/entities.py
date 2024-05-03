@@ -313,6 +313,9 @@ class Entity(game_structures.Body):
         self.__offset = store_offset
         return collect
 
+    def touching_player(self):
+        return abs(self.x) < 32 and abs(self.y - game_states.DISTANCE) < 32 + self.height // 2
+
     def __repr__(self):
         return f"<{self.__class__.__name__}: {self.pos}>"
 
@@ -1819,6 +1822,48 @@ class Bomb(InvulnerableGlides):
         else:
             remainder = speed // taper
         return speed * glide_duration + remainder * (2 * speed - taper * remainder) // 2
+
+
+class Hatchet(InvulnerableGlides):
+
+    imgs = images.HATCHET_THROWN
+    buried = images.HATCHET_BURIED
+
+    def __init__(self, pos, rotation, duration, item):
+        super().__init__(self.imgs[0].img, rotation, pos)
+        self.item = item
+        self.tick_counter = 0
+        self.img_index = 0
+        self.start_glide(25, duration, 100, int(-math.cos(math.radians(rotation))))
+
+        if items.from_player(item):
+            self.pickup_to = item.pos[1]
+            self.allied_with_player = True
+        else:
+            self.pickup_to = None
+            self.allied_with_player = item.pos[0].allied_with_player
+
+    def tick(self):
+        if self.glide_speed:
+            self.glide_tick()
+            for e in self.all_in_range(
+                    self.height // 2 + Entity.biggest_radius,
+                    lambda en: en.allied_with_player != self.allied_with_player and self.collide(en)
+            ):
+                e.hit(5, self)
+            if (not self.allied_with_player) and self.touching_player():
+                game_structures.deal_damage(4, self)
+            if not self.glide_speed:
+                self.img = self.buried.outlined_img
+            else:
+                self.tick_counter += 1
+                if self.tick_counter >= 10:
+                    self.tick_counter = 0
+                    self.img_index = (self.img_index + 1) % len(self.imgs)
+                    self.img = self.imgs[self.img_index]
+        elif self.pickup_to is not None:
+            if game_structures.HANDS[self.pickup_to] is None and self.touching_player():
+                game_structures.HANDS[self.pickup_to] = self.item
 
 
 class DelayedDeploy(InvulnerableEntity):
