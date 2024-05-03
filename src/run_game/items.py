@@ -21,7 +21,7 @@ This is going to be full of factory functions, huh.  Factories of factories of f
 """
 
 from dataclasses import dataclass
-from typing import Callable, Union, Any
+from typing import Callable, Union, Any, Self
 import pygame
 from run_game import entities, tutorials, abilities, ingame, gameboard
 import math
@@ -30,13 +30,59 @@ from data import draw_constants, game_states, images, switches
 from general_use import utility, game_structures
 
 
-class ItemTypes(enum.IntEnum):
+@dataclass
+class ItemType:
+
+    __first: int = -1  # first possible appearance, -1 for never (aka abstract or not fully implemented)
+    range: Callable = (utility.passing(0), 0)  # range, used for calculations when held by monsters
+    action_available: Callable = (utility.passing(False), False)  # check if an action is available
+    in_use: Callable = (utility.passing(False), False)  # check if item is in use
+    from_player: Callable = (lambda item: isinstance(item.pos, int), False)  # check if item is from player
+    prevent_other_use: Callable = (utility.passing(False), False)  # check if it prevents other items from being in use
+    swappable: Callable = (utility.passing(True), True)  # check if it is swappable with other items
+
+    def __init__(self, first=-1, parent: Self = None, **kwargs):
+        self.__dict__.update({k: v[0] for k, v in self.__class__.__dict__.items() if not k.startswith("_")})
+        self.__first = first
+        for k in kwargs:
+            if k.startswith("_") or k not in self.__dict__:
+                raise TypeError(f"'{k}' is an invalid keyword argument for ItemType()")
+        if parent is not None:
+            self.__dict__.update(parent.__dict__)
+        self.__dict__.update(kwargs)
+
+
+class ItemTypes(enum.Enum):
     """
     enum of item types
     """
-    SimpleStab = 0
-    SimpleShield = 1
-    SimpleThrowable = 2
+    SimpleCooldownAction = ItemType(
+        action_available=lambda item: not item.data_pack[0] and item.data_pack[1] >= item.data_pack[2],
+        in_use=lambda item: item.data_pack[0]
+    )
+    SimpleStab: ItemType = ItemType(
+        0,
+        SimpleCooldownAction,
+        range=pygame.Surface.get_height
+    )
+    SimpleShield: ItemType = ItemType(
+        0,
+        range=lambda item: pygame.Surface.get_width,
+        action_available=utility.passing(True),
+        in_use=lambda item: item.data_pack[0],
+        prevent_other_use=lambda item: item.data_pack[0]
+    )
+    SimpleThrowable: ItemType = ItemType(
+        range=lambda item: item.data_pack[0].find_range(*item.data_pack[1]),
+        action_available=lambda item: True
+    )
+    SimpleShooter: ItemType = ItemType(
+        parent=SimpleCooldownAction
+    )
+    Boomerang: ItemType = ItemType(
+        in_use=lambda item: item.data_pack[0],
+        swappable=lambda item: item.data_pack[0]
+    )
 
 
 @dataclass
@@ -241,52 +287,27 @@ def find_range(item) -> int:
     :param item:
     :return:
     """
-
-    if item.type == ItemTypes.SimpleStab:
-        return item.img.get_height()
-    elif item.type == ItemTypes.SimpleShield:
-        return item.img.get_width()
-    elif item.type == ItemTypes.SimpleThrowable:
-        return item.data_pack[0].find_range(*item.data_pack[1])
+    return item.type.value.find_range(item)
 
 
-@none_check(False)
-def action_available(item) -> bool:
-    if item.type == ItemTypes.SimpleStab:
-        return not item.data_pack[0] and item.data_pack[1] >= item.data_pack[2]
-    elif item.type == ItemTypes.SimpleShield:
-        return True
-    elif item.type == ItemTypes.SimpleThrowable:
-        return True
+# dynamically generate these.  forward calls to item type defined
+action_available: Callable[[Item], bool]
+in_use: Callable[[Item], bool]
+from_player: Callable[[Item], bool]
+prevent_other_use: Callable[[Item], bool]
+swappable: Callable[[Item], bool]
+
+maker = lambda name: lambda item: getattr(item.type.value, name)
+
+globals().update({
+    name: none_check(val[1])(maker(name))
+    for name, val in
+    ItemType.__dict__.items()
+    if not name.startswith("_")
+})
 
 
-@none_check(False)
-def in_use(item) -> bool:
-    if item.type == ItemTypes.SimpleStab:
-        return item.data_pack[0]
-    elif item.type == ItemTypes.SimpleShield:
-        return item.data_pack[0]
-    elif item.type == ItemTypes.SimpleThrowable:
-        return False
-
-
-@none_check(False)
-def from_player(item) -> bool:
-    if item.type == ItemTypes.SimpleStab:
-        return isinstance(item.pos, int)
-    elif item.type == ItemTypes.SimpleShield:
-        return isinstance(item.pos, int)
-    elif item.type == ItemTypes.SimpleThrowable:
-        return isinstance(item.pos, int)
-
-
-@none_check(False)
-def prevent_other_use(item) -> bool:
-    if item.type == ItemTypes.SimpleShield:
-        return item.data_pack[0]
-    else:
-        return False
-
+del maker
 
 @forward_wrapper_func
 def draw_on_ground_if_not_held(func: Callable, item: Item):
@@ -332,7 +353,7 @@ def if_held_by_player(item: Item):
 def draw_icon(item: Item):
     abilities.draw_icon(
         item.icon, 0, (get_icon_x(item.pos), get_icon_y()),
-        prevent_other_use(game_structures.HANDS[1 - item.pos])
+        prevent_other_use(game_structures.HANDS[1 - item.pos]) or not swappable(item)
     )
 
 
@@ -343,7 +364,7 @@ def draw_icon_for_simple_duration_item(item: Item):
         item.icon,
         item.data_pack[1] / item.data_pack[3] if item.data_pack[0] else 1 - item.data_pack[1] / item.data_pack[2],
         (get_icon_x(item.pos), get_icon_y()),
-        prevent_other_use(game_structures.HANDS[1 - item.pos])
+        prevent_other_use(game_structures.HANDS[1 - item.pos]) or not swappable(item)
     )
 
 
@@ -745,20 +766,22 @@ def simple_throwable_action(item: Item):
     :param item:
     :return:
     """
-    p = isinstance(item.pos, int)  # if it's from the player
+    p = from_player(item)  # if it's from the player
     if p:
+        allied = True
         pos = (0, game_states.DISTANCE)
         rot = game_states.LAST_DIRECTION * 90 + 90
         # print(rot)
         game_structures.HANDS[item.pos] = None  # remove from hands of entity throwing
         ingame.pickup_to_hand(item.pos)  # refill player hands
     else:
+        allied = item.pos[0].allied_with_player
         pos = item.pos[0].pos
         rot = item.pos[0].rotation
         item.pos[0].hands[item.pos[1]] = None  # remove from hands of entity throwing
     # print(item)
     ent = item.data_pack[0](pos, rot, *item.data_pack[1])  # create entity
-    ent.allied_with_player = p
+    ent.allied_with_player = allied
     gameboard.NEW_ENTITIES.append(ent)  # add entity to entity list
 
 
@@ -825,7 +848,6 @@ def simple_shield(pos: tuple[int, int]) -> Item:
 
 
 def random_simple_shield(random, pos=None):
-
     return simple_shield(pos)
 
 
@@ -835,11 +857,30 @@ def make_random_reusable(random, pos):
     :param random:
     :return:
     """
-    choose = random.randint(0, 1)
-    if choose == 0:
+    choose = random.choice(typ for typ in ItemTypes if typ.value.first != -1 and typ.value.first > game_states.LAST_AREA)
+    if choose is ItemTypes.SimpleStab:
         return random_simple_stab(game_states.LAST_AREA, random, pos)
-    elif choose == 1:
+    elif choose is ItemTypes.SimpleShield:
         return random_simple_shield(random, pos)
+    elif choose is ItemTypes.SimpleThrowable:
+        return random_simple_throwable(random, pos)
+    elif choose is ItemTypes.SimpleShooter:
+        return random_simple_shooter(random, pos)
+    elif choose is ItemTypes.Boomerang:
+        return boomerang(pos)
+
+
+def random_simple_throwable(random, pos):
+    # current only reusable throwable is hatchet
+    item = simple_throwable(
+        images.SIMPLE_BOMB.img,
+        images.SIMPLE_BOMB.outlined_img,
+        pos,
+        entities.Hatchet,
+        ()
+    )
+    item.data_pack[1] = tuple([random.choice((5, 10, 20)), item])
+    return item
 
 
 def simple_throwable(img, ground_img, pos, creates, args):
