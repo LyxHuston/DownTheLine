@@ -670,7 +670,6 @@ class Slime(Glides):
                     self.glide_speed = 4
                 self.wait = 36
         else:
-            self.glide_tick()
             self.frame = (self.frame + 1) % (4 * self.frame_change_frequency)
             self.img = self.imgs[self.frame // self.frame_change_frequency]
         # print(self.health, self.frame, self.pos, game_states.DISTANCE)
