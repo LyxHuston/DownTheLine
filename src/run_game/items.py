@@ -741,11 +741,9 @@ def simple_shield_tick(item: Item):
             else:
                 change = round(math.copysign(radius, push_factor))
 
-            if isinstance(item.pos, int):
-                game_states.DISTANCE += change
-            else:
-                e.y += change
-            center += change
+
+        # change rect so that it doesn't pull stuff along
+        rect.y += change
 
         e: entities.Entity
         for e in filter(lambda ent: ent.colliderect(rect), collide_list):
