@@ -111,33 +111,33 @@ def begin_shake(duration: int, maximum: tuple[int, int], change_per_tick: tuple[
     game_states.X_CHANGE, game_states.Y_CHANGE = change_per_tick
 
 
-def deal_damage(damage: int, source):
-    if game_states.INVULNERABLE:
-        return False
-    if hasattr(source, "in_knockback"):
-        if source.in_knockback:
-            return False
-    if game_states.INVULNERABILITY_LEFT == 0:
-        for hand in HANDS:
-            if hand is None:
-                continue
-            if hand.type is items.ItemTypes.SimpleShield:
-                if hand.data_pack[0]:
-                    if isinstance(source, entities.Entity):
-                        if (source.y > game_states.DISTANCE) != (game_states.LAST_DIRECTION == -1):
-                            return False
-                        continue
-                    if isinstance(source.pos, int):
-                        continue
-                    elif isinstance(source.pos[0], entities.Entity):
-                        if (source.pos[0].y > game_states.DISTANCE) != (game_states.LAST_DIRECTION == -1):
-                            return False
-                        continue
-        game_states.HEALTH = max(game_states.HEALTH - damage, 0)
-        game_states.TIME_SINCE_LAST_INTERACTION = 0
-        game_states.INVULNERABILITY_LEFT = damage * 15 + 5
-        return True
-        # print(source, source.pos, source.img, source.tick, source.draw)
+# def deal_damage(damage: int, source):
+#     if game_states.INVULNERABLE:
+#         return False
+#     if hasattr(source, "in_knockback"):
+#         if source.in_knockback:
+#             return False
+#     if game_states.INVULNERABILITY_LEFT == 0:
+#         for hand in HANDS:
+#             if hand is None:
+#                 continue
+#             if hand.type is items.ItemTypes.SimpleShield:
+#                 if hand.data_pack[0]:
+#                     if isinstance(source, entities.Entity):
+#                         if (source.y > game_states.DISTANCE) != (game_states.LAST_DIRECTION == -1):
+#                             return False
+#                         continue
+#                     if isinstance(source.pos, int):
+#                         continue
+#                     elif isinstance(source.pos[0], entities.Entity):
+#                         if (source.pos[0].y > game_states.DISTANCE) != (game_states.LAST_DIRECTION == -1):
+#                             return False
+#                         continue
+#         game_states.HEALTH = max(game_states.HEALTH - damage, 0)
+#         game_states.TIME_SINCE_LAST_INTERACTION = 0
+#         game_states.INVULNERABILITY_LEFT = damage * 15 + 5
+#         return True
+#         # print(source, source.pos, source.img, source.tick, source.draw)
 
 
 # SCREEN = pygame.display.set_mode((500, 200))
@@ -660,8 +660,8 @@ class Body:
         return self.__y_frozen
 
     def __init__(self, img: pygame.Surface, rotation: int, pos: tuple[int, int] | None):
-        self.__radius = 0
         self.__original_img = img
+        self.__radius = Body.__calc_radius(img.get_width(), img.get_height())
         self._rotated_img = None
         self.__rotation = 0
         self.rotation = rotation
@@ -819,6 +819,8 @@ def get_last_initialized():
 
 
 from run_game import ingame, items, entities, tutorials
+
+PLAYER_ENTITY: entities.PlayerEntity = entities.PlayerEntity()
 
 if __name__ == "__main__":
 
