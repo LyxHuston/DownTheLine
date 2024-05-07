@@ -803,7 +803,6 @@ def add_game_area():
             images.SIMPLE_SWORD.outlined_img,
             (-images.SIMPLE_SWORD.outlined_img.get_width() // 4, 60)
         )))
-        area.entity_list.append(entities.ItemEntity(items.simple_shield((0, 80))))
     elif game_states.LAST_AREA == 1:
         area = GameArea(1, 450, determinator, customized=True)
         area.entity_list.append(entities.Obstacle(pos=(0, area.length), health=5))
@@ -829,14 +828,14 @@ def add_game_area():
         area.entity_list.append(entities.Obstacle(pos=(0, + area.length), health=5))
         area.entity_list.append(entities.Slime((0, area.length // 3), area.random.randint(0, 2 ** 32 - 1)))
         area.entity_list.append(entities.Slime((0, 2 * area.length // 2), area.random.randint(0, 2 ** 32 - 1)))
-        # area.entity_list.append(entities.ItemEntity(items.simple_stab(
-        #     100,
-        #     10,
-        #     images.SIMPLE_SPEAR.img,
-        #     images.SIMPLE_SPEAR.outlined_img,
-        #     (-images.SIMPLE_SPEAR.outlined_img.get_width() // 4, 180),
-        #     2
-        # )))
+        area.entity_list.append(entities.ItemEntity(items.simple_stab(
+            100,
+            10,
+            images.SIMPLE_SPEAR.img,
+            images.SIMPLE_SPEAR.outlined_img,
+            (-images.SIMPLE_SPEAR.outlined_img.get_width() // 4, 180),
+            2
+        )))
     else:
         # print(determinator, game_states.SEED + game_states.LAST_AREA)
         typ = determinator % 64
