@@ -605,7 +605,7 @@ class EnslaughtArea(GameArea, have_starter=True):
                 self.state = 2
                 self.cooldown_ticks = 0
                 self.end_wall.alive = False
-                self.entity_list = self.get_entity_snapshot()
+                self.entity_list = [e for e in self.get_entity_snapshot() if not e.allied_with_player]
         elif self.state == 2:
             if self.cooldown_ticks <= 0:
                 self.cooldown_ticks = 30
