@@ -49,6 +49,13 @@ def end_maker(reason: run_start_end.RunEndReasons, background: tuple[int, int, i
                                                     border_width=5, x_align=1, y_align=0,
                                                     special_press=ingame.Inputs.prefer_pickup))
 
+        for area in game_structures.AREA_QUEUE:
+            if area.end_coordinate >= game_states.DISTANCE:
+                break
+            game_states.AREAS_PASSED += 1
+            if area.__class__.__name__ in run_start_end.GameAreaLog.areas_dict:
+                run_start_end.GameAreaLog.areas_dict[area.__class__.__name__] += 1
+
         fade_counter = 0
         tick_counter = 0
         next_tick_max = 0
