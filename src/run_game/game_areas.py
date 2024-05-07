@@ -146,34 +146,35 @@ class GameArea:
     taper_length = 100
 
     def tick(self):
-        region = 0
-        while region * self.region_length + self.taper_length < self.length:  # spawn particles for middle regions
-            height = self.start_coordinate + self.random.randint(0, self.region_length - 1) + region * self.region_length
-            if height > self.end_coordinate - self.taper_length // 2:
-                break
-            # noinspection PyTypeChecker
-            self.particle_list.add(entities.Particle(
-                *self.particle_args,
-                (
-                    self.random.randint(-game_states.WIDTH // 2, game_states.WIDTH // 2),
-                    height
-                )
-            ))
-            region += 1
-        self.spawn_end = not self.spawn_end
-        if self.random.randint(0, self.region_length // self.taper_length) == 0:
-            # noinspection PyTypeChecker
-            self.particle_list.add(entities.Particle(
-                *self.particle_args,
-                (
-                    self.random.randint(-game_states.WIDTH // 2, game_states.WIDTH // 2),
-                    self.start_coordinate + self.length // 2 + (self.spawn_end * 2 - 1) * (
-                            self.length +
-                            self.taper_length - round(math.sqrt(1 + 8 * self.random.randint(0, (self.taper_length + 1) * self.taper_length // 2) - 1) - 1)
-                    ) // 2
-                )
-            ))
-        gameboard.particle_set_tick(self.particle_list)
+        if len(gameboard.PARTICLE_BOARD) + len(self.particle_list) < self.length:
+            region = 0
+            while region * self.region_length + self.taper_length < self.length:  # spawn particles for middle regions
+                height = self.start_coordinate + self.random.randint(0, self.region_length - 1) + region * self.region_length
+                if height > self.end_coordinate - self.taper_length // 2:
+                    break
+                # noinspection PyTypeChecker
+                self.particle_list.add(entities.Particle(
+                    *self.particle_args,
+                    (
+                        self.random.randint(-game_states.WIDTH // 2, game_states.WIDTH // 2),
+                        height
+                    )
+                ))
+                region += 1
+            self.spawn_end = not self.spawn_end
+            if self.random.randint(0, self.region_length // self.taper_length) == 0:
+                # noinspection PyTypeChecker
+                self.particle_list.add(entities.Particle(
+                    *self.particle_args,
+                    (
+                        self.random.randint(-game_states.WIDTH // 2, game_states.WIDTH // 2),
+                        self.start_coordinate + self.length // 2 + (self.spawn_end * 2 - 1) * (
+                                self.length +
+                                self.taper_length - round(math.sqrt(1 + 8 * self.random.randint(0, (self.taper_length + 1) * self.taper_length // 2) - 1) - 1)
+                        ) // 2
+                    )
+                ))
+            gameboard.particle_set_tick(self.particle_list)
         # print(len(self.particle_list))
         if not self.boundary_crossed and game_states.DISTANCE > self.start_coordinate:
             self.boundary_crossed = True
