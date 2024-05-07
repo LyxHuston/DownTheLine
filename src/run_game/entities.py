@@ -1210,7 +1210,7 @@ class Lazer(InvulnerableEntity):
                 self.hit = False
                 self.firing = False
         else:
-            if self.cooldown % 2 == 0:
+            if self.cooldown % 3 == 0:
                 speed = 5 * self.cooldown / self.charge_time
                 spread = round(90 * (1 - (self.cooldown / self.charge_time) ** 3))
                 for end in self.ends:
