@@ -217,9 +217,7 @@ def tick(do_tick: bool = True, draw_gui: bool = True):
                 if isinstance(entity, entities.AreaStopper):
                     break
             del ENTITY_BOARD[:i]
-            if removing.__class__.__name__ in run_start_end.GameAreaLog.areas_dict:
-                run_start_end.GameAreaLog.areas_dict[removing.__class__.__name__] += 1
-            game_states.AREAS_PASSED += 1
+            run_start_end.log_area(removing)
             add_game_area()
         if game_states.SHAKE_DURATION > 0:
             game_states.SHAKE_DURATION -= 1
