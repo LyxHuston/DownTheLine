@@ -1227,6 +1227,19 @@ class Lazer(InvulnerableEntity):
         return True
 
     def draw(self):
+        end2 = self.ends[-1]
+        if self.charge_time - self.cooldown <= 25:
+            for i in range(len(self.ends)):
+                end1 = end2
+                end2 = self.ends[i]
+                intercept = round(end2.y - end2.x * (end1.y - end2.y) / (end1.x - end2.x))  # hit left side
+                pygame.draw.circle(
+                    game_structures.SCREEN,
+                    (255, 255, 255),
+                    game_structures.to_screen_pos((0, intercept)),
+                    25 - self.charge_time + self.cooldown,
+                    5
+                )
         if self.firing:
             positions = [end.screen_pos for end in self.ends]
             # print(positions)
