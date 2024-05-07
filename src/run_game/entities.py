@@ -1943,19 +1943,22 @@ class MassDelayedDeploy(InvulnerableEntity):
                 self.deploy_call()
 
 
-class Particle(Entity):
+class Particle:
     """
-    a basic particle.  Inherits Entity for draw assistance.
+    a basic particle.  Inherits Entity for on-screen detection assistance
     """
 
     __id = 0
 
-    def __init__(self, imgs: list[images.Image] | list[pygame.Surface], tick_rate: int, lifespan: int, pos: tuple[int, int], momentum: tuple[int, int] = (0, 0), rotation: int = 0):
+    def __init__(self, imgs: list[images.Image] | list[pygame.Surface], tick_rate: int, lifespan: int, radius: int, pos: tuple[int, int], momentum: tuple[int, int] = (0, 0), rotation: int = 0):
         self.imgs: list[pygame.Surface] = imgs
         if isinstance(self.imgs[0], images.Image):
             for i in range(len(self.imgs)):
                 self.imgs[i] = self.imgs[i].img
-        super().__init__(self.imgs[0], rotation, pos)
+        self.__radius = radius
+        self.rotation = rotation
+        self.img = self.imgs[0]
+        self.x, self.y = pos
         self.ticks_per_frame_change = tick_rate
         self.frame_loop = len(self.imgs) * tick_rate
         self.frame = 0
@@ -1971,6 +1974,20 @@ class Particle(Entity):
         self.x += self.momentum[0]
         self.y += self.momentum[1]
         return self.lifespan > 0
+
+    def draw(self):
+        if game_states.CAMERA_BOTTOM - self.__radius < game_states.DISTANCE < game_states.CAMERA_BOTTOM + game_states.HEIGHT + self.__radius:
+            img = self._rotated_img
+            if img is None:
+                return
+            game_structures.SCREEN.blit(
+                img,
+                (
+                    game_structures.to_screen_x(self.x) - img.get_width() // 2,
+                    game_structures.to_screen_y(self.y) - img.get_height() // 2
+                )
+            )
+        return self.x, self.y
 
     def reset_id_check(self):
         if self.__id == 10000:
@@ -1995,9 +2012,15 @@ class Particle(Entity):
 
 
 def particle_with_settings(imgs: list[pygame.Surface] | list[images.Image], tick_rate: int, lifespan: int):
-    return lambda pos, momentum = (0, 0), rotation = 0: Particle(imgs, tick_rate, lifespan, pos, momentum, rotation)
+    def radius_helper(img) -> int:
+        if isinstance(img, images.Image):
+            img = img.img
+        return math.isqrt(img.get_width() ** 2 + img.get_height() ** 2) // 2
+    radius = max(radius_helper(img) for img in imgs)
+    return lambda pos, momentum = (0, 0), rotation = 0: Particle(imgs, tick_rate, lifespan, radius, pos, momentum, rotation)
 
 
+VOID_PARTICLES = particle_with_settings(images.VOID_PARTICLES, 30, 120)
 DASH_RIPPLE_PARTICLES = particle_with_settings(list(images.DASH_PARTICLES), 4, 20)
 STEAM_PARTICLES = particle_with_settings(list(images.STEAM_PARTICLES), 4, 12)
 EXPLOSION_PARTICLES = particle_with_settings(list(images.EXPLOSION_PARTICLES), 12, 36)

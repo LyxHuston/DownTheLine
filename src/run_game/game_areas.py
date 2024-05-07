@@ -69,9 +69,7 @@ class GameArea:
         self.initialized: bool = False
         self.boundary_crossed: bool = False
         self.entity_list: list[entities.Entity] | None = []
-        self.particle_args: tuple[list[images.Image] | list[pygame.Surface], int, int] = (
-            images.VOID_PARTICLES, 30, 120
-        )
+        self.particle_maker: Callable[[tuple[int, int]], entities.Particle] = entities.VOID_PARTICLES
         self.particle_list: set = set()
         if seed is None:
             raise ValueError("I cry non-deterministic from set seed (every random call needs to be deterministic from"
@@ -153,27 +151,21 @@ class GameArea:
                 if height > self.end_coordinate - self.taper_length // 2:
                     break
                 # noinspection PyTypeChecker
-                self.particle_list.add(entities.Particle(
-                    *self.particle_args,
-                    (
-                        self.random.randint(-game_states.WIDTH // 2, game_states.WIDTH // 2),
-                        height
-                    )
-                ))
+                self.particle_list.add(self.particle_maker((
+                    self.random.randint(-game_states.WIDTH // 2, game_states.WIDTH // 2),
+                    height
+                )))
                 region += 1
             self.spawn_end = not self.spawn_end
             if self.random.randint(0, self.region_length // self.taper_length) == 0:
                 # noinspection PyTypeChecker
-                self.particle_list.add(entities.Particle(
-                    *self.particle_args,
-                    (
+                self.particle_list.add(self.particle_maker((
                         self.random.randint(-game_states.WIDTH // 2, game_states.WIDTH // 2),
                         self.start_coordinate + self.length // 2 + (self.spawn_end * 2 - 1) * (
                                 self.length +
                                 self.taper_length - round(math.sqrt(1 + 8 * self.random.randint(0, (self.taper_length + 1) * self.taper_length // 2) - 1) - 1)
                         ) // 2
-                    )
-                ))
+                )))
             gameboard.particle_set_tick(self.particle_list)
         # print(len(self.particle_list))
         if not self.boundary_crossed and game_states.DISTANCE > self.start_coordinate:
