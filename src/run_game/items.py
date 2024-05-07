@@ -674,8 +674,10 @@ def simple_shield_tick(item: Item):
         rect.y += change
 
         e: entities.Entity
-        for e in filter(lambda ent: ent.colliderect(rect), collide_list):
-            e.y = user.y + (radius + e.rect.height // 2 + 1) * ((e.y - user.y > 0) * 2 - 1)
+        for e in collide_list:
+            e.flashing = 1
+            if e.colliderect(rect):
+                e.y = user.y + (radius + e.rect.height // 2 + 1) * ((e.y - user.y > 0) * 2 - 1)
     return True
 
 
