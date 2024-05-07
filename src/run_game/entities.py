@@ -31,10 +31,12 @@ from typing import Type, Iterable, Self, Callable, Literal
 
 
 def glide_player(speed: int, duration: int, taper: int, direction: int):
-    game_states.GLIDE_SPEED = speed
-    game_states.GLIDE_DURATION = duration
-    game_states.TAPER_AMOUNT = taper
-    game_states.GLIDE_DIRECTION = direction
+    game_structures.PLAYER_ENTITY.start_glide(
+        speed,
+        duration,
+        taper,
+        direction
+    )
 
 
 class Entity(game_structures.Body):
@@ -203,6 +205,9 @@ class Entity(game_structures.Body):
         """
         self.health -= damage
 
+    def damage_player(self):
+        pass
+
     def tick(self):
         """
         runs a tick of the entity
@@ -312,6 +317,12 @@ class Entity(game_structures.Body):
             collect.append(check)
         self.__offset = store_offset
         return collect
+
+    def colliding(self, additional_predicate: Callable[[Self], bool] = None) -> list[Self]:
+        return self.all_in_range(
+            self.height // 2 + Entity.biggest_radius,
+            accept_func=self.collide if additional_predicate is None else (lambda e: self.collide(e) and additional_predicate(e))
+        )
 
     def touching_player(self):
         return abs(self.x) < 32 and abs(self.y - game_states.DISTANCE) < 32 + self.height // 2
@@ -473,12 +484,11 @@ class ItemEntity(InvulnerableEntity):
         self.picked_up = False
         super().__init__(item.img, 0, item.pos)
 
-    def pick_up(self, hand):
+    def pick_up(self):
         if self.picked_up:
             return None
         self.picked_up = True
         self.alive = False
-        self.item.pos = hand
         return self.item
 
     def tick(self):
@@ -538,6 +548,9 @@ class Glides(Entity):
         self.taper: int = 0
         self.glide_duration: int = 0
 
+    def is_gliding(self):
+        return self.glide_duration > 0
+
     def glide_tick(self) -> bool:
         """
         a single tick of gliding motion
@@ -562,6 +575,42 @@ class Glides(Entity):
 
 
 InvulnerableGlides: Type[Glides] = make_invulnerable_version(Glides)
+
+
+class CarriesItems:
+
+    def __init__(self, hands):
+        self.hands: list[items.Item] = hands
+        for i in range(len(hands)):
+            if hands[i] is None:
+                continue
+            hands[i].pos = (self, i)
+
+    def pickup_to(self, item: items.Item | ItemEntity, hand: int) -> bool:
+        if items.swappable(self.hands[hand]):
+            if isinstance(item, ItemEntity):
+                item = item.pick_up()
+            if self.hands[hand] is not None:
+                self.hands[hand].pos = self.pos
+                gameboard.NEW_ENTITIES.append(ItemEntity(self.hands[hand]))
+            item.pos = (self, hand)
+            self.hands[hand] = item
+            return True
+        return False
+
+    def tick(self):
+        for hand in self.hands:
+            if hand is None:
+                continue
+            if hand.pos[0] is not self:
+                hand.pos = (self, hand.pos[1])
+            hand.tick(hand)
+
+    def draw(self):
+        for hand in self.hands:
+            if hand is None:
+                continue
+            hand.draw(hand)
 
 
 class Obstacle(Entity, track_instances=True):
@@ -593,7 +642,7 @@ class Obstacle(Entity, track_instances=True):
     def tick(self):
         if abs(self.x) < 128 + 32 and abs(game_states.DISTANCE - self.y) < 56:
             game_states.DISTANCE = self.y + ((game_states.DISTANCE - self.y > 0) * 2 - 1) * 56
-        for entity in self.all_in_range(self.height // 2 + Entity.biggest_radius, accept_func=self.collide):
+        for entity in self.colliding():
             # number arbitrarily chosen for while this is proof of concept, change limit in the future?
             if abs(entity.y - self.y) < abs(entity.x - self.x) - 48:
                 entity.x = self.x + (128 + entity.rect.width // 2) * ((entity.x - self.x > 0) * 2 - 1)
@@ -641,12 +690,25 @@ class Slime(Glides):
 
     def hit(self, damage: int, source):
         self.health -= damage
-        if isinstance(source.pos, int):
-            self.start_glide(damage, 90, 1, ((self.y - game_states.DISTANCE) > 0) * 2 - 1)
-        else:
-            self.start_glide(damage, 90, 1, ((self.y - source.pos[1]) > 0) * 2 - 1)
+        y = items.holder(source).y if isinstance(source, items.Item) else source.y
+        self.start_glide(damage, 90, 1, ((self.y - y) > 0) * 2 - 1)
+
+    def damage_player(self):
+        glide_player(5, 2, 1, ((self.y - game_states.DISTANCE) < 0) * 2 - 1)
+        game_structures.begin_shake(6, (10, 10), (7, 5))
 
     def tick(self):
+        colliding = self.colliding(
+            additional_predicate=lambda en: self.allied_with_player is not en.allied_with_player
+        )
+        if colliding:
+            direction = 0
+            for entity in colliding:
+                entity.hit(1, self)
+                entity.y = self.y + (self.height // 2 + entity.height // 2) * ((self.y < entity.y) * 2 - 1)
+                direction += (self.y > entity.y) * 2 - 1
+            self.start_glide(5, 30, 5, int(math.copysign(min(abs(direction), 1), direction)))
+            return
         self.glide_tick()
         if self.glide_speed == 0:
             self.wait -= 1
@@ -672,23 +734,6 @@ class Slime(Glides):
         else:
             self.frame = (self.frame + 1) % (4 * self.frame_change_frequency)
             self.img = self.imgs[self.frame // self.frame_change_frequency]
-        # print(self.health, self.frame, self.pos, game_states.DISTANCE)
-        # pygame.draw.circle(
-        #     game_structures.SCREEN,
-        #     (255, 255, 255),
-        #     game_structures.to_screen_pos(self.pos),
-        #     32,
-        #     5
-        # )
-        # if self.draw() != self.pos:
-        #     # print("Position discrepancy")
-        if abs(self.x) < 32 and abs(self.y - game_states.DISTANCE) < 64:
-            if game_structures.deal_damage(1, self):
-                glide_player(5, 2, 1, ((self.y - game_states.DISTANCE) < 0) * 2 - 1)
-                game_structures.begin_shake(6, (10, 10), (7, 5))
-            self.start_glide(5, 30, 5, (self.y > game_states.DISTANCE) * 2 - 1)
-            game_states.DISTANCE = self.y + 64 * (((self.y - game_states.DISTANCE) < 0) * 2 - 1)
-        return self.health > 0
 
     def first_seen(self):
         self.alert.img
@@ -726,10 +771,12 @@ class Crawler(Glides, track_instances=True):
 
     def hit(self, damage: int, source):
         self.health -= damage
-        if isinstance(source.pos, int):
-            self.start_glide(damage, 90, 1, ((self.y - game_states.DISTANCE) > 0) * 2 - 1)
-        else:
-            self.start_glide(damage, 90, 1, ((self.y - source.pos[0]) > 0) * 2 - 1)
+        y = items.holder(source).y if isinstance(source, items.Item) else source.y
+        self.start_glide(damage, 90, 1, ((self.y - y) > 0) * 2 - 1)
+
+    def damage_player(self):
+        glide_player(round(self.speed * 1.5), 5, 10, ((self.y - game_states.DISTANCE) < 0) * 2 - 1)
+        game_structures.begin_shake(6, (10, 10), (7, 5))
 
     def tick(self):
         # print(self.y, self.health)
@@ -753,13 +800,7 @@ class Crawler(Glides, track_instances=True):
         #     32,
         #     5
         # )
-        if abs(self.x) < 28 and abs(self.y - game_states.DISTANCE) < 66:
-            if game_structures.deal_damage(1, self):
-                glide_player(round(self.speed * 1.5), 5, 10, ((self.y - game_states.DISTANCE) < 0) * 2 - 1)
-                game_structures.begin_shake(6, (10, 10), (7, 5))
-            self.y -= self.glide_speed * self.glide_direction
-            game_states.DISTANCE = self.y + 66 * (((self.y - game_states.DISTANCE) < 0) * 2 - 1)
-        collide_list: list[Entity] = self.all_in_range(self.height // 2 + Entity.biggest_radius, lambda en: not en.freeze_y() and self.collide(en))
+        collide_list: list[Entity] = self.colliding(additional_predicate=lambda en: not en.freeze_y())
         if self.glide_direction != 0 and collide_list:
             push_factor: float = math.inf
             new_push_factor: float
@@ -779,6 +820,8 @@ class Crawler(Glides, track_instances=True):
         for e in collide_list:
             if self.collide(e):
                 e.y = self.y + (self.rect.height // 2 + e.rect.height // 2) * ((e.y - self.y > 0) * 2 - 1)
+                if self.allied_with_player is not e.allied_with_player:
+                    e.hit(1, self)
         return
 
     def first_seen(self):
@@ -822,6 +865,10 @@ class Fencer(Glides):
         self.cooldown_length: int = max(180 - difficulty, 30)
         self.frame: int = 0
 
+    def damage_player(self):
+        glide_player(1, 20, 10, (self.y < game_states.DISTANCE) * 2 - 1)
+        game_structures.begin_shake(10, (20, 20), (13, -9))
+
     def tick(self) -> bool:
         dist = abs(self.y - game_states.DISTANCE)
         self.rotation = 180 * (self.y < game_states.DISTANCE)
@@ -831,10 +878,8 @@ class Fencer(Glides):
                 gameboard.PARTICLE_BOARD.add(DASH_RIPPLE_PARTICLES(
                     self.pos
                 ))
-            if abs(self.x) < 40 and abs(self.y - game_states.DISTANCE) < 56:
-                if game_structures.deal_damage(2, self):
-                    glide_player(1, 20, 10, (self.y < game_states.DISTANCE) * 2 - 1)
-                    game_structures.begin_shake(10, (20, 20), (13, -9))
+            if self.collide(game_structures.PLAYER_ENTITY):
+                game_structures.PLAYER_ENTITY.hit(2, self)
                 game_states.DISTANCE = self.y + 56 * ((self.y < game_states.DISTANCE) * 2 - 1)
                 self.start_glide(25, 10, 15, ((self.y - game_states.DISTANCE) > 0) * 2 - 1)
             if self.cooldown > 0:
@@ -873,10 +918,8 @@ class Fencer(Glides):
 
     def hit(self, damage: int, source):
         self.health -= damage
-        if isinstance(source.pos, int):
-            self.start_glide(25, 10, 15, ((self.y - game_states.DISTANCE) > 0) * 2 - 1)
-        else:
-            self.start_glide(25, 10, 15, ((self.y - source.pos[0]) > 0) * 2 - 1)
+        y = items.holder(source).y if isinstance(source, items.Item) else source.y
+        self.start_glide(25, 10, 15, ((self.y - y) > 0) * 2 - 1)
 
     @classmethod
     def make(cls, determiner: int, area):
@@ -896,6 +939,9 @@ class Projectile(Entity):
         self.damage = damage
         self.expiration_date = expiry
 
+    def damage_player(self):
+        glide_player(self.damage * 2, 10, 1, (self.y < game_states.DISTANCE) * 2 - 1)
+
     def tick(self):
         self.freeze_y(False)
         self.freeze_x(False)
@@ -912,10 +958,8 @@ class Projectile(Entity):
         if self.y > game_states.LAST_AREA_END + 1000:
             self.alive = False
             return
-        rect = self.rect
-        if rect.right > -32 and rect.left < 32 and rect.bottom < game_states.DISTANCE + 32 and rect.top > game_states.DISTANCE - 32:
-            if game_structures.deal_damage(self.damage, self):
-                glide_player(self.damage * 2, 10, 1, (self.y < game_states.DISTANCE) * 2 - 1)
+        if self.collide(game_structures.PLAYER_ENTITY):
+            game_structures.game_structures.PLAYER_ENTITY.hit(self.damage, self)
             if self.destruct_on_collision:
                 self.alive = False
                 return
@@ -973,7 +1017,7 @@ class Archer(Glides):
         return cls((0, area.random.randint(area.length // 3, 2 * area.length // 3)), area.difficulty, area)
 
 
-class Knight(Glides):
+class Knight(Glides, CarriesItems):
     """
     first enemy with a defensive stance
     """
@@ -990,12 +1034,8 @@ class Knight(Glides):
     tutorial_text = "The knights are very resilient and use weapons similar to yours.  This is the last of this sort of opponent they will send you."
 
     def __init__(self, rotation: int, pos: tuple[int, int], hands):
-        super().__init__(self.top.img, rotation, pos)
-        self.hands = hands
-        for i in range(len(hands)):
-            if self.hands[i] is None:
-                continue
-            self.hands[i].pos = (self, i)
+        Glides.__init__(self, self.top.img, rotation, pos)
+        CarriesItems.__init__(self, hands)
         self.frame = 0
         self.max_health = 20
         self.health = 20
@@ -1034,7 +1074,7 @@ class Knight(Glides):
             (0, 0)
         )
         self.img = canvas
-        super().draw()
+        Glides.draw(self)
 
     def tick(self) -> bool:
         if self.glide_speed > 0:
@@ -1045,14 +1085,10 @@ class Knight(Glides):
         desired_dist = 300
         triggerable = None
         wall_in_between = self.entity_in_between(Obstacle)
+        CarriesItems.tick(self)
         for hand in self.hands:
-            if hand is None:
-                continue
-            if hand.pos[0] is not self:
-                hand.pos = (self, hand.pos[1])
-            hand.tick(hand)
             if not wall_in_between and items.action_available(hand):
-                new_dist = items.find_range(hand)
+                new_dist = items.get_range(hand)
                 if new_dist < desired_dist:
                     triggerable = hand
                     desired_dist = new_dist
@@ -1075,34 +1111,19 @@ class Knight(Glides):
 
     def hit(self, damage: int, source):
         if isinstance(source, items.Item):
-            if not items.from_player(source):
-                return
-            for hand in self.hands:
-                if hand is None:
-                    continue
-                if hand.type is items.ItemTypes.SimpleShield:
-                    if hand.datapack[0]:
-                        if isinstance(source.pos, int):
-                            if (self.y > game_states.DISTANCE) != (self.rotation < 90 or self.rotation > 270):
-                                return
-                        else:
-                            if (self.y > source.pos[1]) != (self.rotation < 90 or self.rotation > 270):
-                                return
-        elif isinstance(source, Entity):
-            if source.allied_with_player == self.allied_with_player:
-                return
-            for hand in self.hands:
-                if hand is None:
-                    continue
-                if hand.type is items.ItemTypes.SimpleShield:
-                    if hand.datapack[0]:
-                        if (self.y > source.y) != (self.rotation < 90 or self.rotation > 270):
-                            return
+            source = items.holder(source)
+        if source.allied_with_player == self.allied_with_player:
+            return
+        y = source.y
+        for hand in self.hands:
+            if hand is None:
+                continue
+            if hand.type is items.ItemTypes.SimpleShield:
+                if hand.datapack[0]:
+                    if (self.y > y) != (self.rotation < 90 or self.rotation > 270):
+                        return
         self.health -= damage
-        if isinstance(source.pos, int):
-            self.start_glide(12, 15, 1, ((self.y - game_states.DISTANCE) > 0) * 2 - 1)
-        else:
-            self.start_glide(12, 15, 1, ((self.y - source.pos[0]) > 0) * 2 - 1)
+        self.start_glide(12, 15, 1, ((self.y - y) > 0) * 2 - 1)
 
     def first_seen(self):
         self.stabbing.img
@@ -1178,7 +1199,7 @@ class Lazer(InvulnerableEntity):
                         self.hit = True
                         break
                 if self.hit:
-                    game_structures.deal_damage(self.damage, end2)
+                    game_structures.PLAYER_ENTITY.hit(self.damage, end2)
             if self.cooldown >= self.duration:
                 if self.repeats is not None and self.repeats <= 0:
                     for kill_end in self.ends:
@@ -1297,6 +1318,10 @@ class Fish(Glides, track_instances=True):
         self.already_hit = False
         self.frame_change_ticks = 12 // round(math.sqrt(self.speed))
 
+    def damage_player(self):
+        glide_player(5, 2, 1, ((self.y - game_states.DISTANCE) < 0) * 2 - 1)
+        game_structures.begin_shake(6, (10, 10), (-5, 7))
+
     def tick(self):
         self.glide_tick()
         self.wait -= 1
@@ -1339,9 +1364,7 @@ class Fish(Glides, track_instances=True):
                 if not self.already_hit and abs(self.x) < 64 and abs(self.y - game_states.DISTANCE) < 48:
                     self.already_hit = True
                     self.wait //= 2
-                    if game_structures.deal_damage(1, self):
-                        glide_player(5, 2, 1, ((self.y - game_states.DISTANCE) < 0) * 2 - 1)
-                        game_structures.begin_shake(6, (10, 10), (-5, 7))
+                    game_structures.PLAYER_ENTITY.hit(1, self)
         elif self.state == 3:  # diving
             if self.wait <= 0:
                 self.state = 0
@@ -1354,10 +1377,8 @@ class Fish(Glides, track_instances=True):
 
     def hit(self, damage, source):
         self.health -= damage
-        if isinstance(source.pos, int):
-            self.start_glide(damage, 20, 1, ((self.y - game_states.DISTANCE) > 0) * 2 - 1)
-        else:
-            self.start_glide(damage, 20, 1, ((self.y - source.pos[1]) > 0) * 2 - 1)
+        y = items.holder(source).y if isinstance(source, items.Item) else source.y
+        self.start_glide(damage, 20, 1, ((self.y - y) > 0) * 2 - 1)
 
 
 class Spawner(Entity):
@@ -1753,7 +1774,7 @@ class Note(InvulnerableEntity):
             if self.loop:
                 self.x = game_states.WIDTH // 2 + 32
             else:
-                game_structures.deal_damage(1, self)
+                game_structures.PLAYER_ENTITY.hit(1, self)
                 game_structures.begin_shake(60, (20, 20), (5, 3))
                 self.alive = False
         self.freeze_x(True)
@@ -1772,6 +1793,9 @@ class Bomb(InvulnerableGlides):
         self.start_glide(speed, glide_duration, taper, int(-math.cos(math.radians(rotation))))
         # print(self.glide_direction, self.glide_speed, self.glide_duration)
 
+    def damage_player(self):
+        glide_player(self.damage, 20, 1, (self.y < game_states.DISTANCE) * 2 - 1)
+
     def tick(self):
         self.glide_tick()
         # print(self.y)
@@ -1783,14 +1807,14 @@ class Bomb(InvulnerableGlides):
                 self.x - self.size // 2, self.y - self.size // 2,
                 self.size, self.size
             )
-            if self.allied_with_player:
-                for entity in self.all_in_range(500 + self.size):
-                    if colliding.colliderect(entity.rect):
-                        game_states.TIME_SINCE_LAST_INTERACTION = 0
-                        entity.hit(self.damage, self)
-            if colliding.colliderect(pygame.Rect(-32, game_states.DISTANCE - 32, 64, 64)):
-                if game_structures.deal_damage(self.damage, self):
-                    glide_player(self.damage, 20, 1, (self.y < game_states.DISTANCE) * 2 - 1)
+            damaging = self.all_in_range(
+                    Entity.biggest_radius + self.size,
+                    accept_func=lambda e: colliding.colliderect(e.rect)
+            )
+            if damaging and self.allied_with_player:
+                game_states.TIME_SINCE_LAST_INTERACTION = 0
+            for entity in damaging:
+                entity.hit(self.damage, self)
 
             # make the particles
             area = game_structures.AREA_QUEUE[0]
@@ -1835,23 +1859,18 @@ class Hatchet(InvulnerableGlides):
         self.img_index = 0
         self.start_glide(25, duration, 100, int(-math.cos(math.radians(rotation))))
 
-        if items.from_player(item):
-            self.pickup_to = item.pos[1]
-            self.allied_with_player = True
-        else:
-            self.pickup_to = None
-            self.allied_with_player = item.pos[0].allied_with_player
+        self.pickup_entity = items.holder(item)
+        self.pickup_to = item.pos[1]
+        self.allied_with_player = items.friendly_player(item)
+
+    def damage_player(self):
+        game_states.HEALTH += 1  # don't 1-tap the player.  Just almost.
 
     def tick(self):
         if self.glide_speed:
             self.glide_tick()
-            for e in self.all_in_range(
-                    self.height // 2 + Entity.biggest_radius,
-                    lambda en: en.allied_with_player != self.allied_with_player and self.collide(en)
-            ):
+            for e in self.colliding(additional_predicate=lambda en: en.allied_with_player is not self.allied_with_player):
                 e.hit(5, self)
-            if (not self.allied_with_player) and self.touching_player():
-                game_structures.deal_damage(4, self)
             if not self.glide_speed:
                 self.img = self.buried.outlined_img
             else:
@@ -1860,9 +1879,8 @@ class Hatchet(InvulnerableGlides):
                     self.tick_counter = 0
                     self.img_index = (self.img_index + 1) % len(self.imgs)
                     self.img = self.imgs[self.img_index]
-        elif self.pickup_to is not None:
-            if game_structures.HANDS[self.pickup_to] is None and self.touching_player():
-                game_structures.HANDS[self.pickup_to] = self.item
+        elif self.pickup_entity.hands[self.pickup_to] is None and self.collide(self.pickup_entity):
+            self.pickup_entity.pickup_to(self.item, self.pickup_to)
 
 
 class DelayedDeploy(InvulnerableEntity):
@@ -2015,4 +2033,76 @@ class AreaStarter(AreaEdge):
 
     @y.setter
     def y(self, val):
+        pass
+
+
+class PlayerEntity(Glides, CarriesItems):
+
+    allied_with_player = True
+    has_camera_mass = False
+
+    @property
+    def y(self):
+        return game_states.DISTANCE
+
+    @y.setter
+    def y(self, val: int):
+        game_states.DISTANCE = val
+
+    @property
+    def health(self) -> int:
+        return game_states.HEALTH
+
+    @health.setter
+    def health(self, val: int):
+        game_states.HEALTH = max(val, 0)
+
+    @property
+    def rotation(self):
+        return (game_states.LAST_DIRECTION == 1) * 180
+
+    @rotation.setter
+    def rotation(self, val):
+        pass
+
+    def hit(self, damage: int, source):
+        if game_states.INVULNERABLE:
+            return False
+        if getattr(source, "in_knockback", False):
+            return False
+        if game_states.INVULNERABILITY_LEFT > 0:
+            return False
+        for hand in self.hands:
+            if hand is None:
+                continue
+            if hand.type is items.ItemTypes.SimpleShield:
+                if hand.data_pack[0]:
+                    if isinstance(source, Entity):
+                        if (source.y > game_states.DISTANCE) != (game_states.LAST_DIRECTION == -1):
+                            return False
+                        continue
+                    elif isinstance(source, items.Item):
+                        if (source.pos[0].y > game_states.DISTANCE) != (game_states.LAST_DIRECTION == -1):
+                            return False
+                        continue
+
+        if isinstance(source, Entity):
+            source.damage_player()
+            # item damage case should be handled in item
+
+        game_states.HEALTH = max(game_states.HEALTH - damage, 0)
+        game_states.TIME_SINCE_LAST_INTERACTION = 0
+        game_states.INVULNERABILITY_LEFT = damage * 15 + 5
+        return True
+
+    def __init__(self):
+        CarriesItems.__init__(self, game_structures.HANDS)
+        Glides.__init__(self, pygame.image.load("./resources/player/player.png"), 0, (0, game_states.DISTANCE))
+
+    def draw(self):
+        # player drawing is handled in gameboard still, to keep drawing precedence
+        pass
+
+    def tick(self):
+        # ticks are also still handled in gameboard, to keep computation precedence
         pass

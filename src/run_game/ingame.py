@@ -66,19 +66,19 @@ def tick(do_tick: bool = None):
         if tick_counter >= loop_counter:
             tick_counter = 0
             abilities.last_dash_time -= loop_counter
-        if game_states.GLIDE_SPEED > 0:
-            if game_states.GLIDE_DURATION == 0:
-                game_states.GLIDE_SPEED -= game_states.TAPER_AMOUNT
-                if game_states.GLIDE_SPEED <= 0:
-                    game_states.GLIDE_SPEED = 0
-            else:
-                game_states.GLIDE_DURATION -= 1
-            # spawn dash ripples
-            if (game_states.GLIDE_DURATION + game_states.GLIDE_SPEED // game_states.TAPER_AMOUNT) % 2 == 1:
-                gameboard.PARTICLE_BOARD.add(entities.DASH_RIPPLE_PARTICLES(
-                    (0, game_states.DISTANCE)
-                ))
-            game_states.DISTANCE += game_states.GLIDE_SPEED * game_states.GLIDE_DIRECTION
+        # if game_states.GLIDE_SPEED > 0:
+        #     if game_states.GLIDE_DURATION == 0:
+        #         game_states.GLIDE_SPEED -= game_states.TAPER_AMOUNT
+        #         if game_states.GLIDE_SPEED <= 0:
+        #             game_states.GLIDE_SPEED = 0
+        #     else:
+        #         game_states.GLIDE_DURATION -= 1
+        #     # spawn dash ripples
+        #     if (game_states.GLIDE_DURATION + game_states.GLIDE_SPEED // game_states.TAPER_AMOUNT) % 2 == 1:
+        #         gameboard.PARTICLE_BOARD.add(entities.DASH_RIPPLE_PARTICLES(
+        #             (0, game_states.DISTANCE)
+        #         ))
+        #     game_states.DISTANCE += game_states.GLIDE_SPEED * game_states.GLIDE_DIRECTION
         elif do_tick is None:
             pressed = pygame.key.get_pressed()
             direction = pressed[Inputs.up_input] - pressed[Inputs.down_input]
@@ -141,13 +141,11 @@ def pickup_to_hand(num: int):
         if not (abs(entity.x) < 60 and abs(entity.y - game_states.DISTANCE) < entity.height // 2 + 10):
             continue
         if game_structures.HANDS[num] is None:
-            game_structures.HANDS[num] = entity.pick_up(num)
+            game_structures.PLAYER_ENTITY.pickup_to(entity, num)
         elif game_structures.HANDS[1 - num] is None:
-            game_structures.HANDS[1 - num] = entity.pick_up(1 - num)
+            game_structures.PLAYER_ENTITY.pickup_to(entity, 1 - num)
         elif items.swappable(game_structures.HANDS[num]):
-            game_structures.HANDS[num].pos = entity.pos
-            gameboard.NEW_ENTITIES.append(entities.ItemEntity(game_structures.HANDS[num]))
-            game_structures.HANDS[num] = entity.pick_up(num)
+            game_structures.PLAYER_ENTITY.pickup_to(entity, num)
             spawn_pickup_particles()
         return True
     return False

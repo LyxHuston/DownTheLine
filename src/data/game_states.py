@@ -33,10 +33,11 @@ HEALTH: int = 5
 TIME_SINCE_LAST_INTERACTION: int = 0
 LAST_HEAL: int = 0
 LAST_DIRECTION: int = 1
-GLIDE_SPEED: int = 0
-GLIDE_DIRECTION: int = 0
-GLIDE_DURATION: int = 0
-TAPER_AMOUNT: int = 0
+# dash management is now on player entity
+# GLIDE_SPEED: int = 0
+# GLIDE_DIRECTION: int = 0
+# GLIDE_DURATION: int = 0
+# TAPER_AMOUNT: int = 0
 INVULNERABILITY_LEFT: int = 0
 # screen shake management
 X_DISPLACEMENT: int = 0

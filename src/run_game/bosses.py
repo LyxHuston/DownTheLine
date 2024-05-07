@@ -52,6 +52,9 @@ class BodyPart(entities.Entity):
     a body part of a boss
     """
 
+    def damage_player(self):
+        game_structures.begin_shake(120, (200, 200), (21, 59))
+
     def __init__(self, img: pygame.Surface, rotation: int, pos: tuple[int, int], boss, damage: int = 5,
                  collides: bool = True):
         super().__init__(img, rotation, pos)
@@ -65,8 +68,7 @@ class BodyPart(entities.Entity):
         if not self.collides:
             return True
         if self.rect.colliderect():
-            if game_structures.deal_damage(self.damage, self):
-                game_structures.begin_shake(120, (200, 200), (21, 59))
+            game_structures.PLAYER_ENTITY.hit(self.damage, self)
         return self.boss.alive
 
     def hit(self, damage: int, source):

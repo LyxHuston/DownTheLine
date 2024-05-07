@@ -243,6 +243,12 @@ def tick(do_tick: bool = True, draw_gui: bool = True):
         3
     )
     if do_tick:
+        if game_structures.PLAYER_ENTITY.is_gliding():
+            PARTICLE_BOARD.add(entities.DASH_RIPPLE_PARTICLES(
+                (0, game_states.DISTANCE)
+            ))
+        game_structures.PLAYER_ENTITY.glide_tick()
+        entities.CarriesItems.tick(game_structures.PLAYER_ENTITY)
         enforce_goal: int | None = None
         [entity.final_load() for entity in NEW_ENTITIES]
         ENTITY_BOARD.extend(NEW_ENTITIES)
@@ -300,13 +306,8 @@ def tick(do_tick: bool = True, draw_gui: bool = True):
     for area in game_structures.AREA_QUEUE:
         area.draw()
     # draw hands
-    for item in game_structures.HANDS:
-        if item is None:
-            continue
-        if do_tick:
-            item.tick(item)
-        if draw_gui:
-            item.draw(item)
+    if draw_gui:
+        entities.CarriesItems.draw(game_structures.PLAYER_ENTITY)
     if draw_gui:
         # draw distance record
         game_structures.SCREEN.blit(

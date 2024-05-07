@@ -29,7 +29,7 @@ last_dash_time = -1 - dash_cooldown
 
 
 def is_dashing():
-    return game_states.GLIDE_SPEED > 0
+    return game_structures.PLAYER_ENTITY.is_gliding()
 
 
 def dash_input_catch(tick_counter) -> None:
@@ -37,10 +37,16 @@ def dash_input_catch(tick_counter) -> None:
     if last_dash_time + dash_cooldown > tick_counter:
         return
     last_dash_time = tick_counter
-    game_states.GLIDE_SPEED = 25
-    game_states.TAPER_AMOUNT = 100
-    game_states.GLIDE_DURATION = 20
-    game_states.GLIDE_DIRECTION = game_states.LAST_DIRECTION
+    game_structures.PLAYER_ENTITY.start_glide(
+        25,
+        20,
+        100,
+        game_states.LAST_DIRECTION
+    )
+    # game_states.GLIDE_SPEED = 25
+    # game_states.TAPER_AMOUNT = 100
+    # game_states.GLIDE_DURATION = 20
+    # game_states.GLIDE_DIRECTION = game_states.LAST_DIRECTION
     game_structures.begin_shake(
         20,
         (3, 0),

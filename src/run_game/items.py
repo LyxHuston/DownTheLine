@@ -33,23 +33,26 @@ from general_use import utility, game_structures
 @dataclass
 class ItemType:
 
-    __first: int = -1  # first possible appearance, -1 for never (aka abstract or not fully implemented)
-    range: Callable = (utility.passing(0), 0)  # range, used for calculations when held by monsters
+    first: int = -1  # first possible appearance, -1 for never (aka abstract or not fully implemented)
+    get_range: Callable = (utility.passing(0), 0)  # range, used for calculations when held by monsters
     action_available: Callable = (utility.passing(False), False)  # check if an action is available
     in_use: Callable = (utility.passing(False), False)  # check if item is in use
-    from_player: Callable = (lambda item: isinstance(item.pos, int), False)  # check if item is from player
-    prevent_other_use: Callable = (utility.passing(False), False)  # check if it prevents other items from being in use
-    swappable: Callable = (utility.passing(True), True)  # check if it is swappable with other items
+    held: Callable = (lambda item: isinstance(item.pos[0], entities.Entity), False)  # check if the item is held by an entity
+    holder: Callable = (lambda item: item.pos[0], None)  # get the holder
+    from_player: Callable = (lambda item: item.pos[0] is game_structures.PLAYER_ENTITY, False)  # check if item is from player
+    friendly_player: Callable = (lambda item: item.pos[0].allied_with_player, True)  # check if item is friendly to the player
+    prevent_other_use: Callable = (utility.make_simple_always(False), False)  # check if it prevents other items from being in use
+    swappable: Callable = (utility.passing, True)  # check if it is swappable with other items
 
     def __init__(self, first=-1, parent: Self = None, **kwargs):
-        self.__dict__.update({k: v[0] for k, v in self.__class__.__dict__.items() if not k.startswith("_")})
-        self.__first = first
+        self.__dict__.update({k: v[0] for k, v in self.__class__.__dict__.items() if not k.startswith("_") and k != "first"})
         for k in kwargs:
             if k.startswith("_") or k not in self.__dict__:
                 raise TypeError(f"'{k}' is an invalid keyword argument for ItemType()")
         if parent is not None:
             self.__dict__.update(parent.__dict__)
         self.__dict__.update(kwargs)
+        self.first = first
 
 
 class ItemTypes(enum.Enum):
@@ -63,17 +66,17 @@ class ItemTypes(enum.Enum):
     SimpleStab: ItemType = ItemType(
         0,
         SimpleCooldownAction,
-        range=pygame.Surface.get_height
+        get_range=lambda item: item.img.get_height()
     )
     SimpleShield: ItemType = ItemType(
         0,
-        range=lambda item: pygame.Surface.get_width,
+        get_range=lambda item: item.img.get_width(),
         action_available=utility.passing(True),
         in_use=lambda item: item.data_pack[0],
         prevent_other_use=lambda item: item.data_pack[0]
     )
     SimpleThrowable: ItemType = ItemType(
-        range=lambda item: item.data_pack[0].find_range(*item.data_pack[1]),
+        get_range=lambda item: item.data_pack[0].find_range(*item.data_pack[1]),
         action_available=lambda item: True
     )
     SimpleShooter: ItemType = ItemType(
@@ -280,32 +283,25 @@ def none_check(result: Any) -> Callable[[Any], tuple[Any, Any]]:
     return inner
 
 
-@none_check(0)
-def find_range(item) -> int:
-    """
-    finds the effective range of a given item
-    :param item:
-    :return:
-    """
-    return item.type.value.find_range(item)
-
-
 # dynamically generate these.  forward calls to item type defined
+get_range: Callable[[Item], bool]
 action_available: Callable[[Item], bool]
 in_use: Callable[[Item], bool]
+held: Callable[[Item], bool]
+holder: Callable[[Item], entities.Entity]
 from_player: Callable[[Item], bool]
+friendly_player: Callable[[Item], bool]
 prevent_other_use: Callable[[Item], bool]
 swappable: Callable[[Item], bool]
 
-maker = lambda name: lambda item: getattr(item.type.value, name)
+maker = lambda name: lambda item: getattr(item.type.value, name)(item)
 
 globals().update({
     name: none_check(val[1])(maker(name))
     for name, val in
     ItemType.__dict__.items()
-    if not name.startswith("_")
+    if not name.startswith("_") and name != "first"
 })
-
 
 del maker
 
@@ -316,9 +312,7 @@ def draw_on_ground_if_not_held(func: Callable, item: Item):
     :param func:
     :return:
     """
-    if isinstance(item.pos, int):
-        func(item)
-    elif isinstance(item.pos[0], int):
+    if not held(item):
         draw_on_ground(item)
     else:
         func(item)
@@ -343,17 +337,15 @@ get_icon_y = lambda: (game_states.HEIGHT - 2 * draw_constants.row_separation - t
 
 @make_conditional_wrapper
 def if_held_by_player(item: Item):
-    if isinstance(item.pos, int):
-        return True, False
-    return False, False
+    return from_player(item), False
 
 
 @make_add_wrapper
 @if_held_by_player
 def draw_icon(item: Item):
     abilities.draw_icon(
-        item.icon, 0, (get_icon_x(item.pos), get_icon_y()),
-        prevent_other_use(game_structures.HANDS[1 - item.pos]) or not swappable(item)
+        item.icon, 0, (get_icon_x(item.pos[1]), get_icon_y()),
+        prevent_other_use(game_structures.HANDS[1 - item.pos[1]]) or not swappable(item)
     )
 
 
@@ -363,8 +355,8 @@ def draw_icon_for_simple_duration_item(item: Item):
     abilities.draw_icon(
         item.icon,
         item.data_pack[1] / item.data_pack[3] if item.data_pack[0] else 1 - item.data_pack[1] / item.data_pack[2],
-        (get_icon_x(item.pos), get_icon_y()),
-        prevent_other_use(game_structures.HANDS[1 - item.pos]) or not swappable(item)
+        (get_icon_x(item.pos[1]), get_icon_y()),
+        prevent_other_use(game_structures.HANDS[1 - item.pos[1]]) or not swappable(item)
     )
 
 
@@ -376,35 +368,24 @@ def original_simple_draw(item: Item):
     :param item:
     :return:
     """
-    if isinstance(item.pos, int):
-        game_structures.SCREEN.blit(
-            pygame.transform.flip(item.img, ((item.pos == 0) != (game_states.LAST_DIRECTION == -1)),
-                                  game_states.LAST_DIRECTION == -1),
+    ent = holder(item)
+    hand = item.pos[1] * 2 - 1
+    rotated = pygame.transform.rotate(
+        pygame.transform.flip(item.img, hand == -1, False),
+        ent.rotation + 180
+    )
+    point = game_structures.to_screen_pos(offset_point_rotated(
             (
-                game_structures.to_screen_x(
-                    32 * (item.pos * 2 - 1) * game_states.LAST_DIRECTION) - item.img.get_width() // 2,
-                game_structures.to_screen_y(game_states.DISTANCE) - item.img.get_height() // 2
-            )
-        )
-    else:
-        ent = item.pos[0]
-        hand = item.pos[1] * 2 - 1
-        rotated = pygame.transform.rotate(
-            pygame.transform.flip(item.img, item.pos[1] == 0, False),
-            ent.rotation + 180
-        )
-        # print(ent.pos, (ent.x, ent.y), ent.get_pos(), )
-        game_structures.SCREEN.blit(
-            rotated,
-            game_structures.to_screen_pos(offset_point_rotated(
-                (
-                    ent.x - rotated.get_width() // 2,
-                    ent.y + rotated.get_height() // 2
-                ),
-                (hand * ent.width // 2, 0),
-                ent.rotation
-            ))
-        )
+                ent.x - rotated.get_width() // 2,
+                ent.y + rotated.get_height() // 2
+            ),
+            (hand * ent.width // 2, 0),
+            ent.rotation
+        ))
+    game_structures.SCREEN.blit(
+        rotated,
+        point
+    )
 
 
 simple_draw = draw_on_ground_if_not_held(draw_icon(original_simple_draw))
@@ -438,36 +419,24 @@ def simple_stab_draw(item: Item):
     :param item:
     :return:
     """
-    if isinstance(item.pos, int):
-        game_structures.SCREEN.blit(
-            pygame.transform.flip(item.img, ((item.pos == 0) != (game_states.LAST_DIRECTION == -1)),
-                                  game_states.LAST_DIRECTION == -1),
+    ent = item.pos[0]
+    # print(ent.pos, ent.get_pos())
+    hand = item.pos[1] * 2 - 1
+    rotated = pygame.transform.rotate(
+        pygame.transform.flip(item.img, item.pos[1] == 0, False),
+        ent.rotation + 180
+    )
+    game_structures.SCREEN.blit(
+        rotated,
+        game_structures.to_screen_pos(offset_point_rotated(
             (
-                game_structures.to_screen_x(
-                    16 * (item.pos * 2 - 1) * game_states.LAST_DIRECTION) - item.img.get_width() // 2,
-                game_structures.to_screen_y(game_states.DISTANCE + (
-                        20 + item.img.get_height() // 2) * game_states.LAST_DIRECTION) - item.img.get_height() // 2
-            )
-        )
-    else:
-        ent = item.pos[0]
-        # print(ent.pos, ent.get_pos())
-        hand = item.pos[1] * 2 - 1
-        rotated = pygame.transform.rotate(
-            pygame.transform.flip(item.img, item.pos[1] == 0, False),
-            ent.rotation + 180
-        )
-        game_structures.SCREEN.blit(
-            rotated,
-            game_structures.to_screen_pos(offset_point_rotated(
-                (
-                    ent.x - rotated.get_width() // 2,
-                    ent.y + rotated.get_height() // 2
-                ),
-                (hand * ent.width // 4, ent.height // 2 + item.img.get_height() // 2),
-                ent.rotation
-            ))
-        )
+                ent.x - rotated.get_width() // 2,
+                ent.y + rotated.get_height() // 2
+            ),
+            (hand * ent.width // 4, ent.height // 2 + item.img.get_height() // 2),
+            ent.rotation
+        ))
+    )
 
 
 @draw_on_ground_if_not_held
@@ -480,34 +449,23 @@ def simple_shield_draw(item: Item):
     :param item:
     :return:
     """
-    if isinstance(item.pos, int):
-        game_structures.SCREEN.blit(
-            pygame.transform.rotate(item.img, game_states.LAST_DIRECTION * 90),
+    ent = item.pos[0]
+    hand = item.pos[1] * 2 - 1
+    rotated = pygame.transform.rotate(
+        pygame.transform.flip(item.img, item.pos[1] == 0, False),
+        ent.rotation + 270
+    )
+    game_structures.SCREEN.blit(
+        rotated,
+        game_structures.to_screen_pos(offset_point_rotated(
             (
-                game_structures.to_screen_x(
-                    16 * (item.pos * 2 - 1) * game_states.LAST_DIRECTION) - item.img.get_height() // 2,
-                game_structures.to_screen_y(game_states.DISTANCE + (
-                        20 + item.img.get_width() // 2) * game_states.LAST_DIRECTION) - item.img.get_width() // 2
-            )
-        )
-    else:
-        ent = item.pos[0]
-        hand = item.pos[1] * 2 - 1
-        rotated = pygame.transform.rotate(
-            pygame.transform.flip(item.img, item.pos[1] == 0, False),
-            ent.rotation + 270
-        )
-        game_structures.SCREEN.blit(
-            rotated,
-            game_structures.to_screen_pos(offset_point_rotated(
-                (
-                    ent.x - rotated.get_width() // 2,
-                    ent.y + rotated.get_height() // 2
-                ),
-                (hand * ent.width // 8, ent.height // 2 + rotated.get_height() // 2),
-                ent.rotation
-            ))
-        )
+                ent.x - rotated.get_width() // 2,
+                ent.y + rotated.get_height() // 2
+            ),
+            (hand * ent.width // 8, ent.height // 2 + rotated.get_height() // 2),
+            ent.rotation
+        ))
+    )
 
 
 def simple_cooldown_action(item: Item):
@@ -600,39 +558,29 @@ def simple_stab_tick(item: Item):
     :param item:
     :return:
     """
-    if item.data_pack[0]:
-        if isinstance(item.pos, int):
-            rect = item.img.get_rect(center=(
-                16 * (item.pos * 2 - 1) * game_states.LAST_DIRECTION,
-                game_states.DISTANCE + (20 + item.img.get_height() // 2) * game_states.LAST_DIRECTION
-            ))
-        else:
-            if isinstance(item.pos[0], int):
-                return True
-            rect = item.img.get_rect(center=offset_point_rotated(
-                item.pos[0].pos,
-                (
-                    item.pos[0].width // 2 * (item.pos[1] * 2 - 1),
-                    20 + item.img.get_height() // 2
-                ),
-                item.pos[0].rotation
-            ))
-        if isinstance(item.pos, int):
-            for entity in gameboard.ENTITY_BOARD:
-                if entity in item.data_pack[-1]:
-                    continue
-                if rect.colliderect(entity.rect):
-                    entity.hit(item.data_pack[4], item)
-                    game_states.TIME_SINCE_LAST_INTERACTION = 0
-                    item.data_pack[-1].append(entity)
-        elif "p" not in item.data_pack[-1]:
-            if rect.colliderect(pygame.Rect(-32, game_states.DISTANCE - 32, 64, 64)):
-                item.data_pack[-1].append("p")
-                damage = item.data_pack[4]
-                game_structures.deal_damage(damage, item)
-                game_structures.begin_shake(10 * (1 + damage // 2), (20, 20), (2 * (1 + damage), -5 * (1 + damage)))
-                entities.glide_player(item.data_pack[4] * 3, 20, 3, (
-                        (item.pos[1] if isinstance(item.pos[0], int) else item.pos[0].y) < game_states.DISTANCE) * 2 - 1)
+    if in_use(item) and held(item):
+        user: entities.Entity = holder(item)
+        rect = item.img.get_rect(center=offset_point_rotated(
+            user.pos,
+            (
+                user.width // 2 * (item.pos[1] * 2 - 1),
+                20 + item.img.get_height() // 2
+            ),
+            user.rotation
+        ))
+        rad = user.radius() + get_range(item) + entities.Entity.biggest_radius + 5
+        damage = item.data_pack[4]
+        hit = user.all_in_range(
+                rad, lambda e: e is not user and e not in item.data_pack[-1] and rect.colliderect(e.rect)
+        )
+        if hit and from_player(item):
+            game_states.TIME_SINCE_LAST_INTERACTION = 0
+        for entity in hit:
+            entity.hit(damage, item)
+        item.data_pack[-1].extend(hit)
+        if game_structures.PLAYER_ENTITY in hit:
+            game_structures.begin_shake(10 * (1 + damage // 2), (20, 20), (2 * (1 + damage), -5 * (1 + damage)))
+            entities.glide_player(item.data_pack[4] * 3, 20, 3, (user.y < game_states.DISTANCE) * 2 - 1)
     return True
 
 
@@ -649,61 +597,39 @@ def simple_shield_tick(item: Item):
                 entity.hit(1, item)
             item.data_pack[1].clear()
         return True
-    if isinstance(item.pos, int):
-        rect = pygame.Rect(
-            8 * (item.pos * 2 - 1) * game_states.LAST_DIRECTION - item.img.get_height() // 2,
-            game_states.DISTANCE + (20 + item.img.get_width() // 2) * game_states.LAST_DIRECTION - item.img.get_width() // 2,
-            item.img.get_height(),
-            item.img.get_width()
-        )
+    elif not held(item):
+        if item.data_pack[1]:
+            item.data_pack[1].clear()
+        return True
+    user: entities.Entity | entities.Glides = holder(item)
+    new_center = offset_point_rotated(
+        user.pos,
+        (
+            user.width // 4 * (item.pos[1] * 2 - 1),
+            user.height // 2 + item.img.get_width() // 2
+        ),
+        user.rotation
+    )
+    # rect = item.img.get_rect(center=new_center)
+    rect = pygame.Rect(
+        new_center[0] - item.img.get_height() // 2,
+        new_center[1] - item.img.get_width() // 2,
+        item.img.get_height(),
+        item.img.get_width()
+    )
 
-        player_friendly = True
-        dashing = abilities.is_dashing()
-        center = game_states.DISTANCE
-        radius = rect.height + 20
+    player_friendly = user.allied_with_player
+    dashing = isinstance(user, entities.Glides) and user.is_gliding()
+    rot = (user.rotation // 180 * 2) - 1
+    radius = user.height // 2 + rect.height
 
-        collide_list = [
-            entity
-            for entity in gameboard.ENTITY_BOARD
-            if
-            ((entity.y - game_states.DISTANCE) * game_states.LAST_DIRECTION > 0)
-            and entity.colliderect(rect)
-        ]
+    collide_list = user.all_in_range(
+        entities.Entity.biggest_radius + radius,
+        lambda ent: (ent.y - user.y) * rot > 0 and ent.colliderect(rect)
+    )
 
-        if collide_list:
-            game_states.TIME_SINCE_LAST_INTERACTION = 0
-            game_states.DISTANCE -= game_states.LAST_DIRECTION * 2
-    else:
-        if isinstance(item.pos[0], int):
-            if item.data_pack[1]:
-                item.data_pack[1].clear()
-            return True
-        e: entities.Entity | entities.Glides = item.pos[0]
-        new_center = offset_point_rotated(
-            e.pos,
-            (
-                item.pos[0].width // 4 * (item.pos[1] * 2 - 1),
-                20 + item.img.get_width() // 2
-            ),
-            e.rotation
-        )
-        # rect = item.img.get_rect(center=new_center)
-        rect = pygame.Rect(
-            new_center[0] - item.img.get_height() // 2,
-            new_center[1] - item.img.get_width() // 2,
-            item.img.get_height(),
-            item.img.get_width()
-        )
-
-        player_friendly = False
-        dashing = isinstance(e, entities.Glides) and e.glide_speed > 0
-        center = e.y
-        radius = e.height // 2 + rect.height
-
-        collide_list = e.all_in_range(
-            entities.Entity.biggest_radius + radius,
-            lambda ent: ent.colliderect(rect)
-        )
+    if collide_list and from_player(item):
+        game_states.TIME_SINCE_LAST_INTERACTION = 0
 
     collide_list = list(filter(
         lambda en: False and (
@@ -719,42 +645,37 @@ def simple_shield_tick(item: Item):
             entity.allied_with_player is not player_friendly
             and entity not in item.data_pack[1]
         )
-    else:
-        if item.data_pack[1]:
-            for entity in item.data_pack[1]:
-                entity.hit(1, item)
-            item.data_pack[1].clear()
+    elif item.data_pack[1]:
+        for entity in item.data_pack[1]:
+            entity.hit(1, item)
+        item.data_pack[1].clear()
 
     if collide_list:  # code nearly copied from Crawler
         push_factor: float = math.inf
         new_push_factor: float
         en: entities.Entity
+        push_factor_height: int = 0
         for en in collide_list:
-            if center != en.y:
-                new_push_factor = center - en.y
+            if user.y != en.y:
+                new_push_factor = user.y - en.y
+                # new_push_factor -= math.copysign(min(en.height // 2, new_push_factor - 1), new_push_factor)
                 if abs(new_push_factor) < abs(push_factor):
                     push_factor = new_push_factor
-        if math.isfinite(push_factor):
-            if abs(push_factor) > radius:
-                push_factor -= math.copysign(radius, push_factor)
-                change = radius // round(push_factor)
-            else:
-                change = round(math.copysign(radius, push_factor))
-
+                    push_factor_height = en.height
+        if abs(push_factor) > radius:
+            change = radius // round(abs(push_factor) - radius)
+        else:
+            change = radius
+        change = min(change, push_factor_height // 2 + radius - abs(push_factor))
+        change = round(math.copysign(change, push_factor))
+        user.y += change
 
         # change rect so that it doesn't pull stuff along
         rect.y += change
 
         e: entities.Entity
         for e in filter(lambda ent: ent.colliderect(rect), collide_list):
-            e.y = center + (radius + e.rect.height // 2) * ((e.y - center > 0) * 2 - 1)
-
-    if not player_friendly:
-        if rect.colliderect(pygame.Rect(-32, game_states.DISTANCE - 32, 64, 64)):
-            game_states.DISTANCE = item.pos[0].y + (item.pos[0].height // 2 + item.img.get_width()) * math.cos(
-                math.radians(item.pos[0].rotation))
-            item.pos[0].y -= 2 * math.cos(math.radians(item.pos[0].rotation))
-
+            e.y = user.y + (radius + e.rect.height // 2 + 1) * ((e.y - user.y > 0) * 2 - 1)
     return True
 
 
@@ -764,22 +685,12 @@ def simple_throwable_action(item: Item):
     :param item:
     :return:
     """
-    p = from_player(item)  # if it's from the player
-    if p:
-        allied = True
-        pos = (0, game_states.DISTANCE)
-        rot = game_states.LAST_DIRECTION * 90 + 90
-        # print(rot)
-        game_structures.HANDS[item.pos] = None  # remove from hands of entity throwing
+    user: entities.Entity = holder(item)
+    user.hands[item.pos[1]] = None  # remove from hands of entity throwing
+    if user is game_structures.PLAYER_ENTITY:
         ingame.pickup_to_hand(item.pos)  # refill player hands
-    else:
-        allied = item.pos[0].allied_with_player
-        pos = item.pos[0].pos
-        rot = item.pos[0].rotation
-        item.pos[0].hands[item.pos[1]] = None  # remove from hands of entity throwing
-    # print(item)
-    ent = item.data_pack[0](pos, rot, *item.data_pack[1])  # create entity
-    ent.allied_with_player = allied
+    ent = item.data_pack[0](user.pos, user.rotation, *item.data_pack[1])  # create entity
+    ent.allied_with_player = user.allied_with_player
     gameboard.NEW_ENTITIES.append(ent)  # add entity to entity list
 
 
@@ -855,7 +766,9 @@ def make_random_reusable(random, pos):
     :param random:
     :return:
     """
-    choose = random.choice(typ for typ in ItemTypes if typ.value.first != -1 and typ.value.first > game_states.LAST_AREA)
+    choose = random.choice(tuple(
+        typ for typ in ItemTypes if typ.value.first != -1 and typ.value.first <= game_states.LAST_AREA
+    ))
     if choose is ItemTypes.SimpleStab:
         return random_simple_stab(game_states.LAST_AREA, random, pos)
     elif choose is ItemTypes.SimpleShield:

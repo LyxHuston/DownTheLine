@@ -143,10 +143,12 @@ def start(with_seed: int = None, full: bool = True):
         game_states.HEALTH = 5
         game_states.LAST_HEAL = 20
         game_states.LAST_DIRECTION = 1
-        game_states.GLIDE_SPEED = 0
-        game_states.GLIDE_DIRECTION = 0
-        game_states.GLIDE_DURATION = 0
-        game_states.TAPER_AMOUNT = 0
+        game_structures.PLAYER_ENTITY.start_glide(
+            0,
+            0,
+            0,
+            0
+        )
         # screen shake management
         game_states.X_DISPLACEMENT = 0
         game_states.Y_DISPLACEMENT = 0
@@ -166,9 +168,10 @@ def start(with_seed: int = None, full: bool = True):
 
         abilities.last_dash_time = -1 - abilities.dash_cooldown
 
-        game_structures.HANDS = [None, None]
+        game_structures.HANDS[:] = None, None
 
     clean_gameboard()
+    gameboard.ENTITY_BOARD.append(game_structures.PLAYER_ENTITY)
 
     if full:
         ingame.paused = False
