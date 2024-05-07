@@ -82,7 +82,7 @@ def after_tick(fade_color: tuple[int, int, int], title_text: str, text_backgroun
                 game_structures.Button.make_text_button(title_text, 400, (game_states.WIDTH // 2, 400), None,
                                                         background_color=text_background, outline_color=text_color))
             game_structures.BUTTONS.add_button(
-                game_structures.Button.make_text_button(f"You traveled {game_states.RECORD_DISTANCE} units", 80,
+                game_structures.Button.make_text_button(f"You traveled {run_start_end.visual_distance()} units", 80,
                                                         (game_states.WIDTH // 2 - 600, 700), None,
                                                         background_color=text_background, outline_color=text_color,
                                                         text_align=0, x_align=0))
