@@ -1158,6 +1158,17 @@ class Lazer(InvulnerableEntity):
     Superclass, can be subclassed to add/replace ends, ends should be registered pre super call
     """
 
+    TOP = object()
+    BOTTOM = object()
+
+    @staticmethod
+    def _to_y(y: int | Literal[TOP, BOTTOM]):
+        if y is Lazer.BOTTOM:
+            return game_states.CAMERA_BOTTOM - 20
+        if y is Lazer.TOP:
+            return game_states.CAMERA_BOTTOM + game_states.HEIGHT + 20
+        return y
+
     def __init__(self, y: int, charge_time: int, duration: int, area, repeats: int | None = 1, damage: int = 1):
         # print("new lazer at:", y)
         super().__init__(images.EMPTY, 0, (0, y))
@@ -1221,7 +1232,8 @@ class Lazer(InvulnerableEntity):
                         rot
                     ))
             if self.cooldown >= self.charge_time:
-                self.repeats -= 1
+                if self.repeats is not None:
+                    self.repeats -= 1
                 self.cooldown = 0
                 self.firing = True
         return True
@@ -1268,15 +1280,8 @@ class TrackingLazer(Lazer):
     lazer subclass that chases the player while not firing
     """
 
-    TOP = object()
-    BOTTOM = object()
-
-    def __init__(self, y: int | Literal[TOP, BOTTOM], charge_time: int, duration: int, area, repeats: int | None = 1, damage: int = 1):
-        if y is TrackingLazer.BOTTOM:
-            y = game_states.BOTTOM - 20
-        if y is TrackingLazer.TOP:
-            y = game_states.BOTTOM + game_states.HEIGHT + 20
-        super().__init__(y, charge_time, duration, area, repeats, damage)
+    def __init__(self, y: int | Literal[Lazer.TOP, Lazer.BOTTOM], charge_time: int, duration: int, area, repeats: int | None = 1, damage: int = 1):
+        super().__init__(self._to_y(y), charge_time, duration, area, repeats, damage)
         self.velocity = 0
 
     def tick(self):
@@ -1292,6 +1297,37 @@ class TrackingLazer(Lazer):
         return cls(area.start_coordinate + area.random.randint(0, 1) * area.length, 120, 60, area, 1, 1)
 
 
+class PathedLazer(Lazer):
+    """
+    lazer moves with acceleration like a TrackingLazer, except towards fixed targets
+    """
+
+    def __init__(
+            self, ys: list[int | Literal[Lazer.TOP, Lazer.BOTTOM]], charge_time: int, duration: int, area, damage: int = 1
+    ):
+        super().__init__(self._to_y(ys[0]), charge_time, duration, area, None, damage)
+        self.velocity = 0
+        self.dest = ys[1]
+        self.on = 1
+        self.ys = ys
+
+    def tick(self):
+        to = self._to_y(self.dest)
+        self.velocity += (self.y + self.velocity * 20 < to) * 2 - 1
+        if abs(self.velocity) > 12:
+            self.velocity -= math.copysign(1, self.velocity)
+        self.y += self.velocity
+        for end in self.ends:
+            end.y = self.y
+        if abs(self.y - to) < abs(self.velocity):
+            self.on += 1
+            if self.on < len(self.ys):
+                self.dest = self.ys[self.on]
+            else:
+                self.alive = False
+        super().tick()
+
+
 class ComponentEntity(Entity):
     """
     Any entity that is only a component of another, larger body.  Like lazer ends.
@@ -1305,7 +1341,7 @@ class ComponentEntity(Entity):
 
     @property
     def alive(self) -> bool:
-        return self.__alive
+        return self.__alive and self.parent.alive
 
     @alive.setter
     def alive(self, val):
