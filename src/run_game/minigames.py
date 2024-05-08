@@ -70,7 +70,7 @@ fish = Minigame()
 notes = Minigame()
 lazers = Minigame()
 
-Minigame.minigames = [lazers]
+# Minigame.minigames = [lazers]
 
 
 def entity_tracker(area): return area.data_pack[0]
@@ -196,8 +196,8 @@ def lazers_setup(area):
 
 	for i in range(rep):
 		# register = make_register(i)
-		# lazertype = area.random.randint(0, 4)
-		lazertype = 4
+		lazertype = area.random.randint(0, 4)
+		# lazertype = 4
 		# print(f"wave: {["safety zones", "trackers", "juggle"][lazertype]}")
 		if lazertype == 0:  # safety zone(s)
 			charge_bonus = 10
