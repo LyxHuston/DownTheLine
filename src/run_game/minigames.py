@@ -70,6 +70,8 @@ fish = Minigame()
 notes = Minigame()
 lazers = Minigame()
 
+Minigame.minigames = [lazers]
+
 
 def entity_tracker(area): return area.data_pack[0]
 
@@ -77,7 +79,6 @@ def entity_tracker(area): return area.data_pack[0]
 def preset(area, *args): area.data_pack = list(args)
 
 
-@lazers.set_tick
 @notes.set_tick
 def filter_entities(area):
 	area.data_pack[0][:] = filter(lambda e: e.alive, area.data_pack[0])
@@ -96,7 +97,6 @@ lazers.set_init(set_length(1))
 
 
 @notes.set_check_win
-@lazers.set_check_win
 @fish.set_check_win
 def empty_area(area):
 	return not entity_tracker(area)
@@ -165,31 +165,47 @@ def notes_finish(area):
 	gameboard.NEW_ENTITIES.append(wall)
 
 
+def make_lazer_register_maker(area) -> Callable[[int], Callable[[entities.Entity], list]]:
+	call = entity_tracker(area).append
+	return lambda c: lambda entity: [area.data_pack.__setitem__(1, min(c, area.data_pack[1])), call(entity)]
+
+
+@lazers.set_check_win
+def lazer_win(area) -> bool:
+	return area.data_pack[0] == 0
+
+
 @lazers.set_setup
 def lazers_setup(area):
 	area.enforce_center = area.start_coordinate + area.length // 2
 	wave: list[tuple[Type[entities.Entity], Iterable]] = []
-	ticks_to_cross = area.length // 10
+	ticks_to_cross = area.length // 14
 	rep = area.difficulty // 10 + 1
-	preset(area, [], rep, None, -10)
-	register = None
-	deploy = lambda: None
+	preset(area, rep + 1, None, -10)
+	# register = entity_tracker(area).append
+	register = utility.passing
+	# register = None
+	# deploy = lambda: None
+	deploy = lambda: area.data_pack.__setitem__(0, area.data_pack[0] - 1)
 	delay = 0
-	make_register = (
-		lambda call: lambda c: lambda entity: [area.data_pack.__setitem__(1, min(c, area.data_pack[1])), call(entity)]
-	)(
-		entity_tracker(area).append
-	)
+	# make_register = make_lazer_register_maker(area)
+
+	def wave_make():
+		nonlocal wave
+		wave = [(entities.MassDelayedDeploy, (delay, area, wave, register, deploy))]
+
 	for i in range(rep):
-		register = make_register(i)
-		lazertype = area.random.randint(0, 2)
+		# register = make_register(i)
+		# lazertype = area.random.randint(0, 4)
+		lazertype = 4
 		# print(f"wave: {["safety zones", "trackers", "juggle"][lazertype]}")
 		if lazertype == 0:  # safety zone(s)
 			charge_bonus = 10
 			delay = ticks_to_cross + charge_bonus
+			wave_make()
 			separation = 64
 			pre_safe_creation = [
-				(entities.Lazer, (y, ticks_to_cross + charge_bonus, charge_bonus, area))
+				(entities.Lazer, (y, delay, charge_bonus, area))
 				for y in range(area.start_coordinate + separation, area.end_coordinate, separation)
 			]
 			del_at: int = area.random.randint(0, len(pre_safe_creation) - 2)
@@ -197,8 +213,10 @@ def lazers_setup(area):
 			wave.extend(pre_safe_creation)
 		elif lazertype == 1:  # a bunch of trackers
 			tracker_delay = 30
-			delay = area.random.randint(5, 8)
-			for tracker_count in range(delay):
+			num = area.random.randint(5, 8)
+			delay = (num + 1) * tracker_delay
+			wave_make()
+			for tracker_count in range(num):
 				wave.append((
 					entities.DelayedDeploy,
 					(
@@ -214,10 +232,11 @@ def lazers_setup(area):
 						register
 					)
 				))
-			delay *= tracker_delay
 		elif lazertype == 2:  # juggle 3 trackers
 			repeats = area.random.randint(3, 5)
 			tracker_delay = 30
+			delay = tracker_delay * (repeats + 1)
+			wave_make()
 			for tracker_count in range(3):
 				wave.append((
 					entities.DelayedDeploy,
@@ -232,10 +251,59 @@ def lazers_setup(area):
 						register
 					)
 				))
-			delay = tracker_delay * (repeats + 1)
-		area.data_pack[1] += 1
-		wave = [(entities.MassDelayedDeploy, (delay, area, wave, register, deploy))]
-		deploy = lambda: area.data_pack.__setitem__(1, area.data_pack[1] - 1)
+		elif lazertype == 3:  # odd-even
+			charge_time = 40
+			fire_duration = 10
+			separation = 72
+			repeats = area.random.randint(3, 8)
+			delay = repeats * charge_time
+			wave_make()
+			for rep in range(repeats):
+				wave.append((
+					entities.MassDelayedDeploy,
+					(
+						charge_time * rep,
+						area,
+						[
+							(entities.Lazer, (y, charge_time, fire_duration, area))
+							for y in
+							range(area.start_coordinate + separation * (1 + rep % 2), area.end_coordinate, separation * 2)
+						],
+						register
+					)
+				))
+		elif lazertype == 4:  # blinking sweepers
+			lifetime = 4
+			num = area.random.randint(min(2, area.difficulty // 5), max(2, area.difficulty // 5 + 1))
+			charge_time = 60
+			fire_duration = 40
+			deploy_delay = 60
+			delay = (area.length // 14 + 12) * lifetime + num * deploy_delay
+			wave_make()
+			choices = (
+				entities.Lazer.BOTTOM,
+				entities.Lazer.TOP
+			)
+			for tracker_count in range(num):
+				path = [choices[(tracker_count + dest_num) % 2] for dest_num in range(lifetime)]
+				wave.append((
+					entities.DelayedDeploy,
+					(
+						deploy_delay * tracker_count,
+						area,
+						entities.PathedLazer,
+						(
+							path,
+							charge_time,
+							fire_duration,
+							area
+						),
+						register
+					)
+				))
+		# wave = [(entities.MassDelayedDeploy, (delay, area, wave, register, deploy))]
+	delay = 0
+	wave_make()
 	e = wave[0][0](*wave[0][1])
 	gameboard.NEW_ENTITIES.append(e)
 	register(e)
@@ -277,6 +345,8 @@ def outline_img(img: pygame.Surface, outline: int):
 def draw_count(getter: Callable) -> Callable:
 	def inner(area):
 		count = getter(area)
+		if count == 0:
+			return
 		if area.data_pack[-1] == count:
 			draw = area.data_pack[-2]
 		else:
@@ -293,4 +363,4 @@ def draw_count(getter: Callable) -> Callable:
 
 fish.set_draw(draw_count(lambda area: area.num_entities() - 2))
 notes.set_draw(draw_count(lambda area: area.data_pack[1].waves))
-lazers.set_draw(draw_count(lambda area: area.data_pack[1]))
+lazers.set_draw(draw_count(lambda area: area.data_pack[0]))

@@ -28,7 +28,7 @@ from general_use.utility import make_async, add_error_checking, make_simple_alwa
 from general_use import game_structures
 import math
 from collections import deque
-from typing import Type, Iterable
+from typing import Type, Iterable, Callable
 
 
 class GameArea:
