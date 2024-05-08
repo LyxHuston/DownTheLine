@@ -1252,6 +1252,9 @@ class Lazer(InvulnerableEntity):
                     25 - self.charge_time + self.cooldown,
                     5
                 )
+        percentage = 1 if self.cooldown < self.duration // 2 else 2 - self.cooldown / self.duration * 2
+        width = int(12 * percentage)
+        radius = int(25 * percentage)
         if self.firing:
             positions = [end.screen_pos for end in self.ends]
             # print(positions)
@@ -1260,7 +1263,7 @@ class Lazer(InvulnerableEntity):
                 (255, 255, 255),
                 True,
                 positions,
-                12
+                width
             )
             end2 = self.ends[-1]
             for i in range(len(self.ends)):
@@ -1271,7 +1274,7 @@ class Lazer(InvulnerableEntity):
                     game_structures.SCREEN,
                     (255, 255, 255),
                     game_structures.to_screen_pos((0, intercept)),
-                    25
+                    radius
                 )
 
 
