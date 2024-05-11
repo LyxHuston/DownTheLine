@@ -18,6 +18,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 main ran file for the game
 """
 import argparse
+import cProfile
 
 import pygame
 
@@ -48,7 +49,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(prog="Down The Line")
     parser.add_argument("mode", default="play", choices=["testing", "test_images", "play"], nargs="?")
     parser.add_argument("-c", "--with_interactive_console", action="store_true")
-    parser.add_argument("-p", "--print_seed", action="store_true")
+    parser.add_argument("-s", "--print_seed", action="store_true")
+    parser.add_argument("-p", "--profile", action="store_true")
     args = parser.parse_args()
 
     __run = True
@@ -94,4 +96,7 @@ if __name__ == "__main__":
 
         game_structures.CUSTOM_EVENT_CATCHERS.append(lambda catch: game_states.PLACE.catcher(catch))
 
-        run()
+        if args.profile:
+            cProfile.run("run()")
+        else:
+            run()
