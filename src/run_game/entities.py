@@ -694,7 +694,8 @@ class Slime(Glides):
         self.start_glide(damage, 90, 1, ((self.y - y) > 0) * 2 - 1)
 
     def damage_player(self):
-        glide_player(5, 2, 1, ((self.y - game_states.DISTANCE) < 0) * 2 - 1)
+        if not game_structures.PLAYER_ENTITY.is_gliding():
+            glide_player(5, 2, 1, ((self.y - game_states.DISTANCE) < 0) * 2 - 1)
         game_structures.begin_shake(6, (10, 10), (7, 5))
 
     def tick(self):
@@ -705,8 +706,9 @@ class Slime(Glides):
             direction = 0
             for entity in colliding:
                 entity.hit(1, self)
-                entity.y = self.y + (self.height // 2 + entity.height // 2) * ((self.y < entity.y) * 2 - 1)
-                direction += (self.y > entity.y) * 2 - 1
+                if not (isinstance(entity, Glides) and entity.is_gliding() and entity.glide_speed > 10):
+                    entity.y = self.y + (self.height // 2 + entity.height // 2) * ((self.y < entity.y) * 2 - 1)
+                    direction += (self.y > entity.y) * 2 - 1
             self.start_glide(5, 30, 5, int(math.copysign(min(abs(direction), 1), direction)))
             return
         self.glide_tick()
