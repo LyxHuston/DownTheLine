@@ -347,6 +347,11 @@ def outline_img(img: pygame.Surface, outline: int):
 	return outlining
 
 
+@utility.memoize
+def outline_for(num: int):
+	return outline_img(game_structures.FONTS[64].render(str(num), True, (255, 255, 255), None), 2)
+
+
 def draw_count(getter: Callable) -> Callable:
 	def inner(area):
 		count = getter(area)
@@ -355,8 +360,9 @@ def draw_count(getter: Callable) -> Callable:
 		if area.data_pack[-1] == count:
 			draw = area.data_pack[-2]
 		else:
-			draw = outline_img(game_structures.FONTS[64].render(str(getter(area)), True, (255, 255, 255), None), 2)
+			draw = outline_for(count)
 			area.data_pack[-2] = draw
+			area.data_pack[-1] = count
 		y = 30
 		if tutorials.display is not None and not switches.TUTORIAL_TEXT_POSITION:
 			y += tutorials.display_height
