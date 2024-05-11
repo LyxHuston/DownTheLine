@@ -49,13 +49,18 @@ class Minigame:
 
 		self.minigames.append(self)
 
+	maker = staticmethod(lambda name: lambda self, val: (setattr(self, name, val), val)[1])
+
 	for name in funcs:
 		# def __set(self, val: Callable, name=name):
 		# 	setattr(self, name, val)
 		# 	return val
-		exec(f"def set_{name}(self, val: Callable):setattr(self, \"{name}\", val);return val")
+		# exec(f"def set_{name}(self, val: Callable):setattr(self, \"{name}\", val);return val")
+		locals()[f"set_{name}"] = maker(name)
+		# setattr(cls, f"set_{name}", maker(name))
 	# locals()[f"set_{name}"] = __set
 	# del __set
+	del maker
 	del name
 
 	def __repr__(self):
@@ -70,7 +75,7 @@ fish = Minigame()
 notes = Minigame()
 lazers = Minigame()
 
-# Minigame.minigames = [lazers]
+Minigame.minigames = [notes]
 
 
 def entity_tracker(area): return area.data_pack[0]
