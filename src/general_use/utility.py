@@ -25,31 +25,72 @@ from sys import argv
 memoize_not_have = object()
 
 
-def memoize(func: Callable):
+def memoize(func: Callable = None, /, *, guarantee_single: bool = False, guarantee_natural: bool = False):
     """
     if the function has previously been invoked with the same (hashable) arguments, make it work
     :param func:
+    :param guarantee_single: guarantee that there will only ever be 1 argument passed
+    :param guarantee_natural: guarantee that there will only ever be natural numbers passed
     :return:
     """
 
-    cache = dict()
+    determine = (guarantee_single, guarantee_natural)
 
-    def internal(*args, **kwargs):
+    def inner_make(true_func: Callable):
 
-        key = (args, tuple(sorted(kwargs.items())))
-        if isinstance(key, Hashable):
-            res = cache.get(key, memoize_not_have)
-            if res is memoize_not_have:
-                res = func(*args, **kwargs)
-                cache[key] = res
+        if determine == (True, True):
+            cache = []
+
+            def internal(num):
+                if num < len(cache):
+                    res = cache[num]
+                    if res is memoize_not_have:
+                        res = true_func(num)
+                        cache[num] = res
+                    return res
+                else:
+                    res = true_func(num)
+                    cache.extend([memoize_not_have] * (num - len(cache)) + [res])
+                return res
+
+        elif determine == (True, False):
+
+            cache = dict()
+
+            def internal(arg):
+
+                if isinstance(arg, Hashable):
+                    res = cache.get(arg, memoize_not_have)
+                    if res is memoize_not_have:
+                        res = true_func(arg)
+                        cache[arg] = res
+                else:
+                    res = true_func(arg)
+                return res
+
         else:
-            res = func(*args, **kwargs)
-        return res
+            cache = dict()
 
-    return internal
+            def internal(*args, **kwargs):
+
+                key = (args, tuple(sorted(kwargs.items())))
+                if isinstance(key, Hashable):
+                    res = cache.get(key, memoize_not_have)
+                    if res is memoize_not_have:
+                        res = true_func(*args, **kwargs)
+                        cache[key] = res
+                else:
+                    res = true_func(*args, **kwargs)
+                return res
+
+        return internal
+
+    if func is None:
+        return inner_make
+    return inner_make(func)
 
 
-@memoize
+@memoize(guarantee_single=True)
 def make_simple_always(result: Any) -> Callable:
     """
     makes a simple function that regardless of input produces the same output

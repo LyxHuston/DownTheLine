@@ -602,7 +602,7 @@ class Body:
         self.__original_img = val
         self._rotated_img = None
 
-    @utility.memoize
+    @utility.memoize(guarantee_natural=True)
     @staticmethod
     def __calc_radius(w: int, h: int) -> int:
         return math.isqrt(w ** 2 + h ** 2) // 2

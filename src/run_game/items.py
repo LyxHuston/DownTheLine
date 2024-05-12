@@ -225,7 +225,7 @@ def make_meta_wrapper(wrapper_func: Callable):
     return inner
 
 
-@utility.memoize
+@utility.memoize(guarantee_natural=True, guarantee_single=True)
 def forward_args(num: int):
 
     def to_func(func):
@@ -276,7 +276,7 @@ def make_conditional_wrapper(func1: Callable, func2: Callable, *args, **kwargs):
 
 
 @make_conditional_wrapper
-@utility.memoize
+@utility.memoize(guarantee_single=True)
 def none_check(result: Any) -> Callable[[Any], tuple[Any, Any]]:
     def inner(item):
         return item is not None, result
