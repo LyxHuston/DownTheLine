@@ -40,7 +40,7 @@ class Minigame:
 		if len(args) > len(self.funcs):
 			raise TypeError(f"{self.__init__} takes {len(self.funcs)} positional argument but {len(args)} were given")
 		for name in kwargs:
-			if name in self.funcs:
+			if name not in [f"{n}_func" for n in self.funcs]:
 				raise TypeError(f"{self.__init__} got an unexpected keyword argument '{name}'")
 		for i, name in enumerate(self.funcs):
 			if i < len(args) and f"{name}_func" in kwargs:
@@ -74,8 +74,7 @@ class Minigame:
 fish = Minigame()
 notes = Minigame()
 lazers = Minigame()
-
-Minigame.minigames = [notes]
+Minigame.minigames = [lazers]
 
 
 def entity_tracker(area): return area.data_pack[0]
@@ -89,6 +88,7 @@ def filter_entities(area):
 	area.data_pack[0][:] = filter(lambda e: e.alive, area.data_pack[0])
 
 
+@utility.memoize(guarantee_single=True)
 def set_length(factor: float):
 	def inner(area):
 		area.length = game_states.HEIGHT * factor
@@ -97,29 +97,37 @@ def set_length(factor: float):
 	return inner
 
 
-fish.set_init(set_length(2))
-lazers.set_init(set_length(1))
+@fish.set_init
+def fish_init(area):
+	set_length(2)(area)
+	preset(area, [], None, -10)
+
+	def register(entity):
+		entity_tracker(area).append(entity)
+		entity.y += area.start_coordinate
+
+	wave: list[tuple[Type[entities.Entity], Iterable]] = []
+	waves = area.difficulty // 10
+	count = 0
+	for i in range(waves):
+		for i2 in range(i + 7):
+			wave.append((entities.Fish, [area]))
+			count += 1
+		wave = [(entities.MassDelayedDeploy, (60 * 10, area, wave, register))]
+	e = entities.MassDelayedDeploy(0, wave[0][1][1], wave[0][1][2], register)
+	register(e)
+	pre_compute_outlines_until(count + waves)
+
+
+@fish.set_setup
+def fish_setup(area):
+	gameboard.NEW_ENTITY.extend(entity_tracker(area))
 
 
 @notes.set_check_win
 @fish.set_check_win
 def empty_area(area):
 	return not entity_tracker(area)
-
-
-@fish.set_setup
-def fish_setup(area):
-	preset(area, [], 0, None, -10)
-	register = entity_tracker(area).append
-	wave: list[tuple[Type[entities.Entity], Iterable]] = []
-	for i in range(area.difficulty // 10):
-		for i2 in range(i + 7):
-			wave.append((entities.Fish, [area]))
-			area.data_pack[1] += 1
-		wave = [(entities.MassDelayedDeploy, (60 * 10, area, wave, register))]
-	e = entities.MassDelayedDeploy(0, wave[0][1][1], wave[0][1][2], register)
-	gameboard.NEW_ENTITIES.append(e)
-	register(e)
 
 
 @fish.set_tick
@@ -156,6 +164,7 @@ def notes_init(area):
 	entity_tracker(area).append(start_note)
 	area.entity_list.append(spawner)
 	entity_tracker(area).append(spawner)
+	pre_compute_outlines_until(spawner.waves)
 
 
 @notes.set_setup
@@ -170,40 +179,29 @@ def notes_finish(area):
 	gameboard.NEW_ENTITIES.append(wall)
 
 
-def make_lazer_register_maker(area) -> Callable[[int], Callable[[entities.Entity], list]]:
-	call = entity_tracker(area).append
-	return lambda c: lambda entity: [area.data_pack.__setitem__(1, min(c, area.data_pack[1])), call(entity)]
+@lazers.set_init
+def lazer_init(area):
+	set_length(1)(area)
 
-
-@lazers.set_check_win
-def lazer_win(area) -> bool:
-	return area.data_pack[0] == 0
-
-
-@lazers.set_setup
-def lazers_setup(area):
-	area.enforce_center = area.start_coordinate + area.length // 2
 	wave: list[tuple[Type[entities.Entity], Iterable]] = []
 	ticks_to_cross = area.length // 14
 	rep = area.difficulty // 10 + 1
-	preset(area, rep + 1, None, -10)
-	# register = entity_tracker(area).append
-	register = utility.passing
-	# register = None
-	# deploy = lambda: None
+
+	def register(entity):
+		entity.y += area.start_coordinate
+		if isinstance(entity, entities.Lazer):
+			for end in entity.ends:
+				end.y += area.start_coordinate
+
 	deploy = lambda: area.data_pack.__setitem__(0, area.data_pack[0] - 1)
 	delay = 0
-	# make_register = make_lazer_register_maker(area)
 
 	def wave_make():
 		nonlocal wave
 		wave = [(entities.MassDelayedDeploy, (delay, area, wave, register, deploy))]
 
 	for i in range(rep):
-		# register = make_register(i)
 		lazertype = area.random.randint(0, 4)
-		# lazertype = 4
-		# print(f"wave: {["safety zones", "trackers", "juggle"][lazertype]}")
 		if lazertype == 0:  # safety zone(s)
 			charge_bonus = 10
 			delay = ticks_to_cross + charge_bonus
@@ -211,7 +209,7 @@ def lazers_setup(area):
 			separation = 64
 			pre_safe_creation = [
 				(entities.Lazer, (y, delay, charge_bonus, area))
-				for y in range(area.start_coordinate + separation, area.end_coordinate, separation)
+				for y in range(separation, area.length, separation)
 			]
 			del_at: int = area.random.randint(0, len(pre_safe_creation) - 2)
 			del pre_safe_creation[del_at:del_at + 2]
@@ -229,7 +227,7 @@ def lazers_setup(area):
 						area,
 						entities.TrackingLazer,
 						(
-							area.start_coordinate + area.length * (tracker_count % 2),
+							area.length * (tracker_count % 2),
 							3 * tracker_delay,
 							15,
 							area
@@ -250,7 +248,7 @@ def lazers_setup(area):
 						area,
 						entities.TrackingLazer,
 						(
-							area.start_coordinate + area.length * (tracker_count % 2),
+							area.length * (tracker_count % 2),
 							3 * tracker_delay, 15, area, repeats
 						),
 						register
@@ -272,7 +270,7 @@ def lazers_setup(area):
 						[
 							(entities.Lazer, (y, charge_time, fire_duration, area))
 							for y in
-							range(area.start_coordinate + separation * (1 + rep % 2), area.end_coordinate, separation * 2)
+							range(separation * (1 + rep % 2), area.length, separation * 2)
 						],
 						register
 					)
@@ -306,12 +304,23 @@ def lazers_setup(area):
 						register
 					)
 				))
-		# wave = [(entities.MassDelayedDeploy, (delay, area, wave, register, deploy))]
+	# wave = [(entities.MassDelayedDeploy, (delay, area, wave, register, deploy))]
 	delay = 0
 	wave_make()
 	e = wave[0][0](*wave[0][1])
-	gameboard.NEW_ENTITIES.append(e)
-	register(e)
+	preset(area, rep + 1, e, None, -10)
+	pre_compute_outlines_until(area.data_pack[0])
+
+
+@lazers.set_setup
+def lazers_setup(area):
+	area.enforce_center = area.start_coordinate + area.length // 2
+	gameboard.NEW_ENTITIES.append(area.data_pack[1])
+
+
+@lazers.set_check_win
+def lazer_win(area) -> bool:
+	return area.data_pack[0] == 0
 
 
 def outline_img(img: pygame.Surface, outline: int):
@@ -347,7 +356,18 @@ def outline_img(img: pygame.Surface, outline: int):
 	return outlining
 
 
-@utility.memoize
+__max_computed = 0
+
+
+@utility.make_async(with_lock=True)
+def pre_compute_outlines_until(num: int):
+	global __max_computed
+	for i in range(num, __max_computed, -1):
+		outline_for(i)
+	__max_computed = num
+
+
+@utility.memoize(guarantee_natural=True, guarantee_single=True)
 def outline_for(num: int):
 	return outline_img(game_structures.FONTS[64].render(str(num), True, (255, 255, 255), None), 2)
 
