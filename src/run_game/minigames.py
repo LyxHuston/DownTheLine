@@ -74,7 +74,6 @@ class Minigame:
 fish = Minigame()
 notes = Minigame()
 lazers = Minigame()
-Minigame.minigames = [lazers]
 
 
 def entity_tracker(area): return area.data_pack[0]
