@@ -101,6 +101,8 @@ def event_catcher(event: pygame.event.Event) -> bool:
         return True
     if game_states.HEALTH <= 0:
         return False
+    if event.type == pygame.WINDOWFOCUSLOST:
+        paused = True
     if event.type == pygame.KEYDOWN:
         if event.key == Inputs.dash:
             abilities.dash_input_catch(tick_counter)
