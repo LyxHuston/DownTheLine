@@ -324,6 +324,36 @@ class Entity(game_structures.Body):
             accept_func=self.collide if additional_predicate is None else (lambda e: self.collide(e) and additional_predicate(e))
         )
 
+    def exclude_wall_safe(
+            self,
+            additional_predicate: Callable = utility.passing,
+            displace_predicate: Callable = utility.passing,
+            run_on_hit: Callable = utility.passing
+    ) -> list[Self]:
+        collide_list: list[Self] = self.colliding(additional_predicate=additional_predicate)
+        displace_list: list[Self] = list(filter(displace_predicate, collide_list))
+        if displace_list:
+            push_factor: float = math.inf
+            new_push_factor: float
+            e: Entity
+            for e in displace_list:
+                if self.y != e.y:
+                    new_push_factor = self.y - e.y
+                    if abs(new_push_factor) < abs(push_factor):
+                        push_factor = new_push_factor
+            if math.isfinite(push_factor):
+                if abs(push_factor) > self.height // 2:
+                    push_factor -= math.copysign(self.height // 2, push_factor)
+                    self.y += self.height // round(2 * push_factor)
+                else:
+                    self.y += round(math.copysign(self.height // 2, push_factor))
+        e: Entity
+        for e in filter(self.collide, collide_list):
+            run_on_hit(e)
+        for e in filter(self.collide, displace_list):
+            e.y = self.y + (self.rect.height // 2 + e.rect.height // 2) * ((e.y - self.y > 0) * 2 - 1)
+        return collide_list
+
     def touching_player(self):
         return abs(self.x) < 32 and abs(self.y - game_states.DISTANCE) < 32 + self.height // 2
 
@@ -687,6 +717,7 @@ class Slime(Glides):
         self.random = random.Random(seed)
         self.wait = 36
         self.max_speed = min(difficulty // 5 + 1, 6)
+        self.__direction = 0
 
     def hit(self, damage: int, source):
         self.health -= damage
@@ -698,18 +729,26 @@ class Slime(Glides):
             glide_player(5, 2, 1, ((self.y - game_states.DISTANCE) < 0) * 2 - 1)
         game_structures.begin_shake(6, (10, 10), (7, 5))
 
+    __displace_predicate = staticmethod(
+        lambda en: not (isinstance(en, Glides) and en.is_gliding() and en.glide_speed > 10)
+    )
+
+    def __change(self, i):
+        self.__direction += i
+
     def tick(self):
-        colliding = self.colliding(
-            additional_predicate=lambda en: self.allied_with_player is not en.allied_with_player
-        )
-        if colliding:
-            direction = 0
-            for entity in colliding:
-                entity.hit(1, self)
-                if not (isinstance(entity, Glides) and entity.is_gliding() and entity.glide_speed > 10):
-                    entity.y = self.y + (self.height // 2 + entity.height // 2) * ((self.y < entity.y) * 2 - 1)
-                    direction += (self.y > entity.y) * 2 - 1
-            self.start_glide(5, 30, 5, int(math.copysign(min(abs(direction), 1), direction)))
+        self.__direction = 0
+        if self.exclude_wall_safe(
+            additional_predicate=lambda en: self.allied_with_player is not en.allied_with_player,
+            displace_predicate=self.__displace_predicate,
+            run_on_hit=lambda en: (en.hit(1, self), self.__change((self.y > en.y) * 2 - 1) if self.__displace_predicate(en) else 0)
+        ):
+            self.start_glide(
+                5,
+                30,
+                5,
+                int(math.copysign(min(abs(self.__direction), 1), self.__direction))
+            )
             return
         self.glide_tick()
         if self.glide_speed == 0:
@@ -802,28 +841,14 @@ class Crawler(Glides, track_instances=True):
         #     32,
         #     5
         # )
-        collide_list: list[Entity] = self.colliding(additional_predicate=lambda en: not en.freeze_y())
-        if self.glide_direction != 0 and collide_list:
-            push_factor: float = math.inf
-            new_push_factor: float
-            e: Entity
-            for e in collide_list:
-                if self.y != e.y:
-                    new_push_factor = self.y - e.y
-                    if abs(new_push_factor) < abs(push_factor):
-                        push_factor = new_push_factor
-            if math.isfinite(push_factor):
-                if abs(push_factor) > self.height // 2:
-                    push_factor -= math.copysign(self.height // 2, push_factor)
-                    self.y += self.height // round(2 * push_factor)
-                else:
-                    self.y += round(math.copysign(self.height // 2, push_factor))
-        e: Entity
-        for e in collide_list:
-            if self.collide(e):
-                e.y = self.y + (self.rect.height // 2 + e.rect.height // 2) * ((e.y - self.y > 0) * 2 - 1)
-                if self.allied_with_player is not e.allied_with_player:
-                    e.hit(1, self)
+        if self.is_gliding():
+            self.exclude_wall_safe(
+                additional_predicate=lambda en: not en.freeze_y(),
+                run_on_hit=lambda en: en.hit(1, self) if self.allied_with_player is not en.allied_with_player else 0
+            )
+        else:
+            for entity in self.colliding(additional_predicate=lambda en: not en.freeze_y()):
+                entity.y = self.y + (self.rect.height // 2 + entity.rect.height // 2) * ((entity.y - self.y > 0) * 2 - 1)
         return
 
     def first_seen(self):
