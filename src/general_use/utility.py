@@ -350,7 +350,7 @@ def tick() -> None:
                         button_hover_keyed = True
                     if button_hover_keyed:
                         game_structures.ALERTS.speak.add(game_structures.BUTTONS.get_hover_keyed_text())
-                if event.key == special_key and not keyed_down:
+                if event.key == special_key and not keyed_down and game_structures.BUTTONS.keyed:
                     event_handled = True
                     keyed_down = True
                     game_structures.BUTTONS.do_key(game_structures.Button.ClickTypes.down)

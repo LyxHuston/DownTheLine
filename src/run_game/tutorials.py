@@ -39,7 +39,7 @@ TUTORIAL_VOICE_CHANNEL = None
 
 
 TUTORIAL_TEXTS: deque[TutorialText] = deque()
-on: TutorialText = None
+on: TutorialText | None = None
 current_text: str = ""
 
 typing = False
@@ -47,16 +47,68 @@ typing_delay = 1
 typing_cooldown = 1
 
 
+auto_progress = False
 up_duration = 120
 up_current = 0
 
 
-display: [pygame.Surface] = None
+display: pygame.Surface | None = None
 display_height = 0
 
 WAIT_TIMES: dict[str, int | float] = {".": 12, ",": 8}
 
 switch_ratio: float = 2/3
+
+
+def next_pressed():
+    global typing, current_text
+    if on is None:
+        return
+    if typing:
+        stop_typing()
+        current_text = on.text
+        update_display()
+    else:
+        next_text()
+
+
+def next_text():
+    global on, current_text, typing, display
+    if len(TUTORIAL_TEXTS) > 0:
+        on = TUTORIAL_TEXTS.popleft()
+        game_structures.speak(on.text)
+        current_text = on.text[0]
+        typing = True
+        update_display()
+    else:
+        clear_display()
+
+
+def stop_typing():
+    global typing, up_current
+    typing = False
+    up_current = 0
+
+
+def update_display():
+    global display, display_height
+    display = game_structures.BUTTONS.draw_text(
+        current_text,
+        on.font,
+        (0, 0, 0, 255),
+        (255, 255, 255),
+        max_line_pixels=game_states.WIDTH,
+        enforce_width=game_states.WIDTH
+    )
+    display_height = display.get_height()
+
+
+def clear_display():
+    global display, display_height, current_text
+    display = None
+    display_height = 0
+    current_text = ""
+
 
 def clear_tutorial_text():
     """
@@ -80,10 +132,7 @@ def tick(do_tick):
     :return:
     """
     global display, typing, typing_cooldown, current_text, up_current, on, display_height
-    if display is None:
-        display_height = 0
-    else:
-        display_height = display.get_height()
+    if display is not None:
         # if switches.TUTORIAL_TEXT_POSITION:
         #     if game_states.DISTANCE - game_states.CAMERA_BOTTOM < (1 - switch_ratio) * game_states.HEIGHT:
         #         switches.TUTORIAL_TEXT_POSITION = False
@@ -98,8 +147,10 @@ def tick(do_tick):
         ):
             switches.TUTORIAL_TEXT_POSITION = not switches.TUTORIAL_TEXT_POSITION
 
-        game_structures.SCREEN.blit(display, (0, (game_states.HEIGHT - display_height) *
-                                              switches.TUTORIAL_TEXT_POSITION))
+        game_structures.SCREEN.blit(
+            display,
+            (0, (game_states.HEIGHT - display_height) * switches.TUTORIAL_TEXT_POSITION)
+        )
         line_y: int = game_states.HEIGHT - display_height if switches.TUTORIAL_TEXT_POSITION else display_height
         pygame.draw.line(
             game_structures.SCREEN,
@@ -116,27 +167,15 @@ def tick(do_tick):
             while current_text[-1] == " ":
                 current_text = on.text[0:len(current_text) + 1]
             typing_cooldown = WAIT_TIMES.get(current_text[-1], 1) * typing_delay
-            display = game_structures.BUTTONS.draw_text(
-                current_text,
-                on.font,
-                (0, 0, 0, 255),
-                (255, 255, 255),
-                max_line_pixels=game_states.WIDTH,
-                enforce_width=game_states.WIDTH
-            )
+            update_display()
             if len(current_text) == len(on.text):
-                typing = False
-                up_current = 0
+                stop_typing()
         else:
             typing_cooldown -= 1
-    else:
+    elif auto_progress:
         if up_current >= up_duration:
-            if len(TUTORIAL_TEXTS) > 0:
-                on = TUTORIAL_TEXTS.popleft()
-                game_structures.speak(on.text)
-                current_text = on.text[0]
-                typing = True
-            else:
-                display = None
+            next_text()
         else:
             up_current += 1
+    elif on is None and len(TUTORIAL_TEXTS) > 0:
+        next_text()

@@ -22,7 +22,7 @@ import math
 import pygame
 from data import game_states
 from general_use import game_structures
-from run_game import abilities, gameboard, items, entities
+from run_game import abilities, gameboard, items, entities, tutorials
 from screens import run_start_end
 
 
@@ -32,6 +32,7 @@ class Inputs:
     dash = pygame.K_d
     prefer_pickup = pygame.K_SPACE
     pause = pygame.K_ESCAPE
+    next_text = pygame.K_RETURN
 
 
 loop_counter = 2 ** 10
@@ -109,6 +110,9 @@ def event_catcher(event: pygame.event.Event) -> bool:
             return True
         elif event.key == Inputs.pause:
             paused = True
+            return True
+        elif event.key == pygame.K_RETURN:
+            tutorials.next_pressed()
             return True
     elif event.type == pygame.MOUSEBUTTONDOWN:
         if event.button == 1:
