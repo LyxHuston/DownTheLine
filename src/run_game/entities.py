@@ -360,6 +360,9 @@ class Entity(game_structures.Body):
     def __repr__(self):
         return f"<{self.__class__.__name__}: {self.pos}>"
 
+    def pick_up(self):
+        raise TypeError("Non-item entity picked up")
+
 
 EntityType = Type[Entity]
 
@@ -618,7 +621,7 @@ class CarriesItems:
 
     def pickup_to(self, item: items.Item | ItemEntity, hand: int) -> bool:
         if items.swappable(self.hands[hand]):
-            if isinstance(item, ItemEntity):
+            if isinstance(item, Entity) and item.is_item_entity:
                 item = item.pick_up()
             if self.hands[hand] is not None:
                 self.hands[hand].pos = self.pos
@@ -1931,6 +1934,8 @@ class Hatchet(InvulnerableGlides):
     imgs = images.HATCHET_THROWN
     buried = images.HATCHET_BURIED
 
+    is_item_entity = True
+
     def __init__(self, pos, rotation, duration, item):
         super().__init__(self.imgs[0].img, rotation, pos)
         self.item = item
@@ -1940,7 +1945,15 @@ class Hatchet(InvulnerableGlides):
 
         self.pickup_entity = items.holder(item)
         self.pickup_to = item.pos[1]
+        self.picked_up = False
         self.allied_with_player = items.friendly_player(item)
+
+    def pick_up(self):
+        if self.picked_up:
+            return None
+        self.picked_up = True
+        self.alive = False
+        return self.item
 
     def damage_player(self):
         game_states.HEALTH += 1  # don't 1-tap the player.  Just almost.
@@ -1959,7 +1972,7 @@ class Hatchet(InvulnerableGlides):
                     self.img_index = (self.img_index + 1) % len(self.imgs)
                     self.img = self.imgs[self.img_index]
         elif self.pickup_entity.hands[self.pickup_to] is None and self.collide(self.pickup_entity):
-            self.pickup_entity.pickup_to(self.item, self.pickup_to)
+            self.pickup_entity.pickup_to(self, self.pickup_to)
 
 
 class DelayedDeploy(InvulnerableEntity):
