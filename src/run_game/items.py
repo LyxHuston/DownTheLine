@@ -23,6 +23,7 @@ This is going to be full of factory functions, huh.  Factories of factories of f
 from dataclasses import dataclass
 from typing import Callable, Union, Any, Self
 import pygame
+import functools
 from run_game import entities, tutorials, abilities, ingame, gameboard
 import math
 import enum
@@ -141,13 +142,7 @@ def offset_point_rotated(origin: tuple[int, int], offset: tuple[int, int], rotat
     )
 
 
-def _wrap(new: Any, old: Any):
-    """Simple substitute for functools.update_wrapper."""
-    for replace in ['__module__', '__name__', '__qualname__', '__doc__']:
-        if hasattr(old, replace):
-            setattr(new, replace, getattr(old, replace))
-    new.__dict__.update(old.__dict__)
-    return new
+_wrap = functools.update_wrapper
 
 
 EMPTY = object()
@@ -192,7 +187,7 @@ def preset_args(*args, **kwargs) -> Callable[[Callable], Callable]:
     """
     @use_wrap_update
     def inner(func: Callable) -> Callable:
-        return lambda *args2, **kwargs2: func(*args, *args2, **kwargs, **kwargs2)
+        return functools.partial(func, *args, **kwargs)
     return inner
 
 
@@ -227,7 +222,6 @@ def make_meta_wrapper(wrapper_func: Callable):
 
 @utility.memoize(guarantee_natural=True, guarantee_single=True)
 def forward_args(num: int):
-
     def to_func(func):
         def inner(current_list: tuple[[Callable], ...], *args):
             if len(current_list) + len(args) == num:

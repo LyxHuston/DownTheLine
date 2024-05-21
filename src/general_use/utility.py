@@ -20,6 +20,7 @@ import threading
 from typing import Callable, Any, Union, Hashable
 import traceback
 import logging
+import functools
 from sys import argv
 
 memoize_not_have = object()
@@ -69,19 +70,7 @@ def memoize(func: Callable = None, /, *, guarantee_single: bool = False, guarant
                 return res
 
         else:
-            cache = dict()
-
-            def internal(*args, **kwargs):
-
-                key = (args, tuple(sorted(kwargs.items())))
-                if isinstance(key, Hashable):
-                    res = cache.get(key, memoize_not_have)
-                    if res is memoize_not_have:
-                        res = true_func(*args, **kwargs)
-                        cache[key] = res
-                else:
-                    res = true_func(*args, **kwargs)
-                return res
+            internal = functools.cache(true_func)
 
         return internal
 
