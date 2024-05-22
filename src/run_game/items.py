@@ -77,6 +77,7 @@ class ItemTypes(enum.Enum):
         prevent_other_use=lambda item: item.data_pack[0]
     )
     SimpleThrowable: ItemType = ItemType(
+        10,
         get_range=lambda item: item.data_pack[0].find_range(*item.data_pack[1]),
         action_available=lambda item: True
     )
