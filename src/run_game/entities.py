@@ -384,10 +384,18 @@ def make_invulnerable_version(entity_class):
         new class with frozen health
         """
 
+        do_sheen = True
+
         def __init__(self, *args, **kwargs):
             self.__alive = True
             self.__shine = None
             super().__init__(*args, **kwargs)
+
+        def __init_subclass__(cls, do_sheen=False, **kwargs):
+            cls.do_sheen = do_sheen
+            if not do_sheen:
+                cls.draw = cls.__no_sheen_draw
+            super().__init_subclass__(kwargs)
 
         @property
         def health(self):
@@ -427,6 +435,19 @@ def make_invulnerable_version(entity_class):
                     self.__shine -= invulnerable_shine_speed
                     if self.__shine < 0:
                         self.__shine = None
+            game_structures.SCREEN.blit(
+                img,
+                (
+                    game_structures.to_screen_x(self.x) - img.get_width() // 2,
+                    game_structures.to_screen_y(self.y) - img.get_height() // 2
+                )
+            )
+            return self.pos
+
+        def __no_sheen_draw(self):
+            img = self.img
+            if img is None:
+                return
             game_structures.SCREEN.blit(
                 img,
                 (
@@ -582,7 +603,7 @@ class Glides(Entity):
         self.glide_duration: int = 0
 
     def is_gliding(self):
-        return self.glide_duration > 0
+        return self.glide_duration > 0 or self.glide_speed > 0
 
     def glide_tick(self) -> bool:
         """
@@ -593,12 +614,20 @@ class Glides(Entity):
             return False
         if self.glide_duration == 0:
             self.glide_speed -= self.taper
-            if self.glide_speed < 0:
+            if self.glide_speed <= 0:
+                self.stop_gliding()
                 self.glide_speed = 0
         else:
             self.glide_duration -= 1
         self.y += self.glide_speed * self.glide_direction
         return True
+
+    def stop_gliding(self):
+        """
+        called when a gliding entity stops gliding
+        :return:
+        """
+        pass
 
     def start_glide(self, speed: int, duration: int, taper: int, direction: int):
         self.glide_speed = speed
@@ -742,7 +771,7 @@ class Slime(Glides):
     def tick(self):
         self.__direction = 0
         if self.exclude_wall_safe(
-            additional_predicate=lambda en: self.allied_with_player is not en.allied_with_player,
+            additional_predicate=lambda en: self.allied_with_player is not en.allied_with_player and not en.freeze_y(),
             displace_predicate=self.__displace_predicate,
             run_on_hit=lambda en: (en.hit(1, self), self.__change((self.y > en.y) * 2 - 1) if self.__displace_predicate(en) else 0)
         ):
@@ -1935,18 +1964,24 @@ class Hatchet(InvulnerableGlides):
     buried = images.HATCHET_BURIED
 
     is_item_entity = True
+    has_camera_mass = False
 
     def __init__(self, pos, rotation, duration, item):
         super().__init__(self.imgs[0].img, rotation, pos)
+        self.already_hit = []
         self.item = item
         self.tick_counter = 0
         self.img_index = 0
-        self.start_glide(25, duration, 100, int(-math.cos(math.radians(rotation))))
+        self.start_glide(20, duration, 100, int(-math.cos(math.radians(rotation))))
 
         self.pickup_entity = items.holder(item)
         self.pickup_to = item.pos[1]
         self.picked_up = False
         self.allied_with_player = items.friendly_player(item)
+
+    @staticmethod
+    def find_range(pos, rotation, duration, item):
+        return 20 * duration
 
     def pick_up(self):
         if self.picked_up:
@@ -1955,24 +1990,29 @@ class Hatchet(InvulnerableGlides):
         self.alive = False
         return self.item
 
-    def damage_player(self):
-        game_states.HEALTH += 1  # don't 1-tap the player.  Just almost.
+    def stop_gliding(self):
+        self.freeze_x(True)
+        self.freeze_y(True)
+        self.img = pygame.transform.flip(self.buried.outlined_img, bool(random.randint(0, 1)), False)
 
     def tick(self):
-        if self.glide_speed:
+        if self.is_gliding():
+            self.tick_counter += 1
+            if self.tick_counter >= 15:
+                self.tick_counter = 0
+                self.img_index = (self.img_index + 1) % len(self.imgs)
+                self.img = self.imgs[self.img_index]
             self.glide_tick()
-            for e in self.colliding(additional_predicate=lambda en: en.allied_with_player is not self.allied_with_player):
-                e.hit(5, self)
-            if not self.glide_speed:
-                self.img = self.buried.outlined_img
-            else:
-                self.tick_counter += 1
-                if self.tick_counter >= 10:
-                    self.tick_counter = 0
-                    self.img_index = (self.img_index + 1) % len(self.imgs)
-                    self.img = self.imgs[self.img_index]
+            hit_list = self.colliding(additional_predicate=lambda en: en.allied_with_player is not self.allied_with_player and en not in self.already_hit)
+            for e in hit_list:
+                e.hit(4, self)
+            self.already_hit.extend(hit_list)
         elif self.pickup_entity.hands[self.pickup_to] is None and self.collide(self.pickup_entity):
             self.pickup_entity.pickup_to(self, self.pickup_to)
+
+    def first_seen(self) -> None:
+        tuple(img.img for img in self.imgs)
+        self.buried.outlined_img
 
 
 class DelayedDeploy(InvulnerableEntity):

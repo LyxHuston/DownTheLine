@@ -780,13 +780,13 @@ def make_random_reusable(random, pos):
 def random_simple_throwable(random, pos):
     # current only reusable throwable is hatchet
     item = simple_throwable(
-        images.SIMPLE_BOMB.img,
-        images.SIMPLE_BOMB.outlined_img,
+        images.HATCHET.img,
+        images.HATCHET.outlined_img,
         pos,
         entities.Hatchet,
         ()
     )
-    item.data_pack[1] = tuple([random.choice((5, 10, 20)), item])
+    item.data_pack[1] = tuple([random.choice((25, 35)), item])
     return item
 
 
