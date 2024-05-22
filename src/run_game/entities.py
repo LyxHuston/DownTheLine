@@ -1972,7 +1972,13 @@ class Hatchet(InvulnerableGlides):
         self.item = item
         self.tick_counter = 0
         self.img_index = 0
-        self.start_glide(20, duration, 100, int(-math.cos(math.radians(rotation))))
+        speed = 20
+        holder = items.holder(item)
+        self.damage = 4
+        if isinstance(holder, Glides):
+            speed += holder.glide_speed
+            self.damage += holder.glide_speed // 10
+        self.start_glide(speed, duration, 100, int(-math.cos(math.radians(rotation))))
 
         self.pickup_entity = items.holder(item)
         self.pickup_to = item.pos[1]
@@ -2005,7 +2011,7 @@ class Hatchet(InvulnerableGlides):
             self.glide_tick()
             hit_list = self.colliding(additional_predicate=lambda en: en.allied_with_player is not self.allied_with_player and en not in self.already_hit)
             for e in hit_list:
-                e.hit(4, self)
+                e.hit(self.damage, self)
             self.already_hit.extend(hit_list)
         elif self.pickup_entity.hands[self.pickup_to] is None and self.collide(self.pickup_entity):
             self.pickup_entity.pickup_to(self, self.pickup_to)
