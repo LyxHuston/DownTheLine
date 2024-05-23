@@ -289,7 +289,11 @@ friendly_player: Callable[[Item], bool]
 prevent_other_use: Callable[[Item], bool]
 swappable: Callable[[Item], bool]
 
-maker = lambda name: lambda item: getattr(item.type.value, name)(item)
+maker = lambda name: (
+    getattr(ItemType, name)[0]
+    if all(getattr(typ.value, name) is getattr(ItemType, name) for typ in ItemTypes)
+    else lambda item: getattr(item.type.value, name)(item)
+)
 
 globals().update({
     name: none_check(val[1])(maker(name))
