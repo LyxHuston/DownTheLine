@@ -175,26 +175,35 @@ def test_image(name: str, image: Image):
 
     try:
         img = image.img
-        print(f"Image {name} loaded.  {img.get_pitch() * img.get_height()} bytes.")
+        print(f"Image {name} loaded from path {image.path}.  {img.get_pitch() * img.get_height()} bytes.")
         try:
             img = image.outlined_img
-            print(f"Outlined image {name} loaded.  {img.get_pitch() * img.get_height()} bytes.")
+            print(f"Outlined image {name} loaded from path {image.path}.  {img.get_pitch() * img.get_height()} bytes.")
+            return 1
         except Exception:
-            print(f"Loading outlined image {name} failed.")
+            print(f"Loading outlined image {name} from path {image.path} failed.")
+            return 0
     except Exception:
-        print(f"Loading image {name} failed.")
+        print(f"Loading image {name} from path {image.path} failed.")
+        return 0
 
 
 def test_images():
 
+    count = 0
+    successful = 0
+
     for name, val in globals().items():
         if isinstance(val, Image):
-            test_image(name, val)
+            successful += test_image(name, val)
+            count += 1
         elif isinstance(val, list):
-            i: int = 0
-            for nest_val in val:
-                test_image(name + f"_{i}", nest_val)
-                i += 1
+            successful += sum(test_image(name + f"_{i}", nest_val) for i, nest_val in enumerate(val))
+            count += len(val)
+    if count == successful:
+        print("\nAll loads were successful.\n")
+    else:
+        print(f"\n{successful}/{count} loads were successful.\n")
 
 
 if __name__ == "__main__":
