@@ -76,6 +76,10 @@ class Image:
         self.__outlined_img: pygame.Surface | None = None
 
 
+def img_range(path: str, num: int):
+    return [Image(f"{path}_{i}") for i in range(1, num + 1)]
+
+
 # there is no case where a player image is not required on startup of the game, so it is not registered here
 # same with dash icon
 
@@ -85,24 +89,16 @@ WALL_FULL: Image = Image("entities/obstacle/wall_full")
 WALL_HALF: Image = Image("entities/obstacle/wall_half")
 WALL_FRAGILE: Image = Image("entities/obstacle/wall_fragile")
 
-SLIME_1: Image = Image("entities/slime/slime_1")
-SLIME_2: Image = Image("entities/slime/slime_2")
-SLIME_3: Image = Image("entities/slime/slime_3")
-SLIME_4: Image = Image("entities/slime/slime_4")
+SLIME: list[Image] = img_range("entities/slime/slime", 4)
 SLIME_ALERT: Image = Image("entities/slime/slime_alert")
 
 CRAWLER_1: Image = Image("entities/crawler/crawler_extended")
 CRAWLER_2: Image = Image("entities/crawler/crawler_retracting")
 CRAWLER_3: Image = Image("entities/crawler/crawler_mid_step")
 
-SPAWNER_1: Image = Image("entities/spawner/spawner_1")
-SPAWNER_2: Image = Image("entities/spawner/spawner_2")
-SPAWNER_3: Image = Image("entities/spawner/spawner_3")
-SPAWNER_4: Image = Image("entities/spawner/spawner_4")
+SPAWNER: list[Image] = img_range("entities/spawner/spawner", 4)
 
-FENCER_1: Image = Image("entities/fencer/fencer_1")
-FENCER_2: Image = Image("entities/fencer/fencer_2")
-FENCER_3: Image = Image("entities/fencer/fencer_3")
+FENCER: list[Image] = img_range("entities/fencer/fencer", 3)
 FENCER_DASHING: Image = Image("entities/fencer/fencer_dashing")
 
 ARCHER_RELAXED: Image = Image("entities/archer/archer_relaxed")
@@ -159,36 +155,17 @@ SIMPLE_SHIELD_ICON: Image = Image("items/icons/simple_shield")
 SIMPLE_THROWABLE_ICON: Image = Image("items/icons/simple_throwable")
 
 # particles
-VOID_PARTICLES: list[Image] = [
-    Image("particles/basic_void/basic_void_1"),
-    Image("particles/basic_void/basic_void_2"),
-    Image("particles/basic_void/basic_void_3"),
-    Image("particles/basic_void/basic_void_4")]
+VOID_PARTICLES: list[Image] = img_range("particles/basic_void/basic_void", 4)
 
-EXPLOSION_PARTICLES: list[Image] = [
-    Image("particles/explosion/explosion_1"),
-    Image("particles/explosion/explosion_2"),
-    Image("particles/explosion/explosion_3")]
+EXPLOSION_PARTICLES: list[Image] = img_range("particles/explosion/explosion", 3)
 
-STEAM_PARTICLES: list[Image] = [
-    Image("particles/steam/steam_1"),
-    Image("particles/steam/steam_2"),
-    Image("particles/steam/steam_3")]
+STEAM_PARTICLES: list[Image] = img_range("particles/steam/steam", 3)
 
-PICKUP_SPARKLE_PARTICLES: list[Image] = [
-    Image("particles/pickup_sparkle/sparkle_1"),
-    Image("particles/pickup_sparkle/sparkle_2")
-]
+PICKUP_SPARKLE_PARTICLES: list[Image] = img_range("particles/pickup_sparkle/sparkle", 2)
 
-last_dash_particle = Image("particles/dash_ripples/ripple_4")
-DASH_PARTICLES: list[Image] = [
-    Image("particles/dash_ripples/ripple_1"),
-    Image("particles/dash_ripples/ripple_2"),
-    Image("particles/dash_ripples/ripple_3"),
-    last_dash_particle,
-    last_dash_particle
-]
-del last_dash_particle
+DASH_PARTICLES: list[Image] = img_range("particles/dash_ripples/ripple", 4)
+DASH_PARTICLES.append(DASH_PARTICLES[-1])
+
 # empty
 EMPTY: pygame.Surface = pygame.Surface((0, 0))
 

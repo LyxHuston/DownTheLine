@@ -736,7 +736,7 @@ class Slime(Glides):
 
     frame_change_frequency = 16
     alert = images.SLIME_ALERT
-    imgs = [images.SLIME_1, images.SLIME_2, images.SLIME_3, images.SLIME_4]
+    imgs = images.SLIME
     seen = True
 
     def __init__(self, pos: tuple[int, int] = (0, 0), seed: int = 0, difficulty: int = 0):
@@ -910,14 +910,14 @@ class Fencer(Glides):
     """
 
     dashing = images.FENCER_DASHING
-    imgs = [images.FENCER_1, images.FENCER_2, images.FENCER_3]
+    imgs = images.FENCER
     frame_change_frequency = 5
     cost = 10
 
     tutorial_text = "The fencer.  His lunge is dangerous."
 
     def __init__(self, pos: tuple[int, int], difficulty: int):
-        super().__init__(images.FENCER_1.img, 0, pos)
+        super().__init__(self.imgs[0].img, 0, pos)
         self.max_health: int = 4
         self.health: int = 4
         self.cooldown: int = 0
@@ -1497,7 +1497,7 @@ class Spawner(Entity):
 
     frame_change_frequency = 9
 
-    imgs = [images.SPAWNER_1, images.SPAWNER_2, images.SPAWNER_3, images.SPAWNER_4]
+    imgs = images.SPAWNER
 
     allowable = ((Slime, 0), (Crawler, 6), (Fencer, 13), (Archer, 16), (Knight, 25))
 
