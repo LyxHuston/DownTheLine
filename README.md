@@ -7,7 +7,7 @@ ______________________________________________________________________
 [![License](<https://img.shields.io/badge/License-GPLv3.0-brightgreen.svg>)](https://www.gnu.org/licenses/gpl-3.0.en.html)
 ______________________________________________________________________
 
-Development is currently ongoing, and I hope to release on Steam in under a month!
+Development is currently ongoing, and I hope to release on Itch sometime this summer!
 
 
 I am using multiple libraries with separate licensing.
