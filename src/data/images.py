@@ -115,12 +115,7 @@ ARROW: Image = Image("entities/projectiles/arrow")
 
 LAZER_END: Image = Image("entities/lazer/lazer_end")
 
-FISH_RIPPLES: list[Image] = [
-    Image("entities/fish/fish_ripple_1"),
-    Image("entities/fish/fish_ripple_2"),
-    Image("entities/fish/fish_ripple_3"),
-    Image("entities/fish/fish_ripple_4"),
-    Image("entities/fish/fish_ripple_5")]
+FISH_RIPPLES: list[Image] = img_range("entities/fish/fish_ripple", 5)
 FISH: Image = Image("entities/fish/fish_flight")
 
 TARGET: Image = Image("entities/target/target")
@@ -138,12 +133,10 @@ SIMPLE_SWORD: Image = Image("items/simple_sword")
 SIMPLE_SPEAR: Image = Image("items/simple_spear")
 SIMPLE_SHIELD: Image = Image("items/simple_shield")
 HATCHET: Image = Image("items/hatchet")
-HATCHET_THROWN: list[Image] = [
-    Image("entities/hatchet/hatchet_1"),
-    Image("entities/hatchet/hatchet_2"),
-    Image("entities/hatchet/hatchet_3")
-]
+HATCHET_THROWN: list[Image] = img_range("entities/hatchet/hatchet", 3)
 HATCHET_BURIED: Image = Image("entities/hatchet/hatchet_buried")
+BOOMERANG: Image = Image("items/boomerang")
+BOOMERANG_IN_FLIGHT: list[Image] = img_range("entities/boomerang/boomerang", 3)
 # SPIKY_SHIELD = Image("./resources/items/spiky_shield.png")
 SIMPLE_BOMB: Image = Image("items/simple_bomb")
 BATON: Image = Image("items/baton")
@@ -153,6 +146,7 @@ LOCKED_ICON: Image = Image("items/icons/locked")
 SIMPLE_STAB_ICON: Image = Image("items/icons/simple_stab")
 SIMPLE_SHIELD_ICON: Image = Image("items/icons/simple_shield")
 SIMPLE_THROWABLE_ICON: Image = Image("items/icons/simple_throwable")
+BOOMERANG_ICON: Image = Image("items/icons/boomerang")
 
 # particles
 VOID_PARTICLES: list[Image] = img_range("particles/basic_void/basic_void", 4)
