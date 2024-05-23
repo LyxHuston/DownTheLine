@@ -428,7 +428,7 @@ def simple_stab_draw(item: Item):
                 ent.x - rotated.get_width() // 2,
                 ent.y + rotated.get_height() // 2
             ),
-            (hand * ent.width // 4, ent.height // 2 + item.img.get_height() // 2),
+            (hand * ent.width // 3, ent.height // 2 + item.img.get_height() // 2),
             ent.rotation
         ))
     )
@@ -558,7 +558,7 @@ def simple_stab_tick(item: Item):
         rect = item.img.get_rect(center=offset_point_rotated(
             user.pos,
             (
-                user.width // 2 * (item.pos[1] * 2 - 1),
+                user.width // 3 * (item.pos[1] * 2 - 1),
                 20 + item.img.get_height() // 2
             ),
             user.rotation

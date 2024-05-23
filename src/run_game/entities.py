@@ -993,7 +993,8 @@ class Projectile(Entity):
         self.max_health = health
         self.health = health
         # convert to radians
-        self.move = (round(speed * math.sin(math.radians(rotation))), -round(speed * math.cos(math.radians(rotation))))
+        rads = math.radians(rotation)
+        self.move = (round(speed * math.sin(rads)), -round(speed * math.cos(rads)))
         self.destruct_on_collision = destruct_on_collision
         self.damage = damage
         self.expiration_date = expiry
@@ -1006,22 +1007,19 @@ class Projectile(Entity):
         self.freeze_x(False)
         self.x += self.move[0]
         self.y += self.move[1]
-        if self.expiration_date == 0:
+        if self.expiration_date == 0 or not game_states.BOTTOM < self.y < game_states.LAST_AREA_END + 1000:
             self.alive = False
             return
         if self.expiration_date is not None:
             self.expiration_date -= 1
-        if self.y < game_states.BOTTOM:
-            self.alive = False
-            return
-        if self.y > game_states.LAST_AREA_END + 1000:
-            self.alive = False
-            return
-        if self.collide(game_structures.PLAYER_ENTITY):
-            game_structures.game_structures.PLAYER_ENTITY.hit(self.damage, self)
+        collision_list = self.colliding(
+            additional_predicate=lambda en: en.allied_with_player is not self.allied_with_player
+        )
+        if collision_list:
+            for e in collision_list:
+                e.hit(1, self)
             if self.destruct_on_collision:
                 self.alive = False
-                return
         self.freeze_y(True)
         self.freeze_x(True)
 

@@ -62,6 +62,8 @@ class GameArea:
 
     def __init__(self, index: int, length: int = None, seed: int = None, customized: bool = False):
         self.index: int = index
+        if not hasattr(self, "difficulty"):
+            self.difficulty = index
         self.enforce_center: int | None = None
         self.start_coordinate: int = 0
         if length is not None:
