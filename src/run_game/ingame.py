@@ -94,6 +94,13 @@ def tick(do_tick: bool = None):
     gameboard.tick(do_tick if isinstance(do_tick, bool) else True)
 
 
+mouse_events = {
+    pygame.MOUSEBUTTONDOWN: lambda item: item.action(item),
+    pygame.MOUSEBUTTONUP: lambda item: item.release(item)
+}
+mouse_button_mapping = (None, 0, None, 1)
+
+
 def event_catcher(event: pygame.event.Event) -> bool:
     global paused
     if paused:
@@ -114,12 +121,11 @@ def event_catcher(event: pygame.event.Event) -> bool:
         elif event.key == pygame.K_RETURN:
             tutorials.next_pressed()
             return True
-    elif event.type == pygame.MOUSEBUTTONDOWN:
-        if event.button == 1:
-            item_input_catch(0)
-            return True
-        if event.button == 3:
-            item_input_catch(1)
+    elif event.type in mouse_events:
+        hand = (None, 0, None, 1)
+        if hand is not None:
+            item = game_structures.HANDS[hand]
+            mouse_events[event.type](item)
             return True
     return False
 

@@ -102,6 +102,7 @@ def boomerang(strength, random, pos):
     throw_strength = random.choice((5, 10, 15))
     return Item(
         simple_boomerang_action,
+        passing,
         simple_boomerang_tick,
         images.BOOMERANG.img,
         images.BOOMERANG.outlined_img,
@@ -177,6 +178,7 @@ class Item:
     an item entity
     """
     action: Callable
+    release: Callable
     tick: Callable
     img: pygame.Surface
     ground_img: pygame.Surface
@@ -813,6 +815,7 @@ def simple_throwable(img, ground_img, pos, creates, args):
     return Item(
         simple_throwable_action,
         passing,
+        passing,
         img,
         ground_img,
         pos,
@@ -907,6 +910,7 @@ def simple_stab(cooldown: int, duration: int, img: pygame.Surface, ground_img: p
     """
     return Item(
         simple_cooldown_action,
+        passing,
         simple_stab_tick,
         img,
         ground_img,
@@ -924,6 +928,7 @@ def simple_shield(pos: tuple[int, int]):
     """
     return Item(
         simple_toggle_action,
+        passing,
         simple_shield_tick,
         images.SIMPLE_SHIELD.img,
         images.SIMPLE_SHIELD.outlined_img,
