@@ -145,6 +145,7 @@ class ItemTypes(enum.Enum):
     )
     SimpleShield: ItemType = ItemType(
         0,
+        constructor=random_simple_shield,
         get_range=lambda item: item.img.get_width(),
         action_available=utility.passing(True),
         in_use=in_use_basic,
@@ -152,6 +153,7 @@ class ItemTypes(enum.Enum):
     )
     SimpleThrowable: ItemType = ItemType(
         10,
+        constructor=random_simple_throwable,
         get_range=lambda item: item.data_pack[0].find_range(*item.data_pack[1]),
         action_available=lambda item: True
     )
@@ -160,6 +162,7 @@ class ItemTypes(enum.Enum):
     )
     Boomerang: ItemType = ItemType(
         15,
+        constructor=boomerang,
         in_use=in_use_basic,
         swappable=lambda item: not in_use(item)
     )
