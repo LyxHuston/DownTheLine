@@ -2019,6 +2019,80 @@ class Hatchet(InvulnerableGlides):
         self.buried.outlined_img
 
 
+class Boomerang(InvulnerableEntity):
+
+    imgs = images.BOOMERANG_IN_FLIGHT
+
+    has_camera_mass = False
+
+    def __init__(self, item, power):
+        user = items.holder(item)
+        rotation = user.rotation
+        super().__init__(self.imgs[0].img, rotation, user.pos)
+        self.hit_cache = []
+        self.item = item
+        self.tick_counter = 0
+        self.img_index = 0
+        if isinstance(user, Glides):
+            power += user.glide_speed
+
+        self.departed = False
+        self.velocity = power * int(-math.cos(math.radians(rotation)))
+
+        self.pickup_entity = user
+        self.pickup_to = item.pos[1]
+        self.picked_up = False
+        self.allied_with_player = items.friendly_player(item)
+
+    max_speed = 20
+
+    def tick(self):
+        self.freeze_y(False)
+        self.freeze_x(False)
+
+        self.tick_counter += 1
+        if self.tick_counter >= 6:
+            self.tick_counter = 0
+            self.img_index = (self.img_index + 1) % len(self.imgs)
+            self.img = self.imgs[self.img_index].img
+            gameboard.PARTICLE_BOARD.add(DASH_RIPPLE_PARTICLES(
+                self.pos
+            ))
+        if abs(self.y - self.pickup_entity.y) > game_states.HEIGHT * min(abs(self.velocity) / (2 * self.max_speed), 0.25):
+            power = 0.3 if self.in_view() else 0.6
+            self.velocity += power * ((self.y < game_states.DISTANCE) * 2 - 1)
+        if abs(self.velocity) > self.max_speed:
+            self.velocity *= 0.9
+        self.y += round(self.velocity)
+
+        collide_list = self.colliding(
+            additional_predicate=lambda en: en.allied_with_player is not self.allied_with_player
+        )
+        for e in collide_list:
+            if e not in self.hit_cache:
+                e.hit(1, self)
+        self.hit_cache = collide_list
+
+        if self.departed:
+            if not (isinstance(self.pickup_entity, Glides) and self.pickup_entity.is_gliding()) and self.collide(self.pickup_entity):
+                self.alive = False
+                self.item.data_pack[0] = False
+                self.item.data_pack[1] = 0
+
+        elif abs(self.y - self.pickup_entity.y) > self.radius() + self.pickup_entity.radius():
+            self.departed = True
+
+        self.freeze_y(True)
+        self.freeze_x(True)
+
+    def despawn(self):
+        """ don't """
+        gameboard.NEW_ENTITIES.append(self)
+
+    def first_seen(self) -> None:
+        tuple(img.img for img in self.imgs)
+
+
 class DelayedDeploy(InvulnerableEntity):
 
     has_camera_mass = False

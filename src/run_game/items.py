@@ -40,6 +40,7 @@ class ItemType:
     in_use: Callable = (utility.passing(False), False)  # check if item is in use
     held: Callable = (lambda item: isinstance(item.pos[0], entities.Entity), False)  # check if the item is held by an entity
     holder: Callable = (lambda item: item.pos[0], None)  # get the holder
+    hand: Callable = (lambda item: item.pos[1], None)
     from_player: Callable = (lambda item: item.pos[0] is game_structures.PLAYER_ENTITY, False)  # check if item is from player
     friendly_player: Callable = (lambda item: item.pos[0].allied_with_player, True)  # check if item is friendly to the player
     prevent_other_use: Callable = (utility.make_simple_always(False), False)  # check if it prevents other items from being in use
@@ -56,13 +57,16 @@ class ItemType:
         self.first = first
 
 
+in_use_basic = lambda item: item.data_pack[0]
+
+
 class ItemTypes(enum.Enum):
     """
     enum of item types
     """
     SimpleCooldownAction = ItemType(
         action_available=lambda item: not item.data_pack[0] and item.data_pack[1] >= item.data_pack[2],
-        in_use=lambda item: item.data_pack[0]
+        in_use=in_use_basic
     )
     SimpleStab: ItemType = ItemType(
         0,
@@ -73,8 +77,8 @@ class ItemTypes(enum.Enum):
         0,
         get_range=lambda item: item.img.get_width(),
         action_available=utility.passing(True),
-        in_use=lambda item: item.data_pack[0],
-        prevent_other_use=lambda item: item.data_pack[0]
+        in_use=in_use_basic,
+        prevent_other_use=in_use_basic
     )
     SimpleThrowable: ItemType = ItemType(
         10,
@@ -85,8 +89,9 @@ class ItemTypes(enum.Enum):
         parent=SimpleCooldownAction
     )
     Boomerang: ItemType = ItemType(
-        in_use=lambda item: item.data_pack[0],
-        swappable=lambda item: item.data_pack[0]
+        15,
+        in_use=in_use_basic,
+        swappable=lambda item: not in_use(item)
     )
 
 
@@ -284,6 +289,7 @@ action_available: Callable[[Item], bool]
 in_use: Callable[[Item], bool]
 held: Callable[[Item], bool]
 holder: Callable[[Item], entities.Entity]
+hand: Callable[[Item], int]
 from_player: Callable[[Item], bool]
 friendly_player: Callable[[Item], bool]
 prevent_other_use: Callable[[Item], bool]
@@ -329,7 +335,7 @@ def draw_by_side_if_not_used(func: Callable, item: Item):
 
 
 spread = lambda: 384 - 32 * min(max(0, 4 - game_states.HEALTH), 3)
-get_icon_x = lambda hand: game_states.WIDTH // 2 - spread() // 2 + spread() * hand - 64
+get_icon_x = lambda _hand: game_states.WIDTH // 2 - spread() // 2 + spread() * _hand - 64
 get_icon_y = lambda: (game_states.HEIGHT - 2 * draw_constants.row_separation - tutorials.display_height *
                       switches.TUTORIAL_TEXT_POSITION + 16 * min(max(3 - game_states.HEALTH, 0), 2) ** 2)
 
@@ -342,20 +348,22 @@ def if_held_by_player(item: Item):
 @make_add_wrapper
 @if_held_by_player
 def draw_icon(item: Item):
+    _hand = hand(item)
     abilities.draw_icon(
-        item.icon, 0, (get_icon_x(item.pos[1]), get_icon_y()),
-        prevent_other_use(game_structures.HANDS[1 - item.pos[1]]) or not swappable(item)
+        item.icon, 0, (get_icon_x(_hand), get_icon_y()),
+        prevent_other_use(game_structures.HANDS[1 - _hand]) or not swappable(item)
     )
 
 
 @make_add_wrapper
 @if_held_by_player
 def draw_icon_for_simple_duration_item(item: Item):
+    _hand = hand(item)
     abilities.draw_icon(
         item.icon,
-        item.data_pack[1] / item.data_pack[3] if item.data_pack[0] else 1 - item.data_pack[1] / item.data_pack[2],
-        (get_icon_x(item.pos[1]), get_icon_y()),
-        prevent_other_use(game_structures.HANDS[1 - item.pos[1]]) or not swappable(item)
+        item.data_pack[1] / item.data_pack[3] if in_use(item) else 1 - item.data_pack[1] / item.data_pack[2],
+        (get_icon_x(_hand), get_icon_y()),
+        prevent_other_use(game_structures.HANDS[1 - _hand]) or not swappable(item)
     )
 
 
@@ -368,9 +376,9 @@ def original_simple_draw(item: Item):
     :return:
     """
     ent = holder(item)
-    hand = item.pos[1] * 2 - 1
+    _hand = hand(item) * 2 - 1
     rotated = pygame.transform.rotate(
-        pygame.transform.flip(item.img, hand == -1, False),
+        pygame.transform.flip(item.img, _hand == -1, False),
         ent.rotation + 180
     )
     point = game_structures.to_screen_pos(offset_point_rotated(
@@ -378,7 +386,7 @@ def original_simple_draw(item: Item):
                 ent.x - rotated.get_width() // 2,
                 ent.y + rotated.get_height() // 2
             ),
-            (hand * ent.width // 2, 0),
+            (_hand * ent.width // 2, 0),
             ent.rotation
         ))
     game_structures.SCREEN.blit(
@@ -418,9 +426,9 @@ def simple_stab_draw(item: Item):
     :param item:
     :return:
     """
-    ent = item.pos[0]
+    ent = holder(item)
     # print(ent.pos, ent.get_pos())
-    hand = item.pos[1] * 2 - 1
+    _hand = hand(item) * 2 - 1
     rotated = pygame.transform.rotate(
         pygame.transform.flip(item.img, item.pos[1] == 0, False),
         ent.rotation + 180
@@ -432,7 +440,7 @@ def simple_stab_draw(item: Item):
                 ent.x - rotated.get_width() // 2,
                 ent.y + rotated.get_height() // 2
             ),
-            (hand * ent.width // 3, ent.height // 2 + item.img.get_height() // 2),
+            (_hand * ent.width // 3, ent.height // 2 + item.img.get_height() // 2),
             ent.rotation
         ))
     )
@@ -443,13 +451,13 @@ def simple_stab_draw(item: Item):
 @draw_by_side_if_not_used
 def simple_shield_draw(item: Item):
     """
-    simple draw function for a stabbing item.  In front of player if stabbing,
+    simple draw function for a shield item.  In front of player if shielding,
     beside player if not
     :param item:
     :return:
     """
     ent = item.pos[0]
-    hand = item.pos[1] * 2 - 1
+    _hand = item.pos[1] * 2 - 1
     rotated = pygame.transform.rotate(
         pygame.transform.flip(item.img, item.pos[1] == 0, False),
         ent.rotation + 270
@@ -461,10 +469,19 @@ def simple_shield_draw(item: Item):
                 ent.x - rotated.get_width() // 2,
                 ent.y + rotated.get_height() // 2
             ),
-            (hand * ent.width // 8, ent.height // 2 + rotated.get_height() // 2),
+            (_hand * ent.width // 8, ent.height // 2 + rotated.get_height() // 2),
             ent.rotation
         ))
     )
+
+
+simple_boomerang_draw: Callable = draw_on_ground_if_not_held(
+    draw_icon_for_simple_duration_item(
+        draw_by_side_if_not_used(
+            utility.passing
+        )
+    )
+)
 
 
 def simple_cooldown_action(item: Item):
@@ -501,6 +518,19 @@ def simple_shield_action(item: Item):
     if item.data_pack[0]:
         item.data_pack[1].clear()
     item.data_pack[0] = not item.data_pack[0]
+    return True
+
+
+def simple_boomerang_action(item: Item):
+    if not in_use(item) and item.data_pack[1] >= item.data_pack[2]:
+        item.data_pack[0] = True
+        item.data_pack[1] = 0
+        gameboard.NEW_ENTITIES.append(entities.Boomerang(item, item.data_pack[4]))
+
+
+def simple_boomerang_tick(item: Item):
+    if not item.data_pack[0] and item.data_pack[1] < item.data_pack[2]:
+        item.data_pack[1] += 1
     return True
 
 
@@ -761,6 +791,21 @@ def random_simple_shield(random, pos=None):
     return simple_shield(pos)
 
 
+def boomerang(random, pos):
+    throw_strength = random.choice((5, 10, 15))
+    return Item(
+        simple_boomerang_action,
+        simple_boomerang_tick,
+        images.BOOMERANG.img,
+        images.BOOMERANG.outlined_img,
+        pos,
+        simple_boomerang_draw,
+        images.BOOMERANG_ICON.img,
+        [False, 0, 120, 1, throw_strength],
+        ItemTypes.Boomerang
+    )
+
+
 def make_random_reusable(random, pos):
     """
     makes a random reusable item (melee weapon, shield, throwable, or )
@@ -779,7 +824,7 @@ def make_random_reusable(random, pos):
     elif choose is ItemTypes.SimpleShooter:
         return random_simple_shooter(random, pos)
     elif choose is ItemTypes.Boomerang:
-        return boomerang(pos)
+        return boomerang(random, pos)
 
 
 def random_simple_throwable(random, pos):
