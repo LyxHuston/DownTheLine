@@ -988,19 +988,30 @@ class Fencer(Glides):
 class Projectile(Entity):
 
     def __init__(self, img: pygame.Surface, rotation: int, pos: tuple[int, int], health: int = 1, speed: int = 1,
-                 destruct_on_collision: bool = True, damage: int = 1, expiry: int = None):
+                 num_hit: int = 1, damage: int = 1, expiry: int = None, alliance: bool = False):
         super().__init__(img, rotation, pos)
+        self.allied_with_player = alliance
         self.max_health = health
         self.health = health
         # convert to radians
         rads = math.radians(rotation)
         self.move = (round(speed * math.sin(rads)), -round(speed * math.cos(rads)))
-        self.destruct_on_collision = destruct_on_collision
+        self.num_hit = num_hit
         self.damage = damage
         self.expiration_date = expiry
+        self.hit_chache = []
 
     def damage_player(self):
         glide_player(self.damage * 2, 10, 1, (self.y < game_states.DISTANCE) * 2 - 1)
+
+    def hit(self, damage, source):
+        if self.alive and source not in self.hit_chache and isinstance(source, Projectile) and self.freeze_y():
+            source.hit(self.damage, self)
+            self.num_hit -= 1
+            if self.num_hit == 0:
+                self.alive = False
+            self.hit_chache.append(source)
+        super().hit(damage, source)
 
     def tick(self):
         self.freeze_y(False)
@@ -1013,13 +1024,18 @@ class Projectile(Entity):
         if self.expiration_date is not None:
             self.expiration_date -= 1
         collision_list = self.colliding(
-            additional_predicate=lambda en: en.allied_with_player is not self.allied_with_player
+            additional_predicate=lambda en: en.allied_with_player is not self.allied_with_player and not en.is_item_entity
         )
         if collision_list:
             for e in collision_list:
-                e.hit(1, self)
-            if self.destruct_on_collision:
-                self.alive = False
+                if e in self.hit_chache:
+                    continue
+                e.hit(self.damage, self)
+                self.num_hit -= 1
+                if self.num_hit == 0:
+                    self.alive = False
+                    break
+        self.hit_chache = collision_list
         self.freeze_y(True)
         self.freeze_x(True)
 
