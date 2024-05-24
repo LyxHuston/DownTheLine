@@ -31,10 +31,14 @@ from data import draw_constants, game_states, images, switches
 from general_use import utility, game_structures
 
 
+def raise_abstract_item_type():
+    raise TypeError("Abstract item type attempted to be instantiated")
+
 @dataclass
 class ItemType:
 
     first: int = -1  # first possible appearance, -1 for never (aka abstract or not fully implemented)
+    constructor: Callable = lambda difficulty, random, pos: raise_abstract_item_type()  # constructor for item types
     get_range: Callable = (utility.passing(0), 0)  # range, used for calculations when held by monsters
     action_available: Callable = (utility.passing(False), False)  # check if an action is available
     in_use: Callable = (utility.passing(False), False)  # check if item is in use
@@ -47,7 +51,14 @@ class ItemType:
     swappable: Callable = (utility.passing, True)  # check if it is swappable with other items
 
     def __init__(self, first=-1, parent: Self = None, **kwargs):
-        self.__dict__.update({k: v[0] for k, v in self.__class__.__dict__.items() if not k.startswith("_") and k != "first"})
+        self.__dict__.update(
+            {
+                k: v[0]
+                for k, v in self.__class__.__dict__.items()
+                if not k.startswith("_") and k != "first" and k != "constructor"
+            }
+        )
+        self.constructor = self.__class__.constructor
         for k in kwargs:
             if k.startswith("_") or k not in self.__dict__:
                 raise TypeError(f"'{k}' is an invalid keyword argument for ItemType()")
@@ -55,6 +66,64 @@ class ItemType:
             self.__dict__.update(parent.__dict__)
         self.__dict__.update(kwargs)
         self.first = first
+
+
+simple_stab_imgs = [images.SIMPLE_SWORD, images.SIMPLE_SPEAR]
+
+
+def random_simple_stab(strength: int, random, pos: tuple[int, int] | None = None):
+    image = random.choice(simple_stab_imgs)
+    img = image.img
+
+    damage = max(3 - img.get_height() // 100, 0)
+
+    choose = random.randint(1, 3)
+    if choose == 1:
+        cooldown = max(120 - strength, 60)
+        duration = 70
+    elif choose == 2:
+        cooldown = max(120 - 3 * strength, 40)
+        duration = 50
+    else:
+        cooldown = max(60 - 9 * strength, 20)
+        duration = 10
+
+    if cooldown < 30:
+        cooldown = 30
+
+    return simple_stab(cooldown, duration, img, image.outlined_img, pos, damage)
+
+
+def random_simple_shield(strength, random, pos=None):
+    return simple_shield(pos)
+
+
+def boomerang(strength, random, pos):
+    throw_strength = random.choice((5, 10, 15))
+    return Item(
+        simple_boomerang_action,
+        simple_boomerang_tick,
+        images.BOOMERANG.img,
+        images.BOOMERANG.outlined_img,
+        pos,
+        simple_boomerang_draw,
+        images.BOOMERANG_ICON.img,
+        [False, 0, 120, 1, throw_strength],
+        ItemTypes.Boomerang
+    )
+
+
+def random_simple_throwable(strength, random, pos):
+    # current only reusable throwable is hatchet
+    item = simple_throwable(
+        images.HATCHET.img,
+        images.HATCHET.outlined_img,
+        pos,
+        entities.Hatchet,
+        ()
+    )
+    item.data_pack[1] = tuple([random.choice((25, 35)), item])
+    return item
 
 
 in_use_basic = lambda item: item.data_pack[0]
@@ -71,6 +140,7 @@ class ItemTypes(enum.Enum):
     SimpleStab: ItemType = ItemType(
         0,
         SimpleCooldownAction,
+        constructor=random_simple_stab,
         get_range=lambda item: item.img.get_height()
     )
     SimpleShield: ItemType = ItemType(
@@ -93,6 +163,9 @@ class ItemTypes(enum.Enum):
         in_use=in_use_basic,
         swappable=lambda item: not in_use(item)
     )
+
+
+del in_use_basic
 
 
 @dataclass
@@ -305,7 +378,7 @@ globals().update({
     name: none_check(val[1])(maker(name))
     for name, val in
     ItemType.__dict__.items()
-    if not name.startswith("_") and name != "first"
+    if not name.startswith("_") and name != "first" and name != "constructor"
 })
 
 del maker
@@ -725,121 +798,6 @@ def simple_throwable_action(item: Item):
     gameboard.NEW_ENTITIES.append(ent)  # add entity to entity list
 
 
-def simple_stab(cooldown: int, duration: int, img: pygame.Surface, ground_img: pygame.Surface,
-                pos: tuple[int, int] | None, damage: int = 3) -> Item:
-    """
-    generate an item that uses a simple stab item
-    """
-    return Item(
-        simple_cooldown_action,
-        simple_stab_tick,
-        img,
-        ground_img,
-        pos,
-        simple_stab_draw,
-        images.SIMPLE_STAB_ICON.img,
-        [False, cooldown, cooldown, duration, damage, []
-         ],  # state, tracker, cooldown ticks, duration ticks, damage, hit tracker
-        ItemTypes.SimpleStab
-    )
-
-
-simple_stab_imgs = [images.SIMPLE_SWORD, images.SIMPLE_SPEAR]
-
-
-def random_simple_stab(strength: int, random, pos: tuple[int, int] | None = None):
-    image = random.choice(simple_stab_imgs)
-    img = image.img
-
-    damage = max(3 - img.get_height() // 100, 0)
-
-    choose = random.randint(1, 3)
-    if choose == 1:
-        cooldown = max(120 - strength, 60)
-        duration = 70
-    elif choose == 2:
-        cooldown = max(120 - 3 * strength, 40)
-        duration = 50
-    else:
-        cooldown = max(60 - 9 * strength, 20)
-        duration = 10
-
-    if cooldown < 30:
-        cooldown = 30
-
-    return simple_stab(cooldown, duration, img, image.outlined_img, pos, damage)
-
-
-def simple_shield(pos: tuple[int, int]) -> Item:
-    """
-    generate a simple shield item
-    """
-    return Item(
-        simple_toggle_action,
-        simple_shield_tick,
-        images.SIMPLE_SHIELD.img,
-        images.SIMPLE_SHIELD.outlined_img,
-        pos,
-        simple_shield_draw,
-        images.SIMPLE_SHIELD_ICON.img,
-        [False, []],
-        ItemTypes.SimpleShield
-    )
-
-
-def random_simple_shield(random, pos=None):
-    return simple_shield(pos)
-
-
-def boomerang(random, pos):
-    throw_strength = random.choice((5, 10, 15))
-    return Item(
-        simple_boomerang_action,
-        simple_boomerang_tick,
-        images.BOOMERANG.img,
-        images.BOOMERANG.outlined_img,
-        pos,
-        simple_boomerang_draw,
-        images.BOOMERANG_ICON.img,
-        [False, 0, 120, 1, throw_strength],
-        ItemTypes.Boomerang
-    )
-
-
-def make_random_reusable(random, pos):
-    """
-    makes a random reusable item (melee weapon, shield, throwable, or )
-    :param random:
-    :return:
-    """
-    choose = random.choice(tuple(
-        typ for typ in ItemTypes if typ.value.first != -1 and typ.value.first <= game_states.LAST_AREA
-    ))
-    if choose is ItemTypes.SimpleStab:
-        return random_simple_stab(game_states.LAST_AREA, random, pos)
-    elif choose is ItemTypes.SimpleShield:
-        return random_simple_shield(random, pos)
-    elif choose is ItemTypes.SimpleThrowable:
-        return random_simple_throwable(random, pos)
-    elif choose is ItemTypes.SimpleShooter:
-        return random_simple_shooter(random, pos)
-    elif choose is ItemTypes.Boomerang:
-        return boomerang(random, pos)
-
-
-def random_simple_throwable(random, pos):
-    # current only reusable throwable is hatchet
-    item = simple_throwable(
-        images.HATCHET.img,
-        images.HATCHET.outlined_img,
-        pos,
-        entities.Hatchet,
-        ()
-    )
-    item.data_pack[1] = tuple([random.choice((25, 35)), item])
-    return item
-
-
 def simple_throwable(img, ground_img, pos, creates, args):
     """
     makes a throwable object that creates an entity when thrown with given arguments
@@ -905,8 +863,70 @@ def random_simple_bomb(random, pos):
 def make_random_single_use(random, pos):
     """
     makes a random single use item at a position
+    currently only bombs
     :param random:
     :param pos:
     :return:
     """
     return random_simple_bomb(random, pos)
+
+
+def make_random_reusable(random, pos):
+    """
+    makes a random reusable item (melee weapon, shield, throwable, or )
+    :param random:
+    :return:
+    """
+    choice: ItemTypes = random.choice(tuple(
+        typ for typ in ItemTypes if 0 <= typ.value.first <= game_states.LAST_AREA
+    ))
+    try:
+        return choice.value.constructor(game_states.LAST_AREA, random, pos)
+    except Exception as e:
+        e.add_note(f"Error occurred during construction of {choice.name} item type.")
+        raise e
+    # if choose is ItemTypes.SimpleStab:
+    #     return random_simple_stab(game_states.LAST_AREA, random, pos)  # done
+    # elif choose is ItemTypes.SimpleShield:
+    #     return random_simple_shield(random, pos)  # done
+    # elif choose is ItemTypes.SimpleThrowable:
+    #     return random_simple_throwable(random, pos)  # done
+    # elif choose is ItemTypes.SimpleShooter:
+    #     return random_simple_shooter(random, pos)
+    # elif choose is ItemTypes.Boomerang:
+    #     return boomerang(random, pos)
+
+
+def simple_stab(cooldown: int, duration: int, img: pygame.Surface, ground_img: pygame.Surface,
+                pos: tuple[int, int] | None, damage: int = 3):
+    """
+    generate an item that uses a simple stab item
+    """
+    return Item(
+        simple_cooldown_action,
+        simple_stab_tick,
+        img,
+        ground_img,
+        pos,
+        simple_stab_draw,
+        images.SIMPLE_STAB_ICON.img,
+        [False, cooldown, cooldown, duration, damage, []
+         ],  # state, tracker, cooldown ticks, duration ticks, damage, hit tracker
+        ItemTypes.SimpleStab
+    )
+
+def simple_shield(pos: tuple[int, int]):
+    """
+    generate a simple shield item
+    """
+    return Item(
+        simple_toggle_action,
+        simple_shield_tick,
+        images.SIMPLE_SHIELD.img,
+        images.SIMPLE_SHIELD.outlined_img,
+        pos,
+        simple_shield_draw,
+        images.SIMPLE_SHIELD_ICON.img,
+        [False, []],
+        ItemTypes.SimpleShield
+    )
