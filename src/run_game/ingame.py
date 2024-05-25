@@ -94,9 +94,25 @@ def tick(do_tick: bool = None):
     gameboard.tick(do_tick if isinstance(do_tick, bool) else True)
 
 
+def item_input_catch(num: int) -> None:
+    if game_structures.HANDS[num] is None or pygame.key.get_pressed()[Inputs.prefer_pickup]:
+        pickup_to_hand(num)
+        return
+    if items.prevent_other_use(game_structures.HANDS[1 - num]):
+        return
+    game_structures.HANDS[num].action(game_structures.HANDS[num])
+
+
+def release_hand(hand: int) -> None:
+    item = game_structures.HANDS[hand]
+    if item is None:
+        return
+    item.release(item)
+
+
 mouse_events = {
-    pygame.MOUSEBUTTONDOWN: lambda item: item.action(item),
-    pygame.MOUSEBUTTONUP: lambda item: item.release(item)
+    pygame.MOUSEBUTTONDOWN: item_input_catch,
+    pygame.MOUSEBUTTONUP: release_hand
 }
 mouse_button_mapping = (None, 0, None, 1)
 
@@ -122,10 +138,9 @@ def event_catcher(event: pygame.event.Event) -> bool:
             tutorials.next_pressed()
             return True
     elif event.type in mouse_events:
-        hand = (None, 0, None, 1)
+        hand = mouse_button_mapping[event.button]
         if hand is not None:
-            item = game_structures.HANDS[hand]
-            mouse_events[event.type](item)
+            mouse_events[event.type](hand)
             return True
     return False
 
@@ -161,15 +176,6 @@ def pickup_to_hand(num: int):
             spawn_pickup_particles()
         return True
     return False
-
-
-def item_input_catch(num: int) -> None:
-    if game_structures.HANDS[num] is None or pygame.key.get_pressed()[Inputs.prefer_pickup]:
-        pickup_to_hand(num)
-        return
-    if items.prevent_other_use(game_structures.HANDS[1 - num]):
-        return
-    game_structures.HANDS[num].action(game_structures.HANDS[num])
 
 
 def crash(e: Exception):
