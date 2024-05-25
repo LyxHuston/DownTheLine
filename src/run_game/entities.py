@@ -1000,6 +1000,8 @@ class Projectile(Entity):
         self.damage = damage
         self.expiration_date = expiry
         self.hit_chache = []
+        if self.allied_with_player:
+            self.has_camera_mass = False
 
     def damage_player(self):
         glide_player(self.damage * 2, 10, 1, (self.y < game_states.DISTANCE) * 2 - 1)
