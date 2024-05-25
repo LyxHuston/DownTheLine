@@ -615,7 +615,7 @@ class Glides(Entity):
         if self.glide_duration == 0:
             self.glide_speed -= self.taper
             if self.glide_speed <= 0:
-                self.stop_gliding()
+                self.on_stop_gliding()
                 self.glide_speed = 0
         else:
             self.glide_duration -= 1
@@ -623,6 +623,13 @@ class Glides(Entity):
         return True
 
     def stop_gliding(self):
+        self.glide_speed = 0
+        self.glide_duration = 0
+        self.on_stop_gliding()
+        self.taper = 0
+        self.glide_direction = 0
+
+    def on_stop_gliding(self):
         """
         called when a gliding entity stops gliding
         :return:
