@@ -569,7 +569,7 @@ def make_item_duplicator(item: items.Item):
     :return:
     """
 
-    action, tick, img, outline_img, pos, draw, icon, data_pack_factory, typ = items.deepcopy_datapack_factory(item)
+    action, release, tick, img, outline_img, pos, draw, icon, data_pack_factory, typ = items.deepcopy_datapack_factory(item)
 
     class ItemDuplicator(ItemEntity):
 
@@ -577,6 +577,7 @@ def make_item_duplicator(item: items.Item):
         def make(cls, determiner: int, area):
             return cls(items.Item(
                 action,
+                release,
                 tick,
                 img,
                 outline_img,

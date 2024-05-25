@@ -221,7 +221,7 @@ class Item:
     type: ItemTypes
 
 
-def deepcopy_datapack_factory(item) -> tuple[Callable, Callable, pygame.Surface, pygame.Surface, Any, Callable, pygame.Surface, Callable, ItemTypes]:
+def deepcopy_datapack_factory(item) -> tuple[Callable, Callable, Callable, pygame.Surface, pygame.Surface, Any, Callable, pygame.Surface, Callable, ItemTypes]:
     """
     makes a factory function that returns duplicates of the item datapack for separate use
     :param item: any item
@@ -237,7 +237,7 @@ def deepcopy_datapack_factory(item) -> tuple[Callable, Callable, pygame.Surface,
     def factory():
         return list(contents)
 
-    return item.action, item.tick, item.img, item.ground_img, item.pos, item.draw, item.icon, factory, item.type
+    return item.action, item.release, item.tick, item.img, item.ground_img, item.pos, item.draw, item.icon, factory, item.type
 
 
 def offset_point_rotated(origin: tuple[int, int], offset: tuple[int, int], rotation: int) -> tuple[int, int]:
