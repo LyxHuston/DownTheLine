@@ -951,6 +951,10 @@ def bow_release(item: Item):
         speed = 1 + item.data_pack[1] // 20
         user = holder(item)
         damage = 1 + int(item.data_pack[1] * growth_rate)
+        if isinstance(user, entities.Glides) and user.is_gliding():
+            speed += user.glide_speed // 2
+            damage += user.glide_speed // 10
+            user.stop_gliding()
         rot = user.rotation
         rads = math.radians(rot)
         user_pos = user.pos
