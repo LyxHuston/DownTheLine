@@ -127,6 +127,36 @@ def random_simple_throwable(strength, random, pos):
     return item
 
 
+bow_charge_per_damage = 40
+
+
+def bow(strength, random, pos):
+
+    max_bonus_damage = random.randint(1, strength // 5)
+    pierce = random.choice(list(range(min(strength // 10, 2), 1 + strength // 5)) + ([-1] if strength >= 30 else []))
+
+    cooldown = 30 * max_bonus_damage
+    max_charge = (max_bonus_damage + 1) * bow_charge_per_damage
+
+    if pierce == -1:
+        growth_rate = 0
+    else:
+        growth_rate = max_bonus_damage / (max_charge * (0.5 + pierce / 2))
+
+    return Item(
+        bow_action,
+        bow_release,
+        bow_tick,
+        images.BOW.img,
+        images.BOW.outlined_img,
+        pos,
+        bow_draw,
+        images.BOW_ICON.img,
+        [False, cooldown, cooldown, max_charge, pierce, growth_rate, 0, [img.img for img in images.BOW_DRAWS]],
+        ItemTypes.Bow
+    )
+
+
 in_use_basic = lambda item: item.data_pack[0]
 
 
@@ -158,8 +188,10 @@ class ItemTypes(enum.Enum):
         get_range=lambda item: item.data_pack[0].find_range(*item.data_pack[1]),
         action_available=lambda item: True
     )
-    SimpleShooter: ItemType = ItemType(
-        parent=SimpleCooldownAction
+    Bow: ItemType = ItemType(
+        12,
+        SimpleCooldownAction,
+        constructor=bow
     )
     Boomerang: ItemType = ItemType(
         15,
@@ -562,6 +594,37 @@ simple_boomerang_draw: Callable = draw_on_ground_if_not_held(
 )
 
 
+def spike_repeat(i: int, mod: int):
+    return abs(2 * ((i / mod) % 2) - 1)
+
+
+@draw_on_ground_if_not_held
+@draw_icon_for_simple_duration_item
+@draw_by_side_if_not_used
+def bow_draw(item: Item):
+    ent = holder(item)
+    _hand = hand(item)
+    # shake strength is how much bonus damage it deals, capped at 5
+    shake_strength = min(int(item.data_pack[1] * item.data_pack[5]), 5)
+    rotated = pygame.transform.rotate(
+        pygame.transform.flip(item.data_pack[-1][shake_strength // 2], _hand == -1, False),
+        ent.rotation + 270
+    )
+    y_shake = round(spike_repeat(item.data_pack[-2], 5) * 3 * shake_strength)
+    x_shake = round(spike_repeat(item.data_pack[-2], 7) * 3 * shake_strength)
+    game_structures.SCREEN.blit(
+        rotated,
+        game_structures.to_screen_pos(offset_point_rotated(
+            (
+                ent.x - rotated.get_width() // 2 + x_shake,
+                ent.y + rotated.get_height() // 2 + y_shake
+            ),
+            (_hand * ent.width // 8, ent.height // 2 + rotated.get_height() // 4),
+            ent.rotation
+        ))
+    )
+
+
 def simple_cooldown_action(item: Item):
     """
     a simple action with a cooldown
@@ -864,6 +927,49 @@ def random_simple_bomb(random, pos):
         size = 640
         damage = 4
     return simple_bomb(pos, speed, taper, glide_duration, delay, size, damage)
+
+
+def bow_tick(item: Item):
+    if held(item):
+        item.data_pack[1] = min(item.data_pack[1] + 1, item.data_pack[2 + item.data_pack[0]])
+        item.data_pack[-2] = (item.data_pack[-2] + 1) % 35
+    else:
+        item.data_pack[0] = False
+        item.data_pack[1] = item.data_pack[2]
+    return True
+
+
+def bow_action(item: Item):
+    item.data_pack[0] = True
+
+
+def bow_release(item: Item):
+    if item.data_pack[0]:
+        pierce = item.data_pack[4]
+        growth_rate = item.data_pack[5]
+        duration = item.data_pack[1]
+        speed = 1 + item.data_pack[1] // 20
+        user = holder(item)
+        damage = 1 + int(item.data_pack[1] * growth_rate)
+        rot = user.rotation
+        rads = math.radians(rot)
+        user_pos = user.pos
+        radius = user.radius()
+        pos = (user_pos[0] + round(radius * math.sin(rads)), user_pos[1] + round(radius * math.cos(rads)))
+        gameboard.NEW_ENTITIES.append(
+            entities.Projectile(
+                images.ARROW.outlined_img,
+                rot,
+                pos,
+                speed=speed,
+                num_hit=pierce,
+                damage=damage,
+                expiry=duration,
+                alliance=user.allied_with_player
+            )
+        )
+        item.data_pack[0] = False
+        item.data_pack[1] = 0
 
 
 def make_random_single_use(random, pos):
