@@ -138,10 +138,11 @@ def event_catcher(event: pygame.event.Event) -> bool:
             tutorials.next_pressed()
             return True
     elif event.type in mouse_events:
-        hand = mouse_button_mapping[event.button]
-        if hand is not None:
-            mouse_events[event.type](hand)
-            return True
+        if event.button <= 3:
+            hand = mouse_button_mapping[event.button]
+            if hand is not None:
+                mouse_events[event.type](hand)
+                return True
     return False
 
 
