@@ -455,6 +455,16 @@ def if_held_by_player(item: Item):
     return from_player(item), False
 
 
+@make_conditional_wrapper
+def if_not_in_use(item: Item):
+    return not in_use(item), False
+
+
+@make_conditional_wrapper
+def if_action_available(item: Item):
+    return action_available(item), False
+
+
 @make_add_wrapper
 @if_held_by_player
 def draw_icon(item: Item):
@@ -625,19 +635,16 @@ def bow_draw(item: Item):
     )
 
 
+@if_action_available
 def simple_cooldown_action(item: Item):
     """
     a simple action with a cooldown
     :param item:
     :return:
     """
-    if item.data_pack[0]:
-        return False
-    if item.data_pack[1] >= item.data_pack[2]:
-        item.data_pack[0] = True
-        item.data_pack[1] = 0
-        return True
-    return False
+    item.data_pack[0] = True
+    item.data_pack[1] = 0
+    return True
 
 
 def simple_toggle_action(item: Item):
@@ -662,11 +669,11 @@ def simple_shield_action(item: Item):
     return True
 
 
+@if_action_available
 def simple_boomerang_action(item: Item):
-    if not in_use(item) and item.data_pack[1] >= item.data_pack[2]:
-        item.data_pack[0] = True
-        item.data_pack[1] = 0
-        gameboard.NEW_ENTITIES.append(entities.Boomerang(item, item.data_pack[4]))
+    item.data_pack[0] = True
+    item.data_pack[1] = 0
+    gameboard.NEW_ENTITIES.append(entities.Boomerang(item, item.data_pack[4]))
 
 
 def simple_boomerang_tick(item: Item):
@@ -939,9 +946,9 @@ def bow_tick(item: Item):
     return True
 
 
+@if_action_available
 def bow_action(item: Item):
-    if action_available(item):
-        item.data_pack[0] = True
+    item.data_pack[0] = True
 
 
 def bow_release(item: Item):
