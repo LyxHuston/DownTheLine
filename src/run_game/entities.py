@@ -944,10 +944,17 @@ class Fencer(Glides):
                 gameboard.PARTICLE_BOARD.add(DASH_RIPPLE_PARTICLES(
                     self.pos
                 ))
-            if self.collide(game_structures.PLAYER_ENTITY):
-                game_structures.PLAYER_ENTITY.hit(2, self)
-                game_states.DISTANCE = self.y + 56 * ((self.y < game_states.DISTANCE) * 2 - 1)
-                self.start_glide(25, 10, 15, ((self.y - game_states.DISTANCE) > 0) * 2 - 1)
+            collision_list = self.colliding(
+                additional_predicate=lambda en: en.allied_with_player is not self.allied_with_player
+            )
+            if collision_list:
+                for e in collision_list:
+                    e.hit(2, self)
+                    e.y = self.y + (self.height + e.height) // 2 * ((self.y < e.y) * 2 - 1)
+                self.start_glide(
+                    25, 10, 15,
+                    (self.y > sum(e.y for e in collision_list) / len(collision_list)) * 2 - 1
+                )
             if self.cooldown > 0:
                 self.cooldown -= 1
             return self.health > 0
