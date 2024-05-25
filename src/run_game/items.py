@@ -940,7 +940,8 @@ def bow_tick(item: Item):
 
 
 def bow_action(item: Item):
-    item.data_pack[0] = True
+    if action_available(item):
+        item.data_pack[0] = True
 
 
 def bow_release(item: Item):
