@@ -21,7 +21,7 @@ import math
 
 import pygame
 from data import game_states
-from general_use import game_structures
+from general_use import game_structures, utility
 from run_game import abilities, gameboard, items, entities, tutorials
 from screens import run_start_end
 
@@ -40,6 +40,44 @@ loop_counter = 2 ** 10
 tick_counter = 0
 
 paused = False
+
+
+@utility.make_async
+def outline_text_button(button: game_structures.Button):
+    width = 8
+    img = button.img
+    outlined = utility.outline_img(img, width)
+    if img is button.img:
+        button.img = outlined
+        button.rect.y -= 2 * width
+        button.rect.x -= 2 * width
+        button.rect.width += 4 * width
+        button.rect.height += 4 * width
+
+
+def pause():
+    global paused
+    paused = True
+    width = (game_states.WIDTH - 768) // 2 - 40
+    for i, item in enumerate(game_structures.HANDS):
+        holder: game_structures.ScrollableButtonHolder = run_start_end.PAUSE_BUTTONS[i + 3]
+        holder.clear()
+        if item is not None:
+            description_text = items.description(item)
+            button = game_structures.Button.make_text_button(
+                description_text,
+                64,
+                max_line_pixels=width,
+                enforce_width=width,
+                background_color=(0, 0, 0, 0),
+                outline_color=(255, 255, 255),
+                center=(20, 0),
+                x_align=0,
+                y_align=0
+            )
+            outline_text_button(button)
+            holder.add_button(button)
+            holder.fit_y(20)
 
 
 def tick(do_tick: bool = None):
@@ -126,13 +164,13 @@ def event_catcher(event: pygame.event.Event) -> bool:
     if game_states.HEALTH <= 0:
         return False
     if event.type == pygame.WINDOWFOCUSLOST:
-        paused = True
+        pause()
     if event.type == pygame.KEYDOWN:
         if event.key == Inputs.dash:
             abilities.dash_input_catch(tick_counter)
             return True
         elif event.key == Inputs.pause:
-            paused = True
+            pause()
             return True
         elif event.key == pygame.K_RETURN:
             tutorials.next_pressed()

@@ -22,6 +22,7 @@ import traceback
 import logging
 import functools
 from sys import argv
+import pygame
 
 memoize_not_have = object()
 
@@ -87,6 +88,39 @@ def make_simple_always(result: Any) -> Callable:
     :return: lambda function
     """
     return lambda *args, **kwargs: result
+
+
+def outline_img(img: pygame.Surface, outline: int):
+    width: int = img.get_width()
+    height: int = img.get_height()
+    outlining_width: int = width + 4 * outline
+    outlining_height: int = height + 4 * outline
+    outlining: pygame.Surface = pygame.Surface((
+        outlining_width, outlining_height
+    ), pygame.SRCALPHA)
+    outlining.blit(img, (outline * 2, outline * 2))
+    coord: int
+    checks = tuple(
+        (i % (2 * outline + 1) - outline, i // (2 * outline + 1) - outline)
+        for i in range((2 * outline + 1) ** 2)
+        if (i % 5, i // 5) != (0, 0)
+    )
+    for coord in range((width + 2 * outline) * (height + 2 * outline)):
+        x: int = (coord % (width + 2 * outline) + outline)
+        y: int = (coord // (width + 2 * outline) + outline)
+        offset_x: int
+        offset_y: int
+        if outlining.get_at((x, y)).r == 0 or outlining.get_at((x, y)).a == 0:
+            if any(
+                outlining.get_at((x + offset_x, y + offset_y)).r == 255
+                and outlining.get_at((x + offset_x, y + offset_y)).a == 255
+                for offset_x, offset_y in checks
+                if 0 <= x + offset_x < outlining_width and 0 <= y + offset_y < outlining_height
+            ):
+                outlining.set_at((x, y), (0, 0, 0, 255))
+            else:
+                outlining.set_at((x, y), (0, 0, 0, 0))
+    return outlining
 
 
 """
