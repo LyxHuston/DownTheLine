@@ -187,7 +187,7 @@ def tick(do_tick):
         if up_current >= up_duration:
             if auto_progress:
                 next_text()
-            elif not current_text.endswith("(press ENTER)"):
+            elif current_text and not current_text.endswith("(press ENTER)"):
                 current_text += "  (press ENTER)"
                 update_display()
         else:
