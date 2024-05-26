@@ -1675,7 +1675,7 @@ class Spawner(Entity):
                 self.__class__.imgs[i] = self.__class__.imgs[i].img
 
 
-class SpawnerHolder(Entity):
+class Holder(Entity):
     """
     helper entity class that takes in an entity and wraps it so that the spawner can keep track.
     Most data should just be passing onto the held entity
@@ -1689,7 +1689,7 @@ class SpawnerHolder(Entity):
 
     @img.setter
     def img(self, val):
-        self.img = val
+        self.holding.img = val
 
     @property
     def alive(self) -> bool:
@@ -1706,6 +1706,79 @@ class SpawnerHolder(Entity):
     @health.setter
     def health(self, val):
         self.holding.health = val
+
+    @property
+    def pos(self):
+        return self.holding.pos
+
+    @pos.setter
+    def pos(self, val):
+        self.holding.pos = val
+
+    @property
+    def x(self):
+        return self.holding.x
+
+    @x.setter
+    def x(self, val):
+        self.holding.x = val
+
+    @property
+    def y(self):
+        return self.holding.y
+
+    @y.setter
+    def y(self, val):
+        self.holding.y = val
+
+    def freeze_x(self, val: bool = None):
+        return self.holding.freeze_x(val)
+
+    def freeze_y(self, val: bool = None):
+        return self.holding.freeze_y(val)
+
+    @property
+    def rotation(self):
+        return self.holding.rotation
+
+    @rotation.setter
+    def rotation(self, val):
+        self.holding.rotation = val
+
+    def __init__(self, holding: Entity):
+        self.holding: Entity = holding
+        super().__init__(holding.img, holding.rotation, holding.pos)
+
+    def hit(self, damage: int, source):
+        # print(f"{self.pos}, {self.health}, {self.deployed}")
+        self.holding.hit(damage, source)
+
+    def tick(self):
+        pass
+
+    def draw(self):
+        self.holding.draw()
+
+    def final_load(self):
+        self.holding.final_load()
+
+    def die(self):
+        self.holding.die()
+
+    def despawn(self):
+        self.holding.despawn()
+
+    def cleanup(self):
+        self.holding.cleanup()
+
+
+class SpawnerHolder(Holder):
+    """
+    helper entity class that takes in an entity and wraps it so that the spawner can keep track.
+    Most data should just be passing onto the held entity
+    """
+
+    is_holder = True
 
     @property
     def pos(self):
@@ -1734,36 +1807,17 @@ class SpawnerHolder(Entity):
         self.last_moved = 0
         self.holding.y = val
 
-    def freeze_x(self, val: bool = None):
-        return self.holding.freeze_x(val)
-
-    def freeze_y(self, val: bool = None):
-        return self.holding.freeze_y(val)
-
-    @property
-    def rotation(self):
-        return self.holding.rotation
-
-    @rotation.setter
-    def rotation(self, val):
-        self.holding.rotation = val
-
     __id = 0
 
     def __init__(self, holding: Entity, holder: Spawner, index, destiny=(None, None)):
         self.last_moved = 0
-        self.holding: Entity = holding
+        super().__init__(holding)
         self.holder: Spawner = holder
         self.spawner_index = index
         self.deployed = False
         self.id = SpawnerHolder.__id
         self.destiny = destiny
         SpawnerHolder.__id += 1
-        super().__init__(holding.img, holding.rotation, holding.pos)
-
-    def hit(self, damage: int, source):
-        # print(f"{self.pos}, {self.health}, {self.deployed}")
-        self.holding.hit(damage, source)
 
     def tick(self):
         self.last_moved += 1
@@ -1788,23 +1842,17 @@ class SpawnerHolder(Entity):
             self.deployed = True
         return
 
-    def draw(self):
-        self.holding.draw()
-
-    def final_load(self):
-        self.holding.final_load()
-
     def die(self):
         self.holder.lose(self.spawner_index)
-        self.holding.die()
+        super().die()
 
     def despawn(self):
         self.holder.lose(self.spawner_index)
-        self.holding.despawn()
+        super().despawn()
 
     def cleanup(self):
         self.holder.lose(self.spawner_index)
-        self.holding.cleanup()
+        super().cleanup()
 
 
 note_speed = 15
