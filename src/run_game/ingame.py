@@ -60,10 +60,17 @@ def pause():
     paused = True
     width = (game_states.WIDTH - 768) // 2 - 40
     for i, item in enumerate(game_structures.HANDS):
+        item: items.Item
         holder: game_structures.ScrollableButtonHolder = run_start_end.PAUSE_BUTTONS[i + 3]
         holder.clear()
         if item is not None:
             description_text = items.description(item)
+            holder.add_button(game_structures.Button.make_img_button(
+                None,
+                item.icon,
+                (width // 2, 64),
+                "icon",
+            ))
             button = game_structures.Button.make_text_button(
                 description_text,
                 64,
@@ -71,13 +78,13 @@ def pause():
                 enforce_width=width,
                 background_color=(0, 0, 0, 0),
                 outline_color=(255, 255, 255),
-                center=(20, 0),
+                center=(20, 128),
                 x_align=0,
                 y_align=0
             )
             outline_text_button(button)
             holder.add_button(button)
-            holder.fit_y(20)
+            holder.fit_y(100)
 
 
 def tick(do_tick: bool = None):
