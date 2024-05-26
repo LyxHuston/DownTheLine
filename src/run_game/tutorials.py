@@ -172,10 +172,15 @@ def tick(do_tick):
                 stop_typing()
         else:
             typing_cooldown -= 1
-    elif auto_progress:
-        if up_current >= up_duration:
+    else:
+        if on is None and len(TUTORIAL_TEXTS) > 0:
             next_text()
+            return
+        if up_current >= up_duration:
+            if auto_progress:
+                next_text()
+            elif not current_text.endswith("(press ENTER)"):
+                current_text += "  (press ENTER)"
+                update_display()
         else:
             up_current += 1
-    elif on is None and len(TUTORIAL_TEXTS) > 0:
-        next_text()

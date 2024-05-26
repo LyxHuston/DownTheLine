@@ -185,7 +185,7 @@ def start(with_seed: int = None, full: bool = True):
         reset_gameboard()
 
         tutorials.add_text(
-            "Oh, you're awake.  Good.  (Press Enter)",
+            "Oh, you're awake.  Good.  (press ENTER)",
             game_structures.FONTS[100]
         )
         tutorials.add_text(
