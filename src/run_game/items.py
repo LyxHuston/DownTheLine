@@ -34,6 +34,16 @@ from general_use import utility, game_structures
 def raise_abstract_item_type():
     raise TypeError("Abstract item type attempted to be instantiated")
 
+
+def damage_description(d: int) -> str:
+    if d <= 5:
+        return ("no", "low", "moderate", "great", "high", "massive")[d]
+    d -= 4
+    d //= 5
+    if d <= 5:
+        return ("massive", "extreme", "titanic", "catastrophic", "cataclysmic")[d]
+    return "unimaginable"
+
 @dataclass
 class ItemType:
 
@@ -117,14 +127,19 @@ def boomerang(strength, random, pos):
 
 def random_simple_throwable(strength, random, pos):
     # current only reusable throwable is hatchet
+    throw_strength = random.choice((25, 35))
     item = simple_throwable(
         images.HATCHET.img,
         images.HATCHET.outlined_img,
         pos,
         entities.Hatchet,
-        ()
+        (),
+        "Hatchet\n\n"
+        f"Throw to deal {damage_description(4)} damage to enemies it touches.\n"
+        "If you are dashing while you throw it, it goes faster and deals more damage.\n\n"
+        f"Throw Speed: {throw_strength}"
     )
-    item.data_pack[1] = tuple([random.choice((25, 35)), item])
+    item.data_pack[1] = tuple([throw_strength, item])
     return item
 
 
@@ -191,11 +206,21 @@ class ItemTypes(enum.Enum):
         0,
         SimpleCooldownAction,
         constructor=random_simple_stab,
+        description=lambda item:  # state, tracker, cooldown ticks, duration ticks, damage, hit tracker
+        f"{('Spear', 'Sword')[item.data_pack[-2] - 2]}\n\n"
+        f"Deals {damage_description(item.data_pack[-2])} damage to enemies it hits.\n"
+        f"The simplest weapon type.\n\n"
+        f"Cooldown:{round(item.data_pack[2] / 60, 1)} second(s)\n"
+        f"Stab Duration: {round(item.data_pack[3] / 60, 1)} second(s)",
         get_range=lambda item: item.img.get_height()
     )
     SimpleShield: ItemType = ItemType(
         0,
         constructor=random_simple_shield,
+        description=lambda _:
+        "Shield\n\n"
+        "Protects you from damage in a direction, in exchange for preventing use of other items.\n"
+        f"If you dash into enemies with a shield up, they will take {damage_description(1)} damage.",
         get_range=lambda item: item.img.get_width(),
         action_available=utility.passing(True),
         in_use=in_use_basic,
@@ -204,25 +229,43 @@ class ItemTypes(enum.Enum):
     SimpleThrowable: ItemType = ItemType(
         10,
         constructor=random_simple_throwable,
+        description=lambda item: item.data_pack[-1],
         get_range=lambda item: item.data_pack[0].find_range(*item.data_pack[1]),
         action_available=lambda item: True
     )
     Bow: ItemType = ItemType(
         12,
         SimpleCooldownAction,
-        constructor=bow
+        constructor=bow,
+        description=lambda item:
+        "Bow\n\n"
+        f"Hold it to charge up and shoot an arrow in a given direction, dealing {damage_description(1)} damage.  "
+        "The longer you charge, the longer the arrow travels, and the more damage it deals.\n"
+        "Release while dashing to halt a dash and deal more damage.\n\n"
+        f"Cooldown:{round(item.data_pack[2] / 60, 1)} second(s)\n"
+        f"Max Charge Length: {round(item.data_pack[3] / 60, 1)} second(s)"
     )
     Boomerang: ItemType = ItemType(
         15,
         constructor=boomerang,
+        description=lambda item:
+        "Boomerang\n\n"
+        f"A throwable weapon that returns to the user.  It deals {damage_description(1)} "
+        f"damage to enemies it travels through.\n"
+        "When the boomerang returns to the user, "
+        "the user will automatically pick it back up, unless the player is dashing.\n\n"
+        f"Throw Strength: {item.data_pack[4]}",
         in_use=in_use_basic,
         swappable=lambda item: not in_use(item)
     )
     Hammer: ItemType = ItemType(
         10,
         SimpleCooldownAction,
-        constructor=hammer
-
+        constructor=hammer,
+        description=lambda item:
+        "Hammer\n\n"
+        f"After a long charge-up deal {damage_description(5)} damage to the closest enemy in range.  "
+        "Knock it far back and deal moderate damage to enemies it touches."
     )
 
 
@@ -899,13 +942,14 @@ def simple_throwable_action(item: Item):
     gameboard.NEW_ENTITIES.append(ent)  # add entity to entity list
 
 
-def simple_throwable(img, ground_img, pos, creates, args):
+def simple_throwable(img, ground_img, pos, creates, args, description):
     """
     makes a throwable object that creates an entity when thrown with given arguments
     :param img:
     :param pos:
     :param creates:
     :param args:
+    :param description:
     :return:
     """
     return Item(
@@ -917,7 +961,7 @@ def simple_throwable(img, ground_img, pos, creates, args):
         pos,
         simple_draw,
         images.SIMPLE_THROWABLE_ICON.img,
-        [creates, args],
+        [creates, args, description],
         ItemTypes.SimpleThrowable
     )
 
@@ -928,7 +972,14 @@ def simple_bomb(pos, speed, taper, glide_duration, delay, size, damage):
         images.SIMPLE_BOMB.outlined_img,
         pos,
         entities.Bomb,
-        (images.SIMPLE_BOMB.img, speed, taper, glide_duration, delay, size, damage)
+        (images.SIMPLE_BOMB.img, speed, taper, glide_duration, delay, size, damage),
+        "Bomb\n\n"
+        f"{('drop', 'throw')[speed == 0]} to create an explosion after {round(delay / 60, 1)} second(s), dealing "
+        f"{damage_description(damage)} damage in a {('small', 'medium', 'large')[size // 256]} area.\n\n"
+        f"Movement type: {('drop', 'throw')[speed == 0]}\n"
+        f"Delay: {round(delay / 60, 1)} second(s)\n"
+        f"Damage: {damage_description(damage)}\n"
+        f"Area: {('small', 'medium', 'large')[size // 256]}"
     )
 
 
