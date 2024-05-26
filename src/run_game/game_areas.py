@@ -311,7 +311,7 @@ class BreakThroughArea(GameArea):
     """
 
     first_allowed_spawn = 4
-    required_wait_interval = 2
+    required_wait_interval = 3
 
     def __init__(self, determiner: int, count: int):
         self.difficulty = count
@@ -369,7 +369,7 @@ class GiftArea(GameArea):
 
     first_allowed_spawn = 4
     required_previous = [BreakThroughArea]
-    required_wait_interval = 6
+    required_wait_interval = 2
 
     def __init__(self, determiner, count):
         self.remove_preceding_obstacle = True
