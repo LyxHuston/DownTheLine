@@ -376,26 +376,30 @@ class GiftArea(GameArea):
         self.difficulty = count
         super().__init__(count, seed=determiner, length=1500)
 
-    experiment_area_length = 1200
+    experiment_area_length = 1800
 
     def determine_parts(self):
-        self.make(items.make_random_reusable(self.random, (0, self.experiment_area_length // 2)))
+        self.make(
+            items.make_random_reusable(self.random, (0, 1 * self.experiment_area_length // 3)),
+            items.make_random_reusable(self.random, (0, 2 * self.experiment_area_length // 3))
+        )
 
-    def make(self, gift: items.Item):
+    def make(self, gift1: items.Item, gift2: items.Item):
         spawn = entities.Spawner.make(self.seed, self)
         spawn.y += self.experiment_area_length
         self.length += self.experiment_area_length
         self.entity_list.append(spawn)
         self.entity_list.append(entities.Obstacle(pos=(0, self.experiment_area_length), health=1))
         self.entity_list.append(entities.Obstacle(pos=(0, self.length), health=10))
-        self.entity_list.append(entities.ItemEntity(gift))
+        self.entity_list.append(entities.ItemEntity(gift1))
+        self.entity_list.append(entities.ItemEntity(gift2))
 
     def cross_boundary(self):
         if not GiftArea.tutorial_given:
             GiftArea.tutorial_given = True
             tutorials.clear_tutorial_text()
             tutorials.add_text(
-                "A new item for you!",
+                "New items for you!",
                 game_structures.FONTS[100]
             )
             tutorials.add_text(
