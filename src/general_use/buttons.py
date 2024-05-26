@@ -802,6 +802,8 @@ class ButtonHolder(ButtonHolderTemplate):
             self.rect = self.background.get_rect()
         else:
             self.rect = _rect
+        if fill_color is None:
+            fill_color = (0, 0, 0, 0)
         self.fill_color = fill_color
         self.outline_color = outline_color
         self.outline_width = outline_width
@@ -1262,3 +1264,36 @@ class ScrollableButtonHolder(ButtonHolder):
                 self.window.inflate(2 * self.outline_width, 2 * self.outline_width),
                 width=self.outline_width
             )
+
+
+class SwitchHolder(ButtonHolder):
+    """
+    a button holder that has multiple sets of buttons to switch between
+    """
+
+    @property
+    def view(self):
+        return self.__view
+
+    @view.setter
+    def view(self, val: int):
+        if val < 0:
+            val = len(self._views) + val
+        self._views[self.__view] = self.list
+        self.__view = val
+        self.list = self._views[val]
+
+    def add_view(self, val: list[ButtonHolderTemplate] = None):
+        if val is None:
+            val = []
+        self._views.append(val)
+
+    def __init__(self, start_view: int, init_lists: list[list[ButtonHolderTemplate]] = None, background: Surface = None, _rect: Rect = None,
+                 fill_color: Union[tuple[int, int, int], tuple[int, int, int, int], None] = None,
+                 outline_color: Union[tuple[int, int, int], None] = None, outline_width: int = 0,
+                 visible_check: Callable[[], bool] = utility.passing):
+        if init_lists is None:
+            init_lists = [[]]
+        self._views = init_lists
+        self.__view = 0
+        super().__init__(self._views[self.__view], background, _rect, fill_color, outline_color, outline_width, visible_check)
