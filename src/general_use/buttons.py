@@ -1156,6 +1156,38 @@ class ScrollableButtonHolder(ButtonHolder):
                 self.clip_rect.y = self.rect.height - self.window.height
         self.clip_rect.y = value
 
+    def fit_size(self, margin: int = 0):
+        self.fit_y(margin)
+        self.fit_x(margin)
+
+    def fit_y(self, margin: int = 0):
+        buttons: list[game_structures.ButtonHolderTemplate] = list(filter(lambda b: b is not None, self.list))
+        min_y: int = min(buttons, key=lambda button: button.rect.top).rect.top
+        for button in buttons:
+            button.rect.top -= min_y
+            button.rect.top += margin
+        max_y: int = max(buttons, key=lambda button: button.rect.bottom).rect.bottom
+        self.background = pygame.Surface(
+            (self.background.get_width(), max_y + margin),
+            self.background.get_flags(),
+            masks=self.background.get_masks()
+        )
+        self.rect = self.background.get_rect()
+
+    def fit_x(self, margin: int = 0):
+        buttons = list(filter(lambda b: b is not None, self.list))
+        min_x = min(buttons, key=lambda button: button.rect.left).rect.left
+        for button in buttons:
+            button.rect.left -= min_x
+            button.rect.left += margin
+        max_x = max(buttons, key=lambda button: button.rect.right).rect.right
+        self.background = pygame.Surface(
+            (max_x + margin, self.background.get_height()),
+            self.background.get_flags(),
+            masks=self.background.get_masks()
+        )
+        self.rect = self.background.get_rect()
+
     def adjust_mouse_pos(self, mouse_pos: tuple[int, int]) -> tuple[int, int]:
         """
         adjust mouse position passed based on the holder's rect
