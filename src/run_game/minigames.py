@@ -335,7 +335,7 @@ def pre_compute_outlines_until(num: int):
 
 @utility.memoize(guarantee_natural=True, guarantee_single=True)
 def outline_for(num: int):
-	return outline_img(game_structures.FONTS[64].render(str(num), True, (255, 255, 255), None), 2)
+	return utility.outline_img(game_structures.FONTS[64].render(str(num), True, (255, 255, 255), None), 2)
 
 
 def draw_count(getter: Callable) -> Callable:

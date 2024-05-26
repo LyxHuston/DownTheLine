@@ -19,6 +19,7 @@ handles getting images only when required
 """
 
 import pygame
+from general_use import utility
 
 
 class Image:
@@ -45,29 +46,30 @@ class Image:
     @property
     def outlined_img(self) -> pygame.Surface:
         if self.__outlined_img is None:
-            buffer: int = 2
-            scale: int = 4
-            width: int = self.img.get_width() // scale
-            height: int = self.img.get_height() // scale
-            outlining: pygame.Surface = pygame.Surface((
-                self.img.get_width() + 2 * scale * buffer, self.img.get_height() + 2 * scale * buffer
-            ), pygame.SRCALPHA)
-            outlining.blit(self.img, (buffer * scale, buffer * scale))
-            coord: int
-            for coord in range((width + buffer) * (height + buffer)):
-                x: int = (coord % (width + buffer) + 1) * scale
-                y: int = (coord // (width + buffer) + 1) * scale
-                offset_x: int
-                offset_y: int
-                if outlining.get_at((x, y)).a == 0:
-                    if any(
-                            outlining.get_at((x + offset_x * scale, y + offset_y * scale)).r == 255
-                            for offset_x, offset_y in
-                            ((0, 1), (1, 1), (1, 0), (1, -1), (0, -1), (-1, -1), (-1, 0), (-1, 1))
-                    ):
-                        for offset_x, offset_y in [(i % 4, i // 4) for i in range(16)]:
-                            outlining.set_at((x + offset_x, y + offset_y), (0, 0, 0, 255))
-            self.__outlined_img = outlining
+            # buffer: int = 2
+            # scale: int = 4
+            # width: int = self.img.get_width() // scale
+            # height: int = self.img.get_height() // scale
+            # outlining: pygame.Surface = pygame.Surface((
+            #     self.img.get_width() + 2 * scale * buffer, self.img.get_height() + 2 * scale * buffer
+            # ), pygame.SRCALPHA)
+            # outlining.blit(self.img, (buffer * scale, buffer * scale))
+            # coord: int
+            # for coord in range((width + buffer) * (height + buffer)):
+            #     x: int = (coord % (width + buffer) + 1) * scale
+            #     y: int = (coord // (width + buffer) + 1) * scale
+            #     offset_x: int
+            #     offset_y: int
+            #     if outlining.get_at((x, y)).a == 0:
+            #         if any(
+            #                 outlining.get_at((x + offset_x * scale, y + offset_y * scale)).r == 255
+            #                 for offset_x, offset_y in
+            #                 ((0, 1), (1, 1), (1, 0), (1, -1), (0, -1), (-1, -1), (-1, 0), (-1, 1))
+            #         ):
+            #             for offset_x, offset_y in [(i % 4, i // 4) for i in range(16)]:
+            #                 outlining.set_at((x + offset_x, y + offset_y), (0, 0, 0, 255))
+            # self.__outlined_img = outlining
+            self.__outlined_img = utility.outline_img(self.img, 8)
         return self.__outlined_img
 
     def __init__(self, path: str):

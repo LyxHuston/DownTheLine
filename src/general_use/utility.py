@@ -15,7 +15,8 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
-
+import enum
+import math
 import threading
 from typing import Callable, Any, Union, Hashable
 import traceback
@@ -90,36 +91,62 @@ def make_simple_always(result: Any) -> Callable:
     return lambda *args, **kwargs: result
 
 
-def outline_img(img: pygame.Surface, outline: int):
+class OutlineTypes(enum.Enum):
+    Block = lambda check, width: True
+    Circle = lambda check, width: math.sqrt(check[0] ** 2 + check[1] ** 2) <= width
+    Manhattan = lambda check, width: check[0] + check[1] <= width
+
+
+def outline_img(img: pygame.Surface, outline: int, outline_type: OutlineTypes | Callable[[tuple[int, int], int], bool] = OutlineTypes.Block):
     width: int = img.get_width()
     height: int = img.get_height()
-    outlining_width: int = width + 4 * outline
-    outlining_height: int = height + 4 * outline
+    outlining_width: int = width + 2 * outline
+    outlining_height: int = height + 2 * outline
     outlining: pygame.Surface = pygame.Surface((
         outlining_width, outlining_height
     ), pygame.SRCALPHA)
-    outlining.blit(img, (outline * 2, outline * 2))
     coord: int
-    checks = tuple(
-        (i % (2 * outline + 1) - outline, i // (2 * outline + 1) - outline)
-        for i in range((2 * outline + 1) ** 2)
-        if (i % 5, i // 5) != (0, 0)
+    if isinstance(outline_type, OutlineTypes):
+        outline_type = outline_type.value
+    # checks = tuple(
+    #     (ox, oy)
+    #     for ox in range(-outline, outline + 1)
+    #     for oy in range(-outline, outline + 1)
+    #     if ox != 0 or oy != 0
+    #     and outline_type((ox, oy), outline)
+    # )
+    outlining.blits(
+        blit_sequence=list(
+            (img, (outline + ox, outline + oy))
+            for ox in range(-outline, outline + 1)
+            for oy in range(-outline, outline + 1)
+            if ox != 0 or oy != 0
+            and outline_type((ox, oy), outline)
+        ),
+        doreturn=False
     )
-    for coord in range((width + 2 * outline) * (height + 2 * outline)):
-        x: int = (coord % (width + 2 * outline) + outline)
-        y: int = (coord // (width + 2 * outline) + outline)
-        offset_x: int
-        offset_y: int
-        if outlining.get_at((x, y)).r == 0 or outlining.get_at((x, y)).a == 0:
-            if any(
-                outlining.get_at((x + offset_x, y + offset_y)).r == 255
-                and outlining.get_at((x + offset_x, y + offset_y)).a == 255
-                for offset_x, offset_y in checks
-                if 0 <= x + offset_x < outlining_width and 0 <= y + offset_y < outlining_height
-            ):
-                outlining.set_at((x, y), (0, 0, 0, 255))
-            else:
-                outlining.set_at((x, y), (0, 0, 0, 0))
+    # for x_offset, y_offset in checks:
+    #     outlining.blit(img, (outline + x_offset, outline + y_offset))
+    outlining.fill(
+        (0, 0, 0, 0),
+        special_flags=pygame.BLEND_RGB_MIN
+    )
+    outlining.blit(img, (outline, outline))
+    # for coord in range((width + 2 * outline) * (height + 2 * outline)):
+    #     x: int = (coord % (width + 2 * outline) + outline)
+    #     y: int = (coord // (width + 2 * outline) + outline)
+    #     offset_x: int
+    #     offset_y: int
+    #     if outlining.get_at((x, y)).r == 0 or outlining.get_at((x, y)).a == 0:
+    #         if any(
+    #                 outlining.get_at((x + offset_x, y + offset_y)).r == 255
+    #                 and outlining.get_at((x + offset_x, y + offset_y)).a == 255
+    #                 for offset_x, offset_y in checks
+    #                 if 0 <= x + offset_x < outlining_width and 0 <= y + offset_y < outlining_height
+    #         ):
+    #             outlining.set_at((x, y), (0, 0, 0, 255))
+    #         else:
+    #             outlining.set_at((x, y), (0, 0, 0, 0))
     return outlining
 
 

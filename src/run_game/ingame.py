@@ -44,15 +44,15 @@ paused = False
 
 @utility.make_async
 def outline_text_button(button: game_structures.Button):
-    width = 8
+    width = 6
     img = button.img
-    outlined = utility.outline_img(img, width)
+    outlined = utility.outline_img(img, width, utility.OutlineTypes.Circle)
     if img is button.img:
         button.img = outlined
-        button.rect.y -= 2 * width
-        button.rect.x -= 2 * width
-        button.rect.width += 4 * width
-        button.rect.height += 4 * width
+        button.rect.y -= width
+        button.rect.x -= width
+        button.rect.width += 2 * width
+        button.rect.height += 2 * width
 
 
 def pause():
