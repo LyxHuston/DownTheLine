@@ -1036,6 +1036,8 @@ def hammer_tick(item: Item):
                 lambda en: user.allied_with_player is not en.allied_with_player and not en.is_item_entity and en.colliderect(rect)
             )
             if collided:
+                if from_player(item):
+                    game_states.TIME_SINCE_LAST_INTERACTION = 0
                 target = min(collided, key=lambda en: abs(user.y - en.y))
                 target.hit(5, item)
                 damage = 2
