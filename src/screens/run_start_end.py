@@ -53,7 +53,9 @@ MESSAGE_LOG = game_structures.ScrollableButtonHolder(
         (game_states.WIDTH // 2 + 40, 0),
     ),
     scrollable_x=False,
-    fill_color=(0, 0, 0, 255)
+    fill_color=(0, 0, 0, 255),
+    outline_color=(255, 255, 255),
+    outline_width=5
 )
 
 MESSAGE_LOG_BUTTONS = game_structures.ButtonHolder(
@@ -70,8 +72,30 @@ PAUSE_SWITCHER = game_structures.SwitchHolder(
 
 
 def switch_to_message_log():
-    PAUSE_SWITCHER.view = 1
+    y = 0
+    width = 2 * game_states.WIDTH // 3 + 40
+    MESSAGE_LOG.rect = pygame.rect.Rect(0, 0, width, game_states.HEIGHT)
+    MESSAGE_LOG.clip_rect = pygame.rect.Rect(0, 0, width, game_states.HEIGHT)
+    MESSAGE_LOG.window = pygame.rect.Rect((game_states.WIDTH - width) // 2, 0, width, game_states.HEIGHT)
+    MESSAGE_LOG.background = pygame.surface.Surface(
+        (width, 0)
+    )
+    for log in tutorials.LOG:
+        button = game_structures.Button.make_text_button(
+            log.text,
+            log.font,
+            (20, y),
+            max_line_pixels=width - 40,
+            background_color=(0, 0, 0),
+            outline_color=(255, 255, 255),
+            x_align=0,
+            y_align=0,
+            border_width=2
+        )
+        MESSAGE_LOG.add_button(button)
+        y += button.img.get_height() + 20
     MESSAGE_LOG.fit_y(20)
+    PAUSE_SWITCHER.view = 1
 
 
 def switch_to_main_pause():
