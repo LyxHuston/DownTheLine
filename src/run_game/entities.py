@@ -1889,7 +1889,8 @@ class KnockbackHolder(InvulnerableGlides, InvulnerableHolder):
         gameboard.ENTITY_BOARD[self.index] = self.holding
 
     # idk why this is necessary
-    draw = InvulnerableHolder.draw
+    def draw(self):
+        InvulnerableHolder.draw(self)
 
     # noinspection PyMissingConstructor
     def __init__(self, holding: Entity, direction: Literal[-1, 1], speed: int, duration: int, damage: int):
