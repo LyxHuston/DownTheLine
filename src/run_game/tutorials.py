@@ -39,6 +39,7 @@ TUTORIAL_VOICE_CHANNEL = None
 
 
 TUTORIAL_TEXTS: deque[TutorialText] = deque()
+LOG: deque[TutorialText] = deque()
 on: TutorialText | None = None
 current_text: str = ""
 
@@ -123,7 +124,14 @@ def clear_tutorial_text():
 
 
 def add_text(text: str, font: pygame.font.Font, sound: pygame.mixer.Sound = None):
-    TUTORIAL_TEXTS.append(TutorialText(text, font, sound))
+    tt = TutorialText(text, font, sound)
+    TUTORIAL_TEXTS.append(tt)
+    LOG.append(tt)
+
+
+def add_texts(texts: list[tuple[str, pygame.font.Font, [pygame.mixer.Sound]]]):
+    for text in texts:
+        add_text(*text)
 
 
 def tick(do_tick):
