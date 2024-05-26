@@ -392,8 +392,11 @@ def make_invulnerable_version(entity_class):
             super().__init__(*args, **kwargs)
 
         def __init_subclass__(cls, do_sheen=False, **kwargs):
+            # print(cls, do_sheen, New.__basic_draw)
+            if do_sheen and not New.__basic_draw:
+                raise ValueError("Attempted to use sheen for invulnerable entities with a non-basic draw superclass.  Please implement on your own.")
             cls.do_sheen = do_sheen
-            if not do_sheen:
+            if not do_sheen and cls.draw is New.draw:
                 cls.draw = cls.__no_sheen_draw
             super().__init_subclass__(kwargs)
 
@@ -418,44 +421,47 @@ def make_invulnerable_version(entity_class):
                 # print(f"invulnerable entity {self} killed")
             self.__alive = val
 
-        def draw(self):
-            if self.img is None:
-                return
-            img = self.img
-            if self.__shine is not None:
-                img = img.copy()
-                if not ingame.paused:
-                    pygame.draw.line(
-                        img,
-                        (255, 255, 255),
-                        (self.__shine, 0),
-                        (self.__shine - self.img.get_height() // invulnerable_shine_slope, self.img.get_height()),
-                        invulnerable_shine_width
-                    )
-                    self.__shine -= invulnerable_shine_speed
-                    if self.__shine < 0:
-                        self.__shine = None
-            game_structures.SCREEN.blit(
-                img,
-                (
-                    game_structures.to_screen_x(self.x) - img.get_width() // 2,
-                    game_structures.to_screen_y(self.y) - img.get_height() // 2
-                )
-            )
-            return self.pos
+        __basic_draw = entity_class.draw is Entity.draw
 
-        def __no_sheen_draw(self):
-            img = self.img
-            if img is None:
-                return
-            game_structures.SCREEN.blit(
-                img,
-                (
-                    game_structures.to_screen_x(self.x) - img.get_width() // 2,
-                    game_structures.to_screen_y(self.y) - img.get_height() // 2
+        if __basic_draw:
+            def draw(self):
+                if self.img is None:
+                    return
+                img = self.img
+                if self.__shine is not None:
+                    img = img.copy()
+                    if not ingame.paused:
+                        pygame.draw.line(
+                            img,
+                            (255, 255, 255),
+                            (self.__shine, 0),
+                            (self.__shine - self.img.get_height() // invulnerable_shine_slope, self.img.get_height()),
+                            invulnerable_shine_width
+                        )
+                        self.__shine -= invulnerable_shine_speed
+                        if self.__shine < 0:
+                            self.__shine = None
+                game_structures.SCREEN.blit(
+                    img,
+                    (
+                        game_structures.to_screen_x(self.x) - img.get_width() // 2,
+                        game_structures.to_screen_y(self.y) - img.get_height() // 2
+                    )
                 )
-            )
-            return self.pos
+                return self.pos
+
+            def __no_sheen_draw(self):
+                img = self.img
+                if img is None:
+                    return
+                game_structures.SCREEN.blit(
+                    img,
+                    (
+                        game_structures.to_screen_x(self.x) - img.get_width() // 2,
+                        game_structures.to_screen_y(self.y) - img.get_height() // 2
+                    )
+                )
+                return self.pos
 
     New.__name__ = "Invulnerable" + entity_class.__name__
     New.__qualname__ = ".".join(entity_class.__qualname__.split(".")[:-1] + [New.__name__])
@@ -1731,6 +1737,14 @@ class Holder(Entity):
     def y(self, val):
         self.holding.y = val
 
+    @property
+    def index(self):
+        return self.holding.index
+
+    @index.setter
+    def index(self, val: int):
+        self.holding.index = val
+
     def freeze_x(self, val: bool = None):
         return self.holding.freeze_x(val)
 
@@ -1770,6 +1784,9 @@ class Holder(Entity):
 
     def cleanup(self):
         self.holding.cleanup()
+
+
+InvulnerableHolder: Type[Holder] = make_invulnerable_version(Holder)
 
 
 class SpawnerHolder(Holder):
@@ -1853,6 +1870,34 @@ class SpawnerHolder(Holder):
     def cleanup(self):
         self.holder.lose(self.spawner_index)
         super().cleanup()
+
+
+class KnockbackHolder(InvulnerableGlides, InvulnerableHolder):
+
+    def on_stop_gliding(self):
+        gameboard.ENTITY_BOARD[self.index] = self.holding
+
+    # idk why this is necessary
+    draw = InvulnerableHolder.draw
+
+    # noinspection PyMissingConstructor
+    def __init__(self, holding: Entity, direction: Literal[-1, 1], speed: int, duration: int, damage: int):
+        index = holding.index
+        InvulnerableHolder.__init__(self, holding)
+        self.index = index
+        self.hit_cache = []
+        self.start_glide(speed, duration, speed, direction)
+        self.damage = damage
+        self.allied_with_player = not holding.allied_with_player
+
+    def tick(self):
+        self.glide_tick()
+        collide_list = self.holding.colliding(
+            additional_predicate=lambda en: self.allied_with_player is not en.allied_with_player
+        )
+        for e in filter(lambda en: en not in self.hit_cache, collide_list):
+            e.hit(self.damage, self)
+        self.hit_cache = collide_list
 
 
 note_speed = 15
