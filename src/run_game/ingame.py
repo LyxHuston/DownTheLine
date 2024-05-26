@@ -79,9 +79,10 @@ def pause():
                 enforce_width=width,
                 background_color=(0, 0, 0, 0),
                 outline_color=(255, 255, 255),
-                center=(20, 128),
-                x_align=0,
-                y_align=0
+                center=(20 + (width - 40) * i, 128),
+                x_align=i,
+                y_align=0,
+                text_align=i
             )
             outline_text_button(button)
             holder.add_button(button)
