@@ -1177,7 +1177,7 @@ class ScrollableButtonHolder(ButtonHolder):
             self.background.get_flags(),
             masks=self.background.get_masks()
         )
-        self.rect = self.background.get_rect()
+        self.rect = self.background.get_rect(topleft=self.rect.topleft)
         if self.clip_rect.bottom > max_y:
             self.clip_rect.bottom = max_y
 
@@ -1196,7 +1196,7 @@ class ScrollableButtonHolder(ButtonHolder):
             self.background.get_flags(),
             masks=self.background.get_masks()
         )
-        self.rect = self.background.get_rect()
+        self.rect = self.background.get_rect(topleft=self.rect.topleft)
         if self.clip_rect.right > max_x:
             self.clip_rect.right = max_x
 
