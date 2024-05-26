@@ -39,6 +39,7 @@ class ItemType:
 
     first: int = -1  # first possible appearance, -1 for never (aka abstract or not fully implemented)
     constructor: Callable = lambda difficulty, random, pos: raise_abstract_item_type()  # constructor for item types
+    description: Callable = (lambda item: f"{item.type.name}: {item.data_pack}", "Empty")  # get string description
     get_range: Callable = (utility.passing(0), 0)  # range, used for calculations when held by monsters
     action_available: Callable = (utility.passing(False), False)  # check if an action is available
     in_use: Callable = (utility.passing(False), False)  # check if item is in use
@@ -155,7 +156,6 @@ def bow(strength, random, pos):
         [False, cooldown, cooldown, max_charge, pierce, growth_rate, 0, [img.img for img in images.BOW_DRAWS]],
         ItemTypes.Bow
     )
-
 
 
 def hammer(strength, random, pos):
@@ -419,6 +419,7 @@ def none_check(result: Any) -> Callable[[Any], tuple[Any, Any]]:
 
 
 # dynamically generate these.  forward calls to item type defined
+description: Callable[[Item], str]
 get_range: Callable[[Item], bool]
 action_available: Callable[[Item], bool]
 in_use: Callable[[Item], bool]
