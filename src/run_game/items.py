@@ -157,6 +157,25 @@ def bow(strength, random, pos):
     )
 
 
+
+def hammer(strength, random, pos):
+    cooldown = 240
+    duration = 120
+    knockback_duration = 120
+    return Item(
+        simple_cooldown_action,
+        passing,
+        hammer_tick,
+        images.HAMMER.img,
+        images.HAMMER.outlined_img,
+        pos,
+        hammer_draw,
+        images.HAMMER_ICON.img,
+        [False, cooldown, cooldown, duration, knockback_duration, images.SWIPE.img],
+        ItemTypes.Hammer
+    )
+
+
 in_use_basic = lambda item: item.data_pack[0]
 
 
@@ -198,6 +217,12 @@ class ItemTypes(enum.Enum):
         constructor=boomerang,
         in_use=in_use_basic,
         swappable=lambda item: not in_use(item)
+    )
+    Hammer: ItemType = ItemType(
+        10,
+        SimpleCooldownAction,
+        constructor=hammer
+
     )
 
 
@@ -579,7 +604,7 @@ def simple_shield_draw(item: Item):
     ent = item.pos[0]
     _hand = item.pos[1] * 2 - 1
     rotated = pygame.transform.rotate(
-        pygame.transform.flip(item.img, item.pos[1] == 0, False),
+        pygame.transform.flip(item.img, _hand == -1, False),
         ent.rotation + 270
     )
     game_structures.SCREEN.blit(
@@ -982,6 +1007,88 @@ def bow_release(item: Item):
         )
         item.data_pack[0] = False
         item.data_pack[1] = 0
+
+
+hammer_swipe_time = 20
+
+
+def hammer_tick(item: Item):
+    item.data_pack[1] += 1
+    if item.data_pack[0]:
+        if item.data_pack[1] > item.data_pack[3]:
+            item.data_pack[0] = False
+            item.data_pack[1] = 0
+        if item.data_pack[3] - item.data_pack[1] < hammer_swipe_time:
+            user: entities.Entity = holder(item)
+            img: pygame.Surface = item.data_pack[-1]
+            radius = (user.radius() + img.get_height()) // 2
+            new_center = offset_point_rotated(
+                user.pos,
+                (
+                    0,
+                    radius
+                ),
+                user.rotation
+            )
+            rect = img.get_rect(center=new_center)
+            collided = user.all_in_range(
+                radius + entities.Entity.biggest_radius,
+                lambda en: user.allied_with_player is not en.allied_with_player and not en.is_item_entity and en.colliderect(rect)
+            )
+            if collided:
+                target = min(collided, key=lambda en: abs(user.y - en.y))
+                target.hit(5, item)
+                damage = 2
+                speed = 10
+                if isinstance(user, entities.Glides) and user.is_gliding():
+                    speed += user.glide_speed
+                    damage += 1
+                    user.stop_gliding()
+                if not target.freeze_x() and not target.freeze_y():
+                    duration = item.data_pack[4]
+                    target.flashing = duration
+                    knocked = entities.KnockbackHolder(target, (target.y > user.y) * 2 - 1, speed, duration, damage)
+                    gameboard.ENTITY_BOARD[target.index] = knocked
+                item.data_pack[0] = False
+                item.data_pack[1] = 0
+    else:
+        if item.data_pack[1] > item.data_pack[2]:
+            item.data_pack[1] = item.data_pack[2]
+    return True
+
+
+@draw_on_ground_if_not_held
+@draw_icon_for_simple_duration_item
+@draw_by_side_if_not_used
+def hammer_draw(item: Item):
+    user = holder(item)
+    _hand = hand(item) * 2 - 1
+    if item.data_pack[3] - item.data_pack[1] < hammer_swipe_time:
+        # swipe
+        angle = user.rotation
+        img = item.data_pack[-1]
+        radius = (img.get_height() + user.radius()) // 2
+        flip_y = True
+    else:
+        img = item.img
+        angle_offset = ((item.data_pack[1] / item.data_pack[3]) ** 4 - 0.25) * 150
+        angle = user.rotation + angle_offset * _hand + 270
+        radius = (img.get_height() + user.radius()) // 2 * _hand
+        flip_y = _hand == 1
+    rotated = pygame.transform.rotate(
+        pygame.transform.flip(img, False, flip_y),
+        angle
+    )
+    rads = math.radians(angle)
+    point = (
+        user.x + radius * math.sin(rads) - rotated.get_width() // 2,
+        user.y - radius * math.cos(rads) + rotated.get_height() // 2
+    )
+    game_structures.SCREEN.blit(
+        rotated,
+        game_structures.to_screen_pos(point)
+    )
+
 
 
 def make_random_single_use(random, pos):
