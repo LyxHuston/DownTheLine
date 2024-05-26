@@ -64,6 +64,8 @@ class Entity(game_structures.Body):
 
     has_camera_mass: bool = True
 
+    collide_priority: int = 0
+
     @property
     def alive(self) -> bool:
         return self.health > 0
@@ -319,9 +321,14 @@ class Entity(game_structures.Body):
         return collect
 
     def colliding(self, additional_predicate: Callable[[Self], bool] = None) -> list[Self]:
+        predicate = (
+            lambda e: self.collide(e) and self.collide_priority >= e.collide_priority
+        ) if additional_predicate is None else (
+            lambda e: self.collide(e) and self.collide_priority >= e.collide_priority and  additional_predicate(e)
+        )
         return self.all_in_range(
             self.height // 2 + Entity.biggest_radius,
-            accept_func=self.collide if additional_predicate is None else (lambda e: self.collide(e) and additional_predicate(e))
+            accept_func=predicate
         )
 
     def exclude_wall_safe(
@@ -693,6 +700,8 @@ class Obstacle(Entity, track_instances=True):
     """
     harmless obstacles on path.
     """
+
+    collide_priority = 1
 
     cost = 0
     has_camera_mass = False
@@ -1686,6 +1695,8 @@ class Holder(Entity):
     helper entity class that takes in an entity and wraps it so that the spawner can keep track.
     Most data should just be passing onto the held entity
     """
+
+    collide_priority = 1
 
     is_holder = True
 
