@@ -47,7 +47,18 @@ def log_area(area: game_areas.GameArea):
 
 PAUSE_BUTTONS = game_structures.ButtonHolder()
 
-MESSAGE_LOG_BUTTONS = game_structures.ButtonHolder()
+MESSAGE_LOG = game_structures.ScrollableButtonHolder(
+    pygame.rect.Rect(game_states.WIDTH // 4, 0, game_states.WIDTH // 2 + 40, game_states.HEIGHT),
+    pygame.surface.Surface(
+        (game_states.WIDTH // 2 + 40, 0),
+    ),
+    scrollable_x=False,
+    fill_color=(0, 0, 0, 255)
+)
+
+MESSAGE_LOG_BUTTONS = game_structures.ButtonHolder(
+    [None, MESSAGE_LOG]
+)
 
 PAUSE_SWITCHER = game_structures.SwitchHolder(
     0,
@@ -56,6 +67,15 @@ PAUSE_SWITCHER = game_structures.SwitchHolder(
     fill_color=(0, 0, 0, 127),
     visible_check=lambda: ingame.paused
 )
+
+
+def switch_to_message_log():
+    PAUSE_SWITCHER.view = 1
+    MESSAGE_LOG.fit_y(20)
+
+
+def switch_to_main_pause():
+    PAUSE_SWITCHER.view = 0
 
 
 def quit_run():
@@ -139,7 +159,7 @@ def start(with_seed: int = None, full: bool = True):
             (game_states.WIDTH // 2, 3 * game_states.HEIGHT // 4),
             enforce_width=768,
             text_align=0.5,
-            up_click=lambda: setattr(ingame, "paused", False),
+            up_click=switch_to_message_log,
             background_color=(0, 0, 0),
             outline_color=(255, 255, 255),
             border_width=5
@@ -160,6 +180,12 @@ def start(with_seed: int = None, full: bool = True):
         ))
         for i in range(3, 5):
             PAUSE_BUTTONS[i].fit_size()
+
+        MESSAGE_LOG_BUTTONS[0] = game_structures.Button.make_text_button(
+            "Back", 128, (0, 0), switch_to_main_pause,
+            background_color=(0, 0, 0), outline_color=(255, 255, 255), x_align=0,
+            y_align=0, border_width=5)
+
         game_structures.BUTTONS.clear()
         PAUSE_SWITCHER.background = pygame.Surface((game_states.WIDTH, game_states.HEIGHT), flags=pygame.SRCALPHA)
         PAUSE_SWITCHER.rect = PAUSE_SWITCHER.background.get_rect()

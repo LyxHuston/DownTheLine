@@ -58,6 +58,7 @@ def outline_text_button(button: game_structures.Button):
 def pause():
     global paused
     paused = True
+    run_start_end.switch_to_main_pause()
     width = (game_states.WIDTH - 768) // 2 - 40
     for i, item in enumerate(game_structures.HANDS):
         item: items.Item
