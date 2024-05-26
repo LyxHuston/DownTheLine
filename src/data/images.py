@@ -131,8 +131,9 @@ SERPENT_BODY: list[Image] = [
     Image("entities/serpent/serpent_body_4")]
 
 # items
-SIMPLE_SWORD: Image = Image("items/simple_sword")
 SIMPLE_SPEAR: Image = Image("items/simple_spear")
+SIMPLE_SWORD: Image = Image("items/simple_sword")
+SIMPLE_DAGGER: Image = Image("items/simple_dagger")
 SIMPLE_SHIELD: Image = Image("items/simple_shield")
 HATCHET: Image = Image("items/hatchet")
 HATCHET_THROWN: list[Image] = img_range("entities/hatchet/hatchet", 3)

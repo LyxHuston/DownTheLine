@@ -79,14 +79,13 @@ class ItemType:
         self.first = first
 
 
-simple_stab_imgs = [images.SIMPLE_SWORD, images.SIMPLE_SPEAR]
+simple_stab_imgs = [images.SIMPLE_SPEAR, images.SIMPLE_SWORD, images.SIMPLE_DAGGER]
 
 
 def random_simple_stab(strength: int, random, pos: tuple[int, int] | None = None):
-    image = random.choice(simple_stab_imgs)
+    damage = random.randint(2, 4)
+    image = simple_stab_imgs[damage - 2]
     img = image.img
-
-    damage = max(3 - img.get_height() // 100, 0)
 
     choose = random.randint(1, 3)
     if choose == 1:
@@ -207,7 +206,7 @@ class ItemTypes(enum.Enum):
         SimpleCooldownAction,
         constructor=random_simple_stab,
         description=lambda item:  # state, tracker, cooldown ticks, duration ticks, damage, hit tracker
-        f"{('Spear', 'Sword')[item.data_pack[-2] - 2]}\n\n"
+        f"{('Spear', 'Sword', 'Dagger')[item.data_pack[-2] - 2]}\n\n"
         f"Deals {damage_description(item.data_pack[-2])} damage to enemies it hits.\n"
         f"The simplest weapon type.\n\n"
         f"Cooldown:{round(item.data_pack[2] / 60, 1)} second(s)\n"
