@@ -1162,11 +1162,14 @@ class ScrollableButtonHolder(ButtonHolder):
 
     def fit_y(self, margin: int = 0):
         buttons: list[game_structures.ButtonHolderTemplate] = list(filter(lambda b: b is not None, self.list))
-        min_y: int = min(buttons, key=lambda button: button.rect.top).rect.top
-        for button in buttons:
-            button.rect.top -= min_y
-            button.rect.top += margin
-        max_y: int = max(max(buttons, key=lambda button: button.rect.bottom).rect.bottom + margin, self.clip_rect.height)
+        if buttons:
+            min_y: int = min(buttons, key=lambda button: button.rect.top).rect.top
+            for button in buttons:
+                button.rect.top -= min_y
+                button.rect.top += margin
+            max_y: int = max(max(buttons, key=lambda button: button.rect.bottom).rect.bottom + margin, self.clip_rect.height)
+        else:
+            max_y: int = self.clip_rect.height
         self.background = pygame.Surface(
             (self.background.get_width(), max_y),
             self.background.get_flags(),
@@ -1178,11 +1181,14 @@ class ScrollableButtonHolder(ButtonHolder):
 
     def fit_x(self, margin: int = 0):
         buttons = list(filter(lambda b: b is not None, self.list))
-        min_x = min(buttons, key=lambda button: button.rect.left).rect.left
-        for button in buttons:
-            button.rect.left -= min_x
-            button.rect.left += margin
-        max_x = max(max(buttons, key=lambda button: button.rect.right).rect.right + margin, self.clip_rect.width)
+        if buttons:
+            min_x = min(buttons, key=lambda button: button.rect.left).rect.left
+            for button in buttons:
+                button.rect.left -= min_x
+                button.rect.left += margin
+            max_x = max(max(buttons, key=lambda button: button.rect.right).rect.right + margin, self.clip_rect.width)
+        else:
+            max_x = self.clip_rect.width
         self.background = pygame.Surface(
             (max_x, self.background.get_height()),
             self.background.get_flags(),
