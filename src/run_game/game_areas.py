@@ -211,9 +211,17 @@ class GameArea:
         for particle in self.particle_list:
             particle.reset_id_check()
 
+    allowable_thresh_holds = (
+        (entities.Slime, 0),
+        (entities.Crawler, 5),
+        (entities.Fencer, 10),
+        (entities.Archer, 10),
+        (entities.Knight, 15)
+    )
+
     def get_allowable(self):
         allowable_entities = []
-        for entry, threshold in BasicArea.allowable_thresh_holds:
+        for entry, threshold in self.allowable_thresh_holds:
             if threshold > self.index:
                 return allowable_entities
             if not isinstance(self, BasicArea):
@@ -246,9 +254,6 @@ class BasicArea(GameArea):
     """
     a basic fight area.  Fight a few monsters and continue.
     """
-
-    allowable_thresh_holds = ((entities.Slime, 0), (entities.Crawler, 5), (entities.Fencer, 10), (entities.Archer, 10),
-                              (entities.Knight, 15))
 
     def __init__(self, determiner, count):
         self.difficulty = count
