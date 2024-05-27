@@ -774,12 +774,16 @@ class BossArea(GameArea):
 guaranteed_type: Type[GameArea] | None = None
 
 
+def get_determiner():
+    return hash(str(game_states.SEED + game_states.LAST_AREA))
+
+
 @make_async(with_lock=True)
 @add_error_checking
 def add_game_area():
     # print(game_states.LAST_AREA)
     area: GameArea
-    determinator = hash(str(game_states.SEED + game_states.LAST_AREA))
+    determinator = get_determiner()
     if game_states.LAST_AREA == 0:
         def first_area_tutorial():
             tutorials.clear_tutorial_text()
