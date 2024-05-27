@@ -1890,6 +1890,8 @@ class SpawnerHolder(Holder):
 
 class KnockbackHolder(InvulnerableGlides, InvulnerableHolder):
 
+    immune_collide_below = 1
+
     def on_stop_gliding(self):
         gameboard.ENTITY_BOARD[self.index] = self.holding
 
