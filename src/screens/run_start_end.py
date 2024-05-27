@@ -17,6 +17,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 starts up a game instance
 """
+import dataclasses
 import datetime
 import enum
 import math
@@ -150,7 +151,7 @@ def reset_gameboard():
     # print(game_states.SEED)
 
 
-def start(with_seed: int = None, full: bool = True):
+def setup(with_seed: int = None, full: bool = True):
     if full:
         PAUSE_BUTTONS.clear()
         PAUSE_BUTTONS.add_button(game_structures.Button.make_text_button(
@@ -262,6 +263,8 @@ def start(with_seed: int = None, full: bool = True):
     gameboard.ENTITY_BOARD.append(game_structures.PLAYER_ENTITY)
 
     if full:
+        game_areas.guaranteed_type = None
+
         ingame.paused = False
 
         reset_gameboard()
@@ -283,9 +286,47 @@ def start(with_seed: int = None, full: bool = True):
             game_structures.TUTORIAL_FONTS[90]
         )
 
-        game_areas.add_game_area().join()
-        for i in range(game_states.AREA_QUEUE_MAX_LENGTH - 1):
-            game_areas.add_game_area()
+
+def start(with_seed: int = None, full: bool = True):
+    setup(with_seed, full)
+    game_areas.add_game_area().join()
+    for i in range(game_states.AREA_QUEUE_MAX_LENGTH - 1):
+        game_areas.add_game_area()
+
+
+@dataclasses.dataclass
+class CustomRun:
+    tutorial: tuple[int, int, int] = (True, True, True)
+    start: int = 3
+    custom_run: list[
+        tuple[Type[game_areas.GameArea], tuple] | Type[game_areas.GameArea]
+    ] = dataclasses.field(default_factory=list)
+    guaranteed_type: Type[game_areas.GameArea] = None
+
+
+def start_custom(custom: CustomRun):
+    setup()
+
+    for i, do in enumerate(custom.tutorial):
+        if do:
+            game_states.LAST_AREA = i
+            game_areas.add_game_area().join()
+
+    game_states.LAST_AREA = custom.start
+
+    for run in custom.custom_run:
+        if isinstance(run, tuple):
+            area_type: Type[game_areas.GameArea]
+            args: tuple
+            area_type, args = run
+            area = area_type(game_areas.get_determiner(), game_states.LAST_AREA, customized=True)
+            area.make(*args)
+        else:
+            area = run(game_areas.get_determiner(), game_states.LAST_AREA)
+        game_structures.AREA_QUEUE.append(area)
+        game_states.LAST_AREA += 1
+
+    game_areas.guaranteed_type = custom.guaranteed_type
 
 
 class GameAreaLog:
