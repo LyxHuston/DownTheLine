@@ -319,7 +319,24 @@ def lazers_setup(area):
 
 @lazers.set_check_win
 def lazer_win(area) -> bool:
-	return area.data_pack[0] == 0
+	if area.data_pack[0] == 0:
+		return True
+	if area.num_entities() > 3:
+		return False
+	if not any(
+		map(
+			lambda en: isinstance(en, (entities.DelayedDeploy, entities.MassDelayedDeploy, entities.Lazer)),
+			gameboard.ENTITY_BOARD
+		)
+	) and not not any(
+		map(
+			lambda en: isinstance(en, (entities.DelayedDeploy, entities.MassDelayedDeploy, entities.Lazer)),
+			gameboard.NEW_ENTITIES
+		)
+	):
+		game_structures.ALERTS.add_alert("Whoops!  Looks like the lazer minigame broke a bit.  Have a freebie!")
+		return True
+	return False
 
 
 __max_computed = 0
