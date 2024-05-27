@@ -800,7 +800,7 @@ def add_game_area():
                 game_structures.FONTS[100],
             )
 
-        area = GameArea(0, 900, determinator, customized=True)
+        area = GameArea(0, 450, determinator, customized=True)
         area.cross_boundary = first_area_tutorial
         area.entity_list.append(entities.Obstacle(pos=(0, 450)))
         area.entity_list.append(entities.ItemEntity(items.simple_stab(
