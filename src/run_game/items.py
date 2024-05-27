@@ -243,6 +243,7 @@ class ItemTypes(enum.Enum):
         "Release while dashing to halt a dash and deal more damage.\n\n"
         f"Cooldown:{round(item.data_pack[2] / 60, 1)} second(s)\n"
         f"Max Charge Length: {round(item.data_pack[3] / 60, 1)} second(s)"
+        f"Pierce: {'Infinite' if item.data_pack[4] == -1 else item.data_pack[4]}"
     )
     Boomerang: ItemType = ItemType(
         15,
