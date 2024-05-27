@@ -40,9 +40,10 @@ def damage_description(d: int) -> str:
         return ("no", "low", "moderate", "great", "high", "massive")[d]
     d -= 4
     d //= 5
-    if d <= 5:
+    if d <= 4:
         return ("massive", "extreme", "titanic", "catastrophic", "cataclysmic")[d]
     return "unimaginable"
+
 
 @dataclass
 class ItemType:
