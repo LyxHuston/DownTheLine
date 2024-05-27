@@ -25,6 +25,7 @@ import pygame
 
 from data import draw_constants, game_states
 from general_use import game_structures, utility
+from run_game import gameboard
 
 
 def run():
@@ -150,6 +151,9 @@ if __name__ == "__main__":
         draw_constants.hearts_y = game_states.HEIGHT - draw_constants.row_separation
 
         game_structures.CUSTOM_EVENT_CATCHERS.append(lambda catch: game_states.PLACE.catcher(catch))
+
+        gameboard.heart_img.convert()
+        gameboard.player_img.convert()
 
     # prompt is never user defined
     if not prompt.endswith("()"):

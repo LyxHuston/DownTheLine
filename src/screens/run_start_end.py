@@ -49,9 +49,7 @@ PAUSE_BUTTONS = game_structures.ButtonHolder()
 
 MESSAGE_LOG = game_structures.ScrollableButtonHolder(
     pygame.rect.Rect(game_states.WIDTH // 4, 0, game_states.WIDTH // 2 + 40, game_states.HEIGHT),
-    pygame.surface.Surface(
-        (game_states.WIDTH // 2 + 40, 0),
-    ),
+    None,
     scrollable_x=False,
     fill_color=(0, 0, 0, 255),
     outline_color=(255, 255, 255),
@@ -212,6 +210,7 @@ def start(with_seed: int = None, full: bool = True):
 
         game_structures.BUTTONS.clear()
         PAUSE_SWITCHER.background = pygame.Surface((game_states.WIDTH, game_states.HEIGHT), flags=pygame.SRCALPHA)
+        PAUSE_SWITCHER.background.convert()
         PAUSE_SWITCHER.rect = PAUSE_SWITCHER.background.get_rect()
         game_structures.BUTTONS.add_button(PAUSE_SWITCHER)
 

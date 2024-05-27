@@ -39,6 +39,7 @@ class Image:
         if self.__img is None:
             try:
                 self.__img = pygame.image.load(self.root + self.path + self.suffix)
+                self.__img.convert()
             except Exception:
                 return EMPTY
         return self.__img

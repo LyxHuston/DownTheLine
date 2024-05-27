@@ -257,6 +257,7 @@ class ButtonHolderTemplate(ABC):
             text_surface.fill(background_color)
         for i in range(len(lines)):
             text_surface.blit(lines[i], (text_align * (max_length - lines[i].get_width()), i * linesize))
+        text_surface.convert()
         return text_surface
 
 
@@ -797,6 +798,8 @@ class ButtonHolder(ButtonHolderTemplate):
         self.list = init_list
         if init_list is None:
             self.list = list()
+        if background is not None:
+            background.convert()
         self.background = background
         if _rect is None and self.background is not None:
             self.rect = self.background.get_rect()
