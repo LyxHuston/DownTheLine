@@ -51,8 +51,8 @@ class ItemType:
     constructor: Callable = lambda difficulty, random, pos: raise_abstract_item_type()  # constructor for item types
     description: Callable = (lambda item: f"{item.type.name}: {item.data_pack}", "Empty")  # get string description
     get_range: Callable = (utility.passing(0), 0)  # range, used for calculations when held by monsters
-    action_available: Callable = (utility.passing(False), False)  # check if an action is available
-    in_use: Callable = (utility.passing(False), False)  # check if item is in use
+    action_available: Callable = (utility.make_simple_always(False), False)  # check if an action is available
+    in_use: Callable = (utility.make_simple_always(False), False)  # check if item is in use
     held: Callable = (lambda item: isinstance(item.pos[0], entities.Entity), False)  # check if the item is held by an entity
     holder: Callable = (lambda item: item.pos[0], None)  # get the holder
     hand: Callable = (lambda item: item.pos[1], None)
@@ -246,6 +246,7 @@ class ItemTypes(enum.Enum):
     )
     Boomerang: ItemType = ItemType(
         15,
+        SimpleCooldownAction,
         constructor=boomerang,
         description=lambda item:
         "Boomerang\n\n"
@@ -254,7 +255,6 @@ class ItemTypes(enum.Enum):
         "When the boomerang returns to the user, "
         "the user will automatically pick it back up, unless the player is dashing.\n\n"
         f"Throw Strength: {item.data_pack[4]}",
-        in_use=in_use_basic,
         swappable=lambda item: not in_use(item)
     )
     Hammer: ItemType = ItemType(
