@@ -216,7 +216,7 @@ def lazer_init(area):
 		elif lazertype == 1:  # a bunch of trackers
 			tracker_delay = 30
 			num = area.random.randint(5, 8)
-			delay = (num + 1) * tracker_delay
+			delay = (num + 1) * (3 * tracker_delay + 15)
 			wave_make()
 			for tracker_count in range(num):
 				wave.append((
@@ -237,7 +237,7 @@ def lazer_init(area):
 		elif lazertype == 2:  # juggle 3 trackers
 			repeats = area.random.randint(3, 5)
 			tracker_delay = 30
-			delay = tracker_delay * (repeats + 1)
+			delay = (3 * tracker_delay + 15) * (repeats + 1)
 			wave_make()
 			for tracker_count in range(3):
 				wave.append((
@@ -280,7 +280,7 @@ def lazer_init(area):
 			charge_time = 60
 			fire_duration = 40
 			deploy_delay = 60
-			delay = (area.length // 14 + 12) * lifetime + num * deploy_delay
+			delay = (area.length // 7 + 20) * lifetime + num * deploy_delay
 			wave_make()
 			choices = (
 				entities.Lazer.BOTTOM,
