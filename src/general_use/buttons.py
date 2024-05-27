@@ -789,6 +789,7 @@ class DrawButton(Button):
         )
         new_rect = self.draw_func(onto, over, self.rect.topleft, *self.args)
         if new_rect is not None:
+            self.img = onto.subsurface(new_rect)
             self.rect = new_rect
 
 
