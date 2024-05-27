@@ -89,12 +89,6 @@ def switch_to_message_log():
     else:
         y = 0
     width = 2 * game_states.WIDTH // 3 + 40
-    MESSAGE_LOG.rect = pygame.rect.Rect(0, 0, width, game_states.HEIGHT)
-    MESSAGE_LOG.clip_rect = pygame.rect.Rect(0, 0, width, game_states.HEIGHT)
-    MESSAGE_LOG.window = pygame.rect.Rect((game_states.WIDTH - width) // 2, 0, width, game_states.HEIGHT)
-    MESSAGE_LOG.background = pygame.surface.Surface(
-        (width, 0)
-    )
     for i in range(len(MESSAGE_LOG.list), len(tutorials.LOG)):
         log = tutorials.LOG[i]
         if log is None:
@@ -235,6 +229,14 @@ def setup(with_seed: int = None, full: bool = True):
             "Back", 128, (0, 0), switch_to_main_pause,
             background_color=(0, 0, 0), outline_color=(255, 255, 255), x_align=0,
             y_align=0, border_width=5)
+
+        width = 2 * game_states.WIDTH // 3 + 40
+        MESSAGE_LOG.rect = pygame.rect.Rect(0, 0, width, game_states.HEIGHT)
+        MESSAGE_LOG.clip_rect = pygame.rect.Rect(0, 0, width, game_states.HEIGHT)
+        MESSAGE_LOG.window = pygame.rect.Rect((game_states.WIDTH - width) // 2, 0, width, game_states.HEIGHT)
+        MESSAGE_LOG.background = pygame.surface.Surface(
+            (width, 0)
+        )
 
         game_structures.BUTTONS.clear()
         PAUSE_SWITCHER.background = pygame.Surface((game_states.WIDTH, game_states.HEIGHT), flags=pygame.SRCALPHA)
