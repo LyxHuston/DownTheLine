@@ -93,7 +93,6 @@ class GameArea:
     __have_starter = False
 
     def __new_init(self, *args, customized: bool = False, **kwargs):
-        print("using replaced init")
         self.customized = customized
         self.__class__.__old_init(self, *args, **kwargs)
 
