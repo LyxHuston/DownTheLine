@@ -740,6 +740,58 @@ class Button(ButtonHolderTemplate):
             return result
 
 
+class DrawButton(Button):
+
+    def __init__(self, text: str,
+                 draw_func: Callable[[pygame.Surface, bool, tuple[int, int]], pygame.Rect | None] |
+                 Callable[[pygame.Surface, bool, tuple[int, int], Any, ...], pygame.Rect | None],
+                 _rect: pygame.Rect, colors: tuple | list | None = None,
+                 data_pack: Any = None, down_click: Union[None, Callable] = None,
+                 up_click: Union[None, Callable] = None, hold_click: Union[None, Callable] = None,
+                 down_arguments: Union[None, dict[str, Any]] = None, up_arguments: Union[None, dict[str, Any]] = None,
+                 hold_arguments: Union[None, dict[str, Any]] = None, special_press: tuple = (),
+                 visible_check: Callable[[], bool] = utility.passing):
+        """
+        initialize a button
+        :param down_click:
+        :param text
+        :param down_arguments:
+        :param special_press:
+        """
+        self.draw_func = draw_func
+        self.args = tuple(filter(lambda x: x is not None, [colors, data_pack]))
+
+        super().__init__(
+            img=None,
+            text=text,
+            _rect=_rect,
+            down_click=down_click,
+            up_click=up_click,
+            hold_click=hold_click,
+            down_arguments=down_arguments,
+            up_arguments=up_arguments,
+            hold_arguments=hold_arguments,
+            special_press=special_press,
+            visible_check=visible_check
+        )
+
+    def render_onto(self, onto: Surface, mouse_pos: tuple[int, int]) -> None:
+        """
+        draw onto a surface
+        :return:
+        """
+        if not self.visible():
+            return
+        over = any(
+            click is not None for click in self.clicks
+        ) and (
+            self.keyed or (self.rect is not None and self.rect.collidepoint(mouse_pos))
+        )
+        new_rect = self.draw_func(onto, over, self.rect.topleft, *self.args)
+        if new_rect is not None:
+            self.rect = new_rect
+
+
 class ButtonHolder(ButtonHolderTemplate):
     """
     holds a list of buttons or button holders

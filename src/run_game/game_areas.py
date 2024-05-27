@@ -302,7 +302,7 @@ class BasicArea(GameArea):
                 if not add.tutorial_given:
                     add.tutorial_given = True
                     tutorials.clear_tutorial_text()
-                    tutorials.add_text(add.tutorial_text, game_structures.FONTS[100])
+                    tutorials.add_texts([(add.tutorial_text, game_structures.FONTS[100])])
 
             self.cross_boundary = first_see_of_entity
         else:
@@ -363,18 +363,18 @@ class BreakThroughArea(GameArea):
         if not BreakThroughArea.tutorial_given:
             BreakThroughArea.tutorial_given = True
             tutorials.clear_tutorial_text()
-            tutorials.add_text(
-                "Oh, they left their spawners active.",
-                game_structures.FONTS[100]
-            )
-            tutorials.add_text(
-                "Irresponsible for the fabric of reality, but oh well.",
-                game_structures.FONTS[100]
-            )
-            tutorials.add_text(
-                "You'll need to kill them quick enough to break through.",
-                game_structures.FONTS[100]
-            )
+            tutorials.add_texts([
+                (
+	                "Oh, they left their spawners active.",
+	                game_structures.FONTS[100]
+	            ), (
+	                "Irresponsible for the fabric of reality, but oh well.",
+	                game_structures.FONTS[100]
+	            ), (
+	                "You'll need to kill them quick enough to break through.",
+	                game_structures.FONTS[100]
+	            )
+            ])
 
 
 class GiftArea(GameArea):
@@ -413,18 +413,18 @@ class GiftArea(GameArea):
         if not GiftArea.tutorial_given:
             GiftArea.tutorial_given = True
             tutorials.clear_tutorial_text()
-            tutorials.add_text(
-                "New items for you!",
-                game_structures.FONTS[100]
-            )
-            tutorials.add_text(
-                "I'm not certain if it will be more powerful than your current ones.",
-                game_structures.FONTS[100]
-            )
-            tutorials.add_text(
-                "Hold space to switch items.",
-                game_structures.TUTORIAL_FONTS[90],
-            )
+            tutorials.add_texts([
+                (
+                    "New items for you!",
+                    game_structures.FONTS[100]
+                ), (
+                    "I'm not certain if it will be more powerful than your current ones.",
+                    game_structures.FONTS[100]
+                ), (
+                    "Hold space to switch items.",
+                    game_structures.TUTORIAL_FONTS[90],
+                )
+            ])
 
 
 class EnslaughtAreaEventType(enum.Enum):
@@ -636,14 +636,15 @@ class EnslaughtArea(GameArea, have_starter=True):
         if not EnslaughtArea.tutorial_given:
             EnslaughtArea.tutorial_given = True
             tutorials.clear_tutorial_text()
-            tutorials.add_text(
-                "Oh, it's one of these places.",
-                game_structures.FONTS[100]
-            )
-            tutorials.add_text(
-                "Challenges will come in waves.  You won't get time to rest.  Good luck.",
-                game_structures.FONTS[100]
-            )
+            tutorials.add_texts([
+                (
+                    "Oh, it's one of these places.",
+                    game_structures.FONTS[100]
+                ), (
+                    "Challenges will come in waves.  You won't get time to rest.  Good luck.",
+                    game_structures.FONTS[100]
+                )
+            ])
 
 
 from run_game.minigames import Minigame
@@ -703,18 +704,18 @@ class MinigameArea(GameArea, have_starter=True):
         if not MinigameArea.tutorial_given:
             MinigameArea.tutorial_given = True
             tutorials.clear_tutorial_text()
-            tutorials.add_text(
-                "Ah, one of their sports.",
-                game_structures.FONTS[100]
-            )
-            tutorials.add_text(
-                "I don't know much about these, but there's some sort of goal.",
-                game_structures.FONTS[100]
-            )
-            tutorials.add_text(
-                "Try to figure out the game quick, before it kills you.",
-                game_structures.FONTS[100]
-            )
+            tutorials.add_texts([
+                (
+                    "Ah, one of their sports.",
+                    game_structures.FONTS[100]
+                ), (
+                    "I don't know much about these, but there's some sort of goal.",
+                    game_structures.FONTS[100]
+                ), (
+                    "Try to figure out the game quick, before it kills you.",
+                    game_structures.FONTS[100]
+                )
+            ])
 
 
 class BossArea(GameArea):
@@ -763,22 +764,21 @@ class BossArea(GameArea):
         if not BossArea.tutorial_given:
             BossArea.tutorial_given = True
             tutorials.clear_tutorial_text()
-            tutorials.add_text(
-                "You stumbled across one of their generals.",
-                game_structures.FONTS[100]
-            )
-            tutorials.add_text(
-                "I suppose it was inevitable.  Only one way to go, after all.",
-                game_structures.FONTS[100]
-            )
-            tutorials.add_text(
-                "Any of their generals are more powerful than any creature you've seen so far,",
-                game_structures.FONTS[100]
-            )
-            tutorials.add_text(
-                "and they don't follow the same rules as you, I, or the others.",
-                game_structures.FONTS[100]
-            )
+            tutorials.add_texts([
+                (
+                    "You stumbled across one of their generals.",
+                    game_structures.FONTS[100]
+                ), (
+                    "I suppose it was inevitable.  Only one way to go, after all.",
+                    game_structures.FONTS[100]
+                ), (
+                    "Any of their generals are more powerful than any creature you've seen so far,",
+                    game_structures.FONTS[100]
+                ), (
+                    "and they don't follow the same rules as you, I, or the others.",
+                    game_structures.FONTS[100]
+                )
+            ])
 
 
 guaranteed_type: Type[GameArea] | None = None
@@ -797,22 +797,21 @@ def add_game_area():
     if game_states.LAST_AREA == 0:
         def first_area_tutorial():
             tutorials.clear_tutorial_text()
-            tutorials.add_text(
-                "Pick up the weapon and use it to destroy the wall.",
-                game_structures.FONTS[100],
-            )
-            tutorials.add_text(
-                "Hurry, you don't have much time.",
-                game_structures.FONTS[100],
-            )
-            tutorials.add_text(
-                "Stand on top of the item and use right or left mouse button to pick it up and use it.",
-                game_structures.TUTORIAL_FONTS[90],
-            )
-            tutorials.add_text(
-                "You'll need to use the weapon to kill the slime.  Beware, they move entirely randomly.",
-                game_structures.FONTS[100],
-            )
+            tutorials.add_texts([
+                (
+                    "Pick up the weapon and use it to destroy the wall.",
+                    game_structures.FONTS[100],
+                ), (
+                    "Hurry, you don't have much time.",
+                    game_structures.FONTS[100],
+                ), (
+                    "Stand on top of the item and use right or left mouse button to pick it up and use it.",
+                    game_structures.TUTORIAL_FONTS[90],
+                ), (
+                    "You'll need to use the weapon to kill the slime.  Beware, they move entirely randomly.",
+                    game_structures.FONTS[100],
+                )
+            ])
 
         area = GameArea(0, 450, determinator, customized=True)
         area.cross_boundary = first_area_tutorial
@@ -851,14 +850,15 @@ def add_game_area():
 
         def last_tutorial_area():
             tutorials.clear_tutorial_text()
-            tutorials.add_text(
-                "There's another weapon here for you, but unfortunately I can't help you much.",
-                game_structures.FONTS[100],
-            )
-            tutorials.add_text(
-                "Good luck.  Maybe if you go far enough you'll be able to find something that will let you escape from this.",
-                game_structures.FONTS[100],
-            )
+            tutorials.add_texts([
+                (
+                    "There's another weapon here for you, but unfortunately I can't help you much.",
+                    game_structures.FONTS[100],
+                ), (
+                    "Good luck.  Maybe if you go far enough you'll be able to find something that will let you escape from this.",
+                    game_structures.FONTS[100],
+                )
+            ])
 
         area = GameArea(2, 750, determinator, customized=True)
         area.cross_boundary = last_tutorial_area

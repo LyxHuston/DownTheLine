@@ -52,7 +52,7 @@ MESSAGE_LOG = game_structures.ScrollableButtonHolder(
     pygame.rect.Rect(game_states.WIDTH // 4, 0, game_states.WIDTH // 2 + 40, game_states.HEIGHT),
     None,
     scrollable_x=False,
-    fill_color=(0, 0, 0, 255),
+    fill_color=(0, 0, 0),
     outline_color=(255, 255, 255),
     outline_width=5
 )
@@ -70,6 +70,18 @@ PAUSE_SWITCHER = game_structures.SwitchHolder(
 )
 
 
+def line(onto: pygame.Surface, _: bool, pos: tuple[int, int]):
+    y: int = pos[1]
+    width = onto.get_width()
+    pygame.draw.line(
+        onto,
+        (255, 255, 255),
+        (0, y),
+        (width, y),
+        5
+    )
+
+
 def switch_to_message_log():
     y = 0
     width = 2 * game_states.WIDTH // 3 + 40
@@ -80,19 +92,29 @@ def switch_to_message_log():
         (width, 0)
     )
     for log in tutorials.LOG:
-        button = game_structures.Button.make_text_button(
-            log.text,
-            log.font,
-            (20, y),
-            max_line_pixels=width - 40,
-            background_color=(0, 0, 0),
-            outline_color=(255, 255, 255),
-            x_align=0,
-            y_align=0,
-            border_width=2
-        )
+        if log is None:
+            y += 20
+            button = game_structures.DrawButton(
+                "Message Separator",
+                line,
+                pygame.rect.Rect(0, y - 12, 0, 0),
+            )
+        else:
+            button = game_structures.Button.make_text_button(
+                log.text,
+                log.font,
+                (20, y),
+                max_line_pixels=width - 40,
+                background_color=(0, 0, 0),
+                outline_color=(255, 255, 255),
+                x_align=0,
+                y_align=0,
+                border_width=0
+            )
+            y += button.img.get_height()
         MESSAGE_LOG.add_button(button)
-        y += button.img.get_height() + 20
+        y += 40
+
     MESSAGE_LOG.fit_y(20)
     PAUSE_SWITCHER.view = 1
 
@@ -269,22 +291,21 @@ def setup(with_seed: int = None, full: bool = True):
 
         reset_gameboard()
 
-        tutorials.add_text(
-            "Oh, you're awake.  Good.  (press ENTER)",
-            game_structures.FONTS[100]
-        )
-        tutorials.add_text(
-            "You need to be able to defend yourself.  They won't let you live in peace.",
-            game_structures.FONTS[100]
-        )
-        tutorials.add_text(
-            "Can you go up?",
-            game_structures.FONTS[100]
-        )
-        tutorials.add_text(
-            "Use the w and s keys to move up and down.  Press d to dash in your current direction.",
-            game_structures.TUTORIAL_FONTS[90]
-        )
+        tutorials.add_texts([
+            (
+                "Oh, you're awake.  Good.  (press ENTER)",
+                game_structures.FONTS[100]
+            ), (
+                "You need to be able to defend yourself.  They won't let you live in peace.",
+                game_structures.FONTS[100]
+            ), (
+                "Can you go up?",
+                game_structures.FONTS[100]
+            ), (
+                "Use the w and s keys to move up and down.  Press d to dash in your current direction.",
+                game_structures.TUTORIAL_FONTS[90]
+            )
+        ])
 
 
 def start(with_seed: int = None, full: bool = True):

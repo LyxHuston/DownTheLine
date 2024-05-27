@@ -39,7 +39,7 @@ TUTORIAL_VOICE_CHANNEL = None
 
 
 TUTORIAL_TEXTS: deque[TutorialText] = deque()
-LOG: deque[TutorialText] = deque()
+LOG: deque[TutorialText | None] = deque()
 on: TutorialText | None = None
 current_text: str = ""
 
@@ -130,6 +130,8 @@ def add_text(text: str, font: pygame.font.Font, sound: pygame.mixer.Sound = None
 
 
 def add_texts(texts: list[tuple[str, pygame.font.Font, [pygame.mixer.Sound]]]):
+    if LOG:
+        LOG.append(None)
     for text in texts:
         add_text(*text)
 
