@@ -63,10 +63,6 @@ SEED: int = 0
 # settings
 DO_TTS: bool = False
 # dev tools
-AUTOSAVE: bool = False
-# SAVE_DATA = None
-# HANDS_SAVE = None
-# QUEUE_SAVE = None
 INVULNERABLE: bool = False
 CUSTOM_SEED: bool = False
 PRINT_SEED: bool = False
