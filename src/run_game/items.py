@@ -1091,6 +1091,7 @@ def hammer_tick(item: Item):
                 if from_player(item):
                     game_states.TIME_SINCE_LAST_INTERACTION = 0
                 target = min(collided, key=lambda en: abs(user.y - en.y))
+                gameboard.PARTICLE_BOARD.add(entities.EXPLOSION_PARTICLES(target.pos))
                 target.hit(5, item)
                 damage = 2
                 speed = 10
