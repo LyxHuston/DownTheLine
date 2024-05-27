@@ -766,6 +766,9 @@ class BossArea(GameArea):
             )
 
 
+guaranteed_type: Type[GameArea] | None = None
+
+
 @make_async(with_lock=True)
 @add_error_checking
 def add_game_area():
@@ -816,6 +819,8 @@ def add_game_area():
         # area.entity_list.append(entities.ItemEntity(items.bow(20, area.random, (0, 300))))  # bow
         # area.entity_list.append(entities.ItemEntity(items.boomerang(20, area.random, (0, 360))))  # boomerang
         # area.entity_list.append(entities.ItemEntity(items.hammer(20, area.random, (0, 420))))  # hammer
+    elif guaranteed_type is not None:
+        area = guaranteed_type(determinator, game_states.LAST_AREA + guaranteed_type.first_allowed_spawn)
     elif game_states.LAST_AREA == 1:
         area = GameArea(1, 450, determinator, customized=True)
         area.entity_list.append(entities.Obstacle(pos=(0, area.length), health=5))
