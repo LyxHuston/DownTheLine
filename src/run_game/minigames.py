@@ -304,7 +304,7 @@ def lazer_init(area):
 					)
 				))
 	# wave = [(entities.MassDelayedDeploy, (delay, area, wave, register, deploy))]
-	delay = 0
+	delay = 1
 	wave_make()
 	e = wave[0][0](*wave[0][1])
 	preset(area, rep + 1, e, None, -10)
