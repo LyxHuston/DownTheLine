@@ -792,9 +792,9 @@ def add_game_area():
                 game_structures.FONTS[100],
             )
 
-        area = GameArea(0, 300, determinator, customized=True)
+        area = GameArea(0, 900, determinator, customized=True)
         area.cross_boundary = first_area_tutorial
-        area.entity_list.append(entities.Obstacle(pos=(0, 170)))
+        area.entity_list.append(entities.Obstacle(pos=(0, 450)))
         area.entity_list.append(entities.ItemEntity(items.simple_stab(
             50,
             35,
@@ -802,6 +802,20 @@ def add_game_area():
             images.SIMPLE_SWORD.outlined_img,
             (-images.SIMPLE_SWORD.outlined_img.get_width() // 4, 60)
         )))
+
+        area.entity_list.append(entities.ItemEntity(items.simple_stab(
+            50,
+            35,
+            images.SIMPLE_DAGGER.img,
+            images.SIMPLE_DAGGER.outlined_img,
+            (-images.SIMPLE_DAGGER.outlined_img.get_width() // 4, 120)
+        )))
+        area.entity_list.append(entities.ItemEntity(items.simple_shield((0, 180))))
+        area.entity_list.append(
+            entities.ItemEntity(items.random_simple_throwable(20, area.random, (0, 240))))  # throwable
+        area.entity_list.append(entities.ItemEntity(items.bow(20, area.random, (0, 300))))  # bow
+        area.entity_list.append(entities.ItemEntity(items.boomerang(20, area.random, (0, 360))))  # boomerang
+        area.entity_list.append(entities.ItemEntity(items.hammer(20, area.random, (0, 420))))  # hammer
     elif game_states.LAST_AREA == 1:
         area = GameArea(1, 450, determinator, customized=True)
         area.entity_list.append(entities.Obstacle(pos=(0, area.length), health=5))

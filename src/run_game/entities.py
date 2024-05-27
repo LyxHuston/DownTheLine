@@ -65,6 +65,7 @@ class Entity(game_structures.Body):
     has_camera_mass: bool = True
 
     collide_priority: int = 0
+    immune_collide_below: int = 0
 
     @property
     def alive(self) -> bool:
@@ -322,9 +323,9 @@ class Entity(game_structures.Body):
 
     def colliding(self, additional_predicate: Callable[[Self], bool] = None) -> list[Self]:
         predicate = (
-            lambda e: self.collide(e) and self.collide_priority >= e.collide_priority
+            lambda e: self.collide(e) and self.collide_priority >= e.immune_collide_below
         ) if additional_predicate is None else (
-            lambda e: self.collide(e) and self.collide_priority >= e.collide_priority and  additional_predicate(e)
+            lambda e: self.collide(e) and self.collide_priority >= e.immune_collide_below and additional_predicate(e)
         )
         return self.all_in_range(
             self.height // 2 + Entity.biggest_radius,
@@ -486,6 +487,8 @@ class ItemEntity(InvulnerableEntity):
     """
     wrapper entity for items and abilities while on the ground to make them easier to work with
     """
+
+    collide_priority = 1
 
     is_item_entity = True
 
@@ -1016,6 +1019,8 @@ class Fencer(Glides):
 
 
 class Projectile(Entity):
+
+    collide_priority = 2
 
     def __init__(self, img: pygame.Surface, rotation: int, pos: tuple[int, int], health: int = 1, speed: int = 1,
                  num_hit: int = 1, damage: int = 1, expiry: int = None, alliance: bool = False):
@@ -2096,6 +2101,9 @@ class Bomb(InvulnerableGlides):
 
 class Hatchet(InvulnerableGlides):
 
+    collide_priority = 2
+    immune_collide_below = 1
+
     imgs = images.HATCHET_THROWN
     buried = images.HATCHET_BURIED
 
@@ -2158,6 +2166,8 @@ class Hatchet(InvulnerableGlides):
 
 
 class Boomerang(InvulnerableEntity):
+
+    collide_priority = 2
 
     imgs = images.BOOMERANG_IN_FLIGHT
 
