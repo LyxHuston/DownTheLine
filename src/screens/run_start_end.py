@@ -317,9 +317,10 @@ def setup(with_seed: int = None, full: bool = True):
 
 def start(with_seed: int = None, full: bool = True):
     setup(with_seed, full)
-    game_areas.add_game_area().join()
-    for i in range(game_states.AREA_QUEUE_MAX_LENGTH - 1):
-        game_areas.add_game_area()
+    if full:
+        game_areas.add_game_area().join()
+        for i in range(game_states.AREA_QUEUE_MAX_LENGTH - 1):
+            game_areas.add_game_area()
 
 
 @dataclasses.dataclass
