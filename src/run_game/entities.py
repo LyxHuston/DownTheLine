@@ -1911,6 +1911,8 @@ class KnockbackHolder(InvulnerableGlides, InvulnerableHolder):
 
     def tick(self):
         self.glide_tick()
+        if self.glide_duration % 3 == 0:
+            gameboard.PARTICLE_BOARD.add(DASH_RIPPLE_PARTICLES(self.pos))
         collide_list = self.holding.colliding(
             additional_predicate=lambda en: self.allied_with_player is not en.allied_with_player
         )
