@@ -63,6 +63,7 @@ SEED: int = 0
 # settings
 DO_TTS: bool = False
 # dev tools
+ADMIN: bool = False
 INVULNERABLE: bool = False
 CUSTOM_SEED: bool = False
 PRINT_SEED: bool = False

@@ -76,6 +76,10 @@ if __name__ == "__main__":
         help="The mode for the program to run in."
     )
     parser.add_argument(
+        "-a", "--admin", action="store_true",
+        help="Run the game in admin mode.  Gives extra options and dev tools."
+    )
+    parser.add_argument(
         "-c", "--with_interactive_console", action="store_true",
         help="Start up an interactive console during runtime.  Please close before exit."
     )
@@ -114,8 +118,8 @@ if __name__ == "__main__":
         backdrop = (0, 0, 0)
 
     if __run:
-        if args.print_seed:
-            game_states.PRINT_SEED = True
+        game_states.PRINT_SEED = args.print_seed
+        game_states.ADMIN = args.admin
         if args.with_interactive_console:
             import code
 
