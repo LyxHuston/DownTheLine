@@ -61,6 +61,8 @@ class GameArea:
         return self.start_coordinate + self.length
 
     def __init__(self, index: int, length: int = None, seed: int = None, customized: bool = False):
+        if not hasattr(self, "customized"):
+            self.customized = customized
         self.index: int = index
         if not hasattr(self, "difficulty"):
             self.difficulty = index
@@ -85,12 +87,21 @@ class GameArea:
         self.ender: entities.AreaStopper | None = None
         if self.__have_starter:
             self.starter: entities.AreaStarter | None = None
-        if not customized:
+        if not self.customized:
             self.determine_parts()
 
     __have_starter = False
 
+    def __new_init(self, *args, customized: bool = False, **kwargs):
+        print("using replaced init")
+        self.customized = customized
+        self.__class__.__old_init(self, *args, **kwargs)
+
     def __init_subclass__(cls, have_starter: bool = False):
+        if cls.__init__ is not GameArea.__init__:
+            cls.__old_init = cls.__init__
+            cls.__init__ = cls.__new_init
+
         super().__init_subclass__()
         cls.tutorial_given = False
         cls.__have_starter = have_starter
