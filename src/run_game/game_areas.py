@@ -376,7 +376,7 @@ class GiftArea(GameArea):
         self.difficulty = count
         super().__init__(count, seed=determiner, length=1500)
 
-    experiment_area_length = 1800
+    experiment_area_length = 1200
 
     def determine_parts(self):
         self.make(
