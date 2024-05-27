@@ -76,14 +76,18 @@ def line(onto: pygame.Surface, _: bool, pos: tuple[int, int]):
     pygame.draw.line(
         onto,
         (255, 255, 255),
-        (0, y),
-        (width, y),
+        (0, y - 12),
+        (width, y - 12),
         5
     )
 
 
 def switch_to_message_log():
-    y = 0
+    if MESSAGE_LOG.list:
+        rect = max(MESSAGE_LOG.list, key=lambda but: but.rect.y).rect
+        y = rect.bottom + 40
+    else:
+        y = 0
     width = 2 * game_states.WIDTH // 3 + 40
     MESSAGE_LOG.rect = pygame.rect.Rect(0, 0, width, game_states.HEIGHT)
     MESSAGE_LOG.clip_rect = pygame.rect.Rect(0, 0, width, game_states.HEIGHT)
@@ -91,13 +95,14 @@ def switch_to_message_log():
     MESSAGE_LOG.background = pygame.surface.Surface(
         (width, 0)
     )
-    for log in tutorials.LOG:
+    for i in range(len(MESSAGE_LOG.list), len(tutorials.LOG)):
+        log = tutorials.LOG[i]
         if log is None:
             y += 20
             button = game_structures.DrawButton(
                 "Message Separator",
                 line,
-                pygame.rect.Rect(0, y - 12, 0, 0),
+                pygame.rect.Rect(0, y, 0, 0),
             )
         else:
             button = game_structures.Button.make_text_button(

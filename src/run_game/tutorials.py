@@ -39,7 +39,7 @@ TUTORIAL_VOICE_CHANNEL = None
 
 
 TUTORIAL_TEXTS: deque[TutorialText] = deque()
-LOG: deque[TutorialText | None] = deque()
+LOG: list[TutorialText | None] = list()
 on: TutorialText | None = None
 current_text: str = ""
 
