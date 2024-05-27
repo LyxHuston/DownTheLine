@@ -1284,7 +1284,7 @@ class ScrollableButtonHolder(ButtonHolder):
             return False
         if click:
             for button in self.list:
-                if button is None:
+                if button is None or not button.rect.colliderect(self.clip_rect):
                     continue
                 if button.do_click(interior_mouse_pos, click_type):
                     return True
@@ -1306,7 +1306,7 @@ class ScrollableButtonHolder(ButtonHolder):
         else:
             self.background.fill(self.fill_color)
         for button in self.list:
-            if button is None:
+            if button is None or not button.rect.colliderect(self.clip_rect):
                 continue
             button.render_onto(self.background, inside_mouse_pos)
         window = self.background.subsurface(self.clip_rect)

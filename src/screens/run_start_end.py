@@ -76,8 +76,8 @@ def line(onto: pygame.Surface, _: bool, pos: tuple[int, int]):
     pygame.draw.line(
         onto,
         (255, 255, 255),
-        (0, y - 12),
-        (width, y - 12),
+        (0, y - 11),
+        (width, y - 11),
         5
     )
 
@@ -102,7 +102,7 @@ def switch_to_message_log():
             button = game_structures.DrawButton(
                 "Message Separator",
                 line,
-                pygame.rect.Rect(0, y, 0, 0),
+                pygame.rect.Rect(0, y - 1, 1, 1),
             )
         else:
             button = game_structures.Button.make_text_button(
