@@ -933,9 +933,10 @@ def simple_throwable_action(item: Item):
     :return:
     """
     user: entities.Entity = holder(item)
-    user.hands[item.pos[1]] = None  # remove from hands of entity throwing
+    _hand = hand(item)
+    user.hands[_hand] = None  # remove from hands of entity throwing
     if user is game_structures.PLAYER_ENTITY:
-        ingame.pickup_to_hand(item.pos)  # refill player hands
+        ingame.pickup_to_hand(_hand)  # refill player hands
     ent = item.data_pack[0](user.pos, user.rotation, *item.data_pack[1])  # create entity
     ent.allied_with_player = user.allied_with_player
     gameboard.NEW_ENTITIES.append(ent)  # add entity to entity list
