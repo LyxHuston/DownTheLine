@@ -647,7 +647,7 @@ def simple_shield_draw(item: Item):
     ent = item.pos[0]
     _hand = item.pos[1] * 2 - 1
     rotated = pygame.transform.rotate(
-        pygame.transform.flip(item.img, _hand == -1, False),
+        item.img,
         ent.rotation + 270
     )
     game_structures.SCREEN.blit(
