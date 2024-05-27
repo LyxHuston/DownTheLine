@@ -919,10 +919,12 @@ def simple_shield_tick(item: Item):
         rect.y += change
 
         e: entities.Entity
-        for e in collide_list:
-            e.flashing = 1
-            if e.colliderect(rect):
-                e.y = user.y + (radius + e.rect.height // 2 + 1) * ((e.y - user.y > 0) * 2 - 1)
+        for e in filter(lambda en: en.colliderect(rect), collide_list):
+            e.y = user.y + (radius + e.rect.height // 2 + 1) * ((e.y - user.y > 0) * 2 - 1)
+        if dashing:
+            for e in collide_list:
+                e.flashing = 1
+
     return True
 
 
@@ -1143,7 +1145,6 @@ def hammer_draw(item: Item):
         rotated,
         game_structures.to_screen_pos(point)
     )
-
 
 
 def make_random_single_use(random, pos):
