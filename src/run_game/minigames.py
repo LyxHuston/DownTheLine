@@ -120,7 +120,7 @@ def fish_init(area):
 
 @fish.set_setup
 def fish_setup(area):
-	gameboard.NEW_ENTITY.extend(entity_tracker(area))
+	gameboard.NEW_ENTITIES.extend(entity_tracker(area))
 
 
 @notes.set_check_win
