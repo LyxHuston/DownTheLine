@@ -844,8 +844,8 @@ class Slime(Glides):
     def make(cls, determiner: int, area):
         new_slime = cls(
             (0, area.random.randint(area.length // 3, area.length)),
+            area.random.randint(0, 2 ** 32 - 1),
             area.difficulty,
-            seed=area.random.randint(0, 2 ** 32 - 1)
         )
         return new_slime
 
