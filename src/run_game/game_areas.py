@@ -337,7 +337,7 @@ class BreakThroughArea(GameArea):
         allowance = self.difficulty
         spawner_list = []
         while allowance > 0:
-            spawner = entities.Spawner.make(self.seed, self)
+            spawner = entities.Spawner.make(self.seed + allowance, self)
             spawner_list.append(spawner)
             if spawner.limit is None:
                 allowance -= 2 * (spawner.delay // 200 + 1) * (spawner.entity.cost + 1) ** 2
@@ -353,7 +353,7 @@ class BreakThroughArea(GameArea):
             entity = allowable_entities[index][0]
             allowance -= entity.cost + allowable_entities[index][1] ** 2
             allowable_entities[index][1] += 1
-            entity_list.append(entity.make(self.seed, self))
+            entity_list.append(entity.make(self.seed + num, self))
         self.make(spawner_list, entity_list)
 
     def make(self, spawner_list: list[entities.Spawner], entity_list: list[entities.Entity]):
