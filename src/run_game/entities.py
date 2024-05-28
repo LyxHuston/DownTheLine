@@ -842,8 +842,11 @@ class Slime(Glides):
 
     @classmethod
     def make(cls, determiner: int, area):
-        new_slime = cls((0, area.random.randint(area.length // 3, area.length)), area.difficulty)
-        new_slime.random.seed(area.random.randint(0, 2 ** 32 - 1))
+        new_slime = cls(
+            (0, area.random.randint(area.length // 3, area.length)),
+            area.difficulty,
+            seed=area.random.randint(0, 2 ** 32 - 1)
+        )
         return new_slime
 
 
@@ -1092,7 +1095,7 @@ class Archer(Glides):
         super().__init__(images.ARCHER_RELAXED.img, 0, pos)
         self.max_health = 1
         self.health = 1
-        self.area = area
+        self.random = area.random.randint()
         self.cooldown_length = max(240 - difficulty * 6, 60)
         self.cooldown = self.cooldown_length
 
