@@ -452,7 +452,6 @@ class EnslaughtAreaEvent:
             self.add_entities.append(entities.Spawner(
                 pos,
                 1,
-                area,
                 0,
                 entities.make_item_duplicator(items.make_random_single_use(area.random, pos)),
                 (0, None),

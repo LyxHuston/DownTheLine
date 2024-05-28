@@ -1108,7 +1108,7 @@ class Archer(Glides):
         if self.cooldown == 0:
             if dist < 900:
                 self.cooldown = self.cooldown_length
-                gameboard.NEW_ENTITIES.append(Projectile(images.ARROW.outlined_img, self.rotation, (self.x + self.area.random.randint(-1, 1) * 16, self.y), speed=5))
+                gameboard.NEW_ENTITIES.append(Projectile(images.ARROW.outlined_img, self.rotation, (self.x + self.random.randint(-1, 1) * 16, self.y), speed=5))
         elif self.in_view():
             self.cooldown -= 1
             self.img = self.imgs[3 * self.cooldown // self.cooldown_length]
@@ -1565,12 +1565,12 @@ class Spawner(Entity):
     def spawning(self):
         return self.__spawning
 
-    def __init__(self, pos: tuple[int, int], limit: int | None, area, delay: int, entity: EntityType, deposit: tuple[int | None, int | None], speed: int):
+    def __init__(self, pos: tuple[int, int], limit: int | None, delay: int, entity: EntityType, deposit: tuple[int | None, int | None], speed: int):
         super().__init__(self.imgs[0].img if isinstance(self.imgs[0], images.Image) else self.imgs[0], 0, pos)
         self.max_health = 3
         self.health = 3
         self.max_health = 3
-        self.area = area
+        self.area = None
         self.limit = limit
         self.__check: int = 0
         if limit is None:
@@ -1587,6 +1587,14 @@ class Spawner(Entity):
         self.__speed = speed
         self.switch_ticks = max(speed, 1)
         self.frame = 0
+
+    def final_load(self) -> None:
+        super().final_load()
+        for area in game_structures.AREA_QUEUE:
+            if area.start_coordinate <= self.y <= area.end_coordinate:
+                self.area = area
+                return
+        self.area = game_structures.AREA_QUEUE[-1]
 
     def management_tick(self):
         if self.__spawning is not None:
@@ -1690,7 +1698,7 @@ class Spawner(Entity):
             delay = area.random.randint(5, 8) * 20
         y = area.random.randint(area.length // 3, area.length - 100)
         return cls((area.random.randint(200, game_states.WIDTH // 2) * (area.random.randint(0, 1) * 2 - 1), y), limit,
-                   area, delay, entity, (0, None), area.difficulty // 10 + 1)
+                   delay, entity, (0, None), area.difficulty // 10 + 1)
 
     def first_seen(self):
         for i in range(1, 4):
