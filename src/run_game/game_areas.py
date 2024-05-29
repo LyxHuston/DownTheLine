@@ -28,7 +28,7 @@ from general_use.utility import make_async, add_error_checking, make_simple_alwa
 from general_use import game_structures
 import math
 from collections import deque
-from typing import Type, Iterable, Callable
+from typing import Type, Iterable, Callable, Any
 
 
 class GameArea:
@@ -283,15 +283,15 @@ class BasicArea(GameArea):
                 allowable_entities[index][1] += 1
                 entity_list.append(entity)
             else:
-                add = entity.make(self.seed, self)
-                entity.first_occurs = self.index
-                self.make([add], True)
+                self.make([entity], True)
                 return
-        self.make([entity.make(self.seed, self) for entity in entity_list], False)
+        self.make(entity_list, False)
 
-    def make(self, entity_list: list[entities.Entity], tutorial: bool):
+    def make(self, entity_list: list[Type[entities.Entity]], tutorial: bool):
         if tutorial:
-            add = entity_list[0]
+            typ = entity_list[0]
+            add = typ.make(self.seed, self)
+            typ.first_occurs = self.index
             self.length = 1500
             add.y = self.length // 2
             self.entity_list.append(add)
@@ -306,7 +306,7 @@ class BasicArea(GameArea):
 
             self.cross_boundary = first_see_of_entity
         else:
-            self.entity_list.extend(entity_list)
+            self.entity_list.extend([entity.make(self.seed, self) for entity in entity_list])
 
 
     # methods to keep rarer/more interesting areas from getting overshadowed
@@ -353,11 +353,11 @@ class BreakThroughArea(GameArea):
             entity = allowable_entities[index][0]
             allowance -= entity.cost + allowable_entities[index][1] ** 2
             allowable_entities[index][1] += 1
-            entity_list.append(entity.make(self.seed + num, self))
+            entity_list.append(entity)
         self.make(spawner_list, entity_list)
 
-    def make(self, spawner_list: list[entities.Spawner], entity_list: list[entities.Entity]):
-        self.entity_list = spawner_list + entity_list
+    def make(self, spawner_list: list[entities.Spawner], entity_list: list[Type[entities.Entity]]):
+        self.entity_list = spawner_list + [entity.make(self.seed + num + 3, self) for num, entity in enumerate(entity_list)]
 
     def cross_boundary(self):
         if not BreakThroughArea.tutorial_given:
@@ -554,11 +554,16 @@ class EnslaughtArea(GameArea, have_starter=True):
                     break
         self.make(event_list)
 
-    def make(self, event_list: deque[EnslaughtAreaEvent]):
+    def make(self, event_list: deque[EnslaughtAreaEvent] | deque[tuple[EnslaughtAreaEventType, int]]):
         self.timer = (len(event_list) + 1) * self.cooldown
         self.max = self.timer
         self.num_events = len(event_list)
-        self.events = event_list
+        if isinstance(event_list[0], EnslaughtAreaEvent):
+            self.events = event_list
+        else:
+            self.events = deque(
+                EnslaughtAreaEvent(event_type, target_change, self) for event_type, target_change in event_list
+            )
         self.entity_list.append(self.end_wall)
 
     def draw(self):
@@ -734,10 +739,10 @@ class BossArea(GameArea):
         self.end_wall = entities.InvulnerableObstacle(pos=(0, self.length), health=1)
 
     def determine_parts(self):
-        self.make(None) # TODO
+        self.make(None)  # TODO
 
-    def make(self, boss: bosses.Boss | None):
-        self.boss = boss
+    def make(self, boss: Type[bosses.Boss] | None):
+        self.boss = boss.make(self.seed, self)
         self.entity_list.append(self.end_wall)
         self.entity_list.append(self.boss)
 
