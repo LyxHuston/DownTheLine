@@ -197,7 +197,7 @@ def lazer_init(area):
 
 	def wave_make():
 		nonlocal wave
-		wave = [(entities.MassDelayedDeploy, (delay, area, wave, register, deploy))]
+		wave = [(entities.MassDelayedDeploy, (delay, wave, register, deploy))]
 
 	for i in range(rep):
 		lazertype = area.random.randint(0, 4)
@@ -223,7 +223,6 @@ def lazer_init(area):
 					entities.DelayedDeploy,
 					(
 						tracker_delay * tracker_count,
-						area,
 						entities.TrackingLazer,
 						(
 							area.length * (tracker_count % 2),
@@ -244,7 +243,6 @@ def lazer_init(area):
 					entities.DelayedDeploy,
 					(
 						tracker_delay * tracker_count,
-						area,
 						entities.TrackingLazer,
 						(
 							area.length * (tracker_count % 2),
@@ -265,7 +263,6 @@ def lazer_init(area):
 					entities.MassDelayedDeploy,
 					(
 						charge_time * rep,
-						area,
 						[
 							(entities.Lazer, (y, charge_time, fire_duration, area))
 							for y in
@@ -292,13 +289,12 @@ def lazer_init(area):
 					entities.DelayedDeploy,
 					(
 						deploy_delay * tracker_count,
-						area,
 						entities.PathedLazer,
 						(
 							path,
 							charge_time,
 							fire_duration,
-							area
+							area.random.randint(0, 2 ** 32 - 1)
 						),
 						register
 					)

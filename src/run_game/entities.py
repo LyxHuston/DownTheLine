@@ -1091,11 +1091,11 @@ class Archer(Glides):
 
     tutorial_text = "Ah, the archer.  Not much on their own, just hit down their arrows and chase them down."
 
-    def __init__(self, pos: tuple[int, int], difficulty: int, area):
+    def __init__(self, pos: tuple[int, int], difficulty: int, seed: int):
         super().__init__(images.ARCHER_RELAXED.img, 0, pos)
         self.max_health = 1
         self.health = 1
-        self.random = area.random.randint()
+        self.random = random.Random(seed)
         self.cooldown_length = max(240 - difficulty * 6, 60)
         self.cooldown = self.cooldown_length
 
@@ -1127,7 +1127,9 @@ class Archer(Glides):
 
     @classmethod
     def make(cls, determiner: int, area):
-        return cls((0, area.random.randint(area.length // 3, 2 * area.length // 3)), area.difficulty, area)
+        return cls(
+            (0, area.random.randint(area.length // 3, 2 * area.length // 3)), area.difficulty,
+            area.random.randint(0, 2 ** 32 - 1))
 
 
 class Knight(Glides, CarriesItems):
@@ -1282,7 +1284,7 @@ class Lazer(InvulnerableEntity):
             return game_states.CAMERA_BOTTOM + game_states.HEIGHT + 20
         return y
 
-    def __init__(self, y: int, charge_time: int, duration: int, area, repeats: int | None = 1, damage: int = 1):
+    def __init__(self, y: int, charge_time: int, duration: int, seed, repeats: int | None = 1, damage: int = 1):
         # print("new lazer at:", y)
         super().__init__(images.EMPTY, 0, (0, y))
         if not hasattr(self, "ends"):
@@ -1294,7 +1296,7 @@ class Lazer(InvulnerableEntity):
             gameboard.NEW_ENTITIES.extend(self.ends)
         else:
             area.entity_list.extend(self.ends)
-        self.random = random.Random(area.random.randint(0, 2 ** 32 - 1))
+        self.random = random.Random(seed)
         self.charge_time = charge_time
         self.cooldown = 0
         self.firing = False
@@ -1396,8 +1398,9 @@ class TrackingLazer(Lazer):
     lazer subclass that chases the player while not firing
     """
 
-    def __init__(self, y: int | Literal[Lazer.TOP, Lazer.BOTTOM], charge_time: int, duration: int, area, repeats: int | None = 1, damage: int = 1):
-        super().__init__(self._to_y(y), charge_time, duration, area, repeats, damage)
+    def __init__(self, y: int | Lazer.TOP | Lazer.BOTTOM, charge_time: int, duration: int, seed: int,
+                 repeats: int | None = 1, damage: int = 1):
+        super().__init__(self._to_y(y), charge_time, duration, seed, repeats, damage)
         self.velocity = 0
 
     def tick(self):
@@ -1410,7 +1413,10 @@ class TrackingLazer(Lazer):
 
     @classmethod
     def make(cls, determiner: int, area):
-        return cls(area.start_coordinate + area.random.randint(0, 1) * area.length, 120, 60, area, 1, 1)
+        return cls(
+            area.start_coordinate + area.random.randint(0, 1) * area.length, 120, 60,
+            area.random.randint(0, 2 ** 32 - 1), 1, 1
+        )
 
 
 class PathedLazer(Lazer):
@@ -1419,9 +1425,9 @@ class PathedLazer(Lazer):
     """
 
     def __init__(
-            self, ys: list[int | Literal[Lazer.TOP, Lazer.BOTTOM]], charge_time: int, duration: int, area, damage: int = 1
+            self, ys: list[int | Lazer.TOP | Lazer.BOTTOM], charge_time: int, duration: int, seed, damage: int = 1
     ):
-        super().__init__(self._to_y(ys[0]), charge_time, duration, area, None, damage)
+        super().__init__(self._to_y(ys[0]), charge_time, duration, seed, None, damage)
         self.velocity = 0
         self.dest = ys[1]
         self.on = 1
@@ -1469,19 +1475,23 @@ class Fish(Glides, track_instances=True):
     fish entity that leaps from the void
     """
 
-    def __init__(self, area):
-        super().__init__(images.EMPTY, 0, (30000, area.start_coordinate))
+    def __init__(self, seed):
+        super().__init__(images.EMPTY, 0, (30000, 0))
         # print("new fish")
         self.max_health = 4
         self.state = 3
         self.health = 4
-        self.random = random.Random(area.random.randint(0, 2 ** 32 - 1))
+        self.random = random.Random(seed)
         self.speed = min(area.difficulty // 4, 12)
         self.wait = 0
         self.target_flight = 0
         self.direction = 0
         self.already_hit = False
         self.frame_change_ticks = 12 // round(math.sqrt(self.speed))
+
+    def final_load(self) -> None:
+        super().final_load()
+        self.y = game_states.DISTANCE
 
     def damage_player(self):
         glide_player(5, 2, 1, ((self.y - game_states.DISTANCE) < 0) * 2 - 1)
@@ -2260,13 +2270,17 @@ class DelayedDeploy(InvulnerableEntity):
 
     has_camera_mass = False
 
-    def __init__(self, delay, area, entity: type(Entity), args, tracker: Callable = None):
-        super().__init__(images.EMPTY, 0, (3000, area.start_coordinate))
+    def __init__(self, delay, entity: type(Entity), args, tracker: Callable = None):
+        super().__init__(images.EMPTY, 0, (3000, 0))
         # print("delayed deploy made")
         self.delay = delay
         self.entity = entity
         self.args = args
         self.tracker = tracker
+
+    def final_load(self) -> None:
+        super().final_load()
+        self.y = game_states.DISTANCE
 
     def tick(self):
         self.delay -= 1
@@ -2282,13 +2296,18 @@ class MassDelayedDeploy(InvulnerableEntity):
 
     has_camera_mass = False
 
-    def __init__(self, delay, area, entities: list[tuple[Type[Entity], Iterable]],
+    def __init__(self, delay, entities: list[tuple[Type[Entity], Iterable]],
                  tracker: Callable = None, deployed: Callable = None):
-        super().__init__(images.EMPTY, 0, (3000, area.start_coordinate))
+        super().__init__(images.EMPTY, 0, (3000, 0))
         self.delay = delay
         self.entities = entities
         self.tracker = tracker
         self.deploy_call = deployed
+
+
+    def final_load(self) -> None:
+        super().final_load()
+        self.y = game_states.DISTANCE
 
     def tick(self):
         self.delay -= 1
