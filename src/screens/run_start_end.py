@@ -325,6 +325,7 @@ def start(with_seed: int = None, full: bool = True):
 
 @dataclasses.dataclass
 class CustomRun:
+    seed: int | None = None
     tutorial: tuple[int, int, int] = (True, True, True)
     start: int = 3
     custom_run: list[
@@ -335,6 +336,9 @@ class CustomRun:
 
 def start_custom(custom: CustomRun):
     setup()
+
+    if custom.seed is not None:
+        game_states.SEED = custom.seed
 
     for i, do in enumerate(custom.tutorial):
         if do:
