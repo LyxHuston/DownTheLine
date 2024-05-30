@@ -260,6 +260,9 @@ class GameArea:
         raise NotImplementedError(f"method 'make' not implemented for class '{self.__class__.__name__}'")
 
 
+from screens.custom_runs import FieldOptions
+
+
 class BasicArea(GameArea):
     """
     a basic fight area.  Fight a few monsters and continue.
@@ -286,6 +289,13 @@ class BasicArea(GameArea):
                 self.make([entity], True)
                 return
         self.make(entity_list, False)
+
+    fields = FieldOptions.Tuple.value(
+        FieldOptions.List.value(
+            FieldOptions.EntityType.value()
+        ),
+        FieldOptions.Bool.value()
+    )
 
     def make(self, entity_list: list[Type[entities.Entity]], tutorial: bool):
         if tutorial:

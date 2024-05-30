@@ -34,6 +34,16 @@ from data import images, game_states
 
 import math
 
+
+def recursive_subclasses(cls: type) -> list[type]:
+    lst: list[type] = cls.__subclasses__()
+    i: int = 0
+    while i < len(lst):
+        lst.extend(lst[i].__subclasses__())
+        i += 1
+    return lst
+
+
 SCREEN: pygame.Surface = None
 TRUE_SCREEN: pygame.Surface = None
 TRUE_HEIGHT: int = 0
@@ -567,9 +577,9 @@ def init() -> None:
 
     class PLACES(enum.Enum):
         in_game = ingame.screen
-        dead = other_screens.dead_screen
-        won = other_screens.won_screen
-        lost = other_screens.lost_screen
+        dead = end_screens.dead_screen
+        won = end_screens.won_screen
+        lost = end_screens.lost_screen
         main = main_screen.main_screen_place
 
 
@@ -890,12 +900,3 @@ if __name__ == "__main__":
                 )
             )
         utility.tick()
-
-
-def recursive_subclasses(cls: type) -> list[type]:
-    lst: list[type] = cls.__subclasses__()
-    i: int = 0
-    while i < len(lst):
-        lst.extend(lst[i].__subclasses__())
-        i += 1
-    return lst
