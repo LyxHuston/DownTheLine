@@ -20,7 +20,7 @@ describe the home screen of the game
 from data import game_states
 from general_use import game_structures
 from run_game import gameboard
-from screens import other_screens
+from screens import end_screens
 
 
 def setup_main_screen():

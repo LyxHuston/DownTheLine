@@ -548,7 +548,7 @@ def init() -> None:
     from general_use import utility
     from run_game import ingame
     from screens import main_screen
-    from screens import other_screens
+    from screens import end_screens
 
     VOICE_CHANNEL = utility.make_reserved_audio_channel()
     tutorials.TUTORIAL_VOICE_CHANNEL = utility.make_reserved_audio_channel()
