@@ -323,45 +323,6 @@ def start(with_seed: int = None, full: bool = True):
             game_areas.add_game_area()
 
 
-@dataclasses.dataclass
-class CustomRun:
-    seed: int | None = None
-    tutorial: tuple[int, int, int] = (True, True, True)
-    start: int = 3
-    custom_run: list[
-        tuple[Type[game_areas.GameArea], tuple] | Type[game_areas.GameArea]
-    ] = dataclasses.field(default_factory=list)
-    guaranteed_type: Type[game_areas.GameArea] = None
-
-
-def start_custom(custom: CustomRun):
-    setup()
-
-    if custom.seed is not None:
-        game_states.SEED = custom.seed
-
-    for i, do in enumerate(custom.tutorial):
-        if do:
-            game_states.LAST_AREA = i
-            game_areas.add_game_area().join()
-
-    game_states.LAST_AREA = custom.start
-
-    for run in custom.custom_run:
-        if isinstance(run, tuple):
-            area_type: Type[game_areas.GameArea]
-            args: tuple
-            area_type, args = run
-            area = area_type(game_areas.get_determiner(), game_states.LAST_AREA, customized=True)
-            area.make(*args)
-        else:
-            area = run(game_areas.get_determiner(), game_states.LAST_AREA)
-        game_structures.AREA_QUEUE.append(area)
-        game_states.LAST_AREA += 1
-
-    game_areas.guaranteed_type = custom.guaranteed_type
-
-
 class GameAreaLog:
 
     areas_dict: dict[str, int] = dict()
