@@ -1398,7 +1398,7 @@ class TrackingLazer(Lazer):
     lazer subclass that chases the player while not firing
     """
 
-    def __init__(self, y: int | Lazer.TOP | Lazer.BOTTOM, charge_time: int, duration: int, seed: int,
+    def __init__(self, y: int | Literal[Lazer.TOP, Lazer.BOTTOM], charge_time: int, duration: int, seed: int,
                  repeats: int | None = 1, damage: int = 1):
         super().__init__(self._to_y(y), charge_time, duration, seed, repeats, damage)
         self.velocity = 0
@@ -1425,7 +1425,7 @@ class PathedLazer(Lazer):
     """
 
     def __init__(
-            self, ys: list[int | Lazer.TOP | Lazer.BOTTOM], charge_time: int, duration: int, seed, damage: int = 1
+            self, ys: list[int | Literal[Lazer.TOP, Lazer.BOTTOM]], charge_time: int, duration: int, seed, damage: int = 1
     ):
         super().__init__(self._to_y(ys[0]), charge_time, duration, seed, None, damage)
         self.velocity = 0
