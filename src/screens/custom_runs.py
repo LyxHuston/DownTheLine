@@ -278,32 +278,36 @@ entity_types = tuple(
 boss_types = tuple(game_structures.recursive_subclasses(bosses.Boss))
 
 
+class_name_getter = lambda val: val.__name__
+enum_name_getter = lambda val: val.name
+
+
 class FieldOptions(Enum):
 	Bool = FieldOption(FieldOption.FieldType.Atom, options=bool_choices, buttons=make_boolean_atom_changer)
 	EntityType = FieldOption(FieldOption.FieldType.Atom, options=tuple_choices(
 		tuple(entity_types),
-		to_str=lambda val: val.__name__
+		to_str=class_name_getter
 	))
 	InstantiatedEntity = FieldOption(FieldOption.FieldType.Atom, options=tuple_choices(
 		tuple(entity_types),
-		to_str=lambda val: val.__name__
+		to_str=class_name_getter
 	))
 	BossType = FieldOption(FieldOption.FieldType.Atom, options=tuple_choices(
 		tuple(boss_types),
-		to_str=lambda val: val.__name__
+		to_str=class_name_getter
 	))
 	ItemType = FieldOption(FieldOption.FieldType.Atom, options=tuple_choices(
 		tuple(items.ItemTypes),
-		to_str=lambda val: val.name
+		to_str=enum_name_getter
 	))
 
 	EnslaughtEventType = FieldOption(FieldOption.FieldType.Atom, options=tuple_choices(
 		tuple(game_areas.EnslaughtAreaEventType),
-		to_str=lambda val: val.name
+		to_str=enum_name_getter
 	))
 	MinigameType = FieldOption(FieldOption.FieldType.Atom, options=tuple_choices(
 		tuple(minigames.Minigame.minigames),
-		to_str=lambda val: val.name
+		to_str=enum_name_getter
 	))
 
 	Difficulty = FieldOption(FieldOption.FieldType.Atom, options=positives, buttons=make_increment_atom_changer)
