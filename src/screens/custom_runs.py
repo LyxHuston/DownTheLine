@@ -30,7 +30,12 @@ from general_use import game_structures, utility
 from run_game import game_areas, entities, bosses, items, minigames
 
 
-button_font = game_structures.TUTORIAL_FONTS[32]
+button_font: pygame.font.Font | None = None
+
+
+def get_button_font():
+	global button_font
+	button_font = game_structures.TUTORIAL_FONTS[32]
 
 
 def raise_exc(exc: Exception):
