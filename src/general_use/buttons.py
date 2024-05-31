@@ -32,6 +32,10 @@ import data
 from general_use import utility, game_structures
 
 
+default_text_color = (255, 255, 255)
+default_background = (0, 0, 0)
+
+
 class ButtonHolderTemplate(ABC):
     """
     buttonholder abstract class
@@ -103,8 +107,8 @@ class ButtonHolderTemplate(ABC):
     def draw_text(
             text: str,
             font: int | pygame.font.Font,
-            background_color: Union[tuple[int, int, int], tuple[int, int, int, int], None] = (255, 255, 255, 255),
-            outline_color: tuple[int, int, int] = (0, 0, 0),
+            background_color: Union[tuple[int, int, int], tuple[int, int, int, int], None] = default_background,
+            outline_color: tuple[int, int, int] = default_text_color,
             max_line_pixels: int = 0,
             max_line_words: int = 0,
             max_width: int = 0,
@@ -375,9 +379,9 @@ class Button(ButtonHolderTemplate):
     @staticmethod
     def make_text_button(text: str, font: int, center: tuple[int, int], down_click: Union[Callable, None] = None,
                          up_click: Union[Callable, None] = None, hold_click: Union[Callable, None] = None,
-                         background_color: Union[tuple[int, int, int], tuple[int, int, int, int], None] = (
-                         255, 255, 255, 255), outline_color: tuple[int, int, int] = (0, 0, 0), border_width: int = 0,
-                         max_line_pixels: int = 0, max_line_words: int = 0, max_width: int = 0,
+                         background_color: Union[tuple[int, int, int], tuple[int, int, int, int], None] =
+                         default_background, outline_color: tuple[int, int, int] = default_text_color,
+                         border_width: int = 0, max_line_pixels: int = 0, max_line_words: int = 0, max_width: int = 0,
                          preserve_words: bool = True, text_align: float = 0, x_align: float = 0.5, y_align: float = 0.5,
                          arguments: dict[str, Any] = None, special_press: Union[tuple[str], str] = (),
                          override_text: str = None, max_lines: int = 0, enforce_width: int = 0,
