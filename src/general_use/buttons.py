@@ -41,6 +41,8 @@ class ButtonHolderTemplate(ABC):
     buttonholder abstract class
     """
 
+    rect: pygame.Rect
+
     @abstractmethod
     def render_onto(self, onto: Surface, mouse_pos: tuple[int, int]) -> None:
         """
@@ -570,8 +572,8 @@ class Button(ButtonHolderTemplate):
             others: list[tuple[ButtonHolderTemplate, float, float, int, int]] = (),
             max_line_pixels: int = 0,
             max_width: int = 0,
-            y_align: int = 0.5,
-            x_align: int = 0.5,
+            y_align: float = 0.5,
+            x_align: float = 0.5,
             override_button_name: str = None
     ) -> None:
         """
@@ -589,8 +591,8 @@ class Button(ButtonHolderTemplate):
         integer: static y offset
         :param max_line_pixels: maximum pixels in a line
         :param max_width: maximum width of the button
-        :param y_align: designate where to orient x from
-        :param x_align: designate where to orient y from
+        :param y_align: designate where to orient y from
+        :param x_align: designate where to orient x from
         :param override_button_name: override the button name if any
         :return: None
         """
@@ -891,6 +893,8 @@ class ButtonHolder(ButtonHolderTemplate):
             return
         mouse_pos = self.adjust_mouse_pos(mouse_pos)
         if self.background is None:
+            if self.rect is not None:
+                onto = onto.subsurface(self.rect)
             for button in self.list:
                 if button is None:
                     continue
