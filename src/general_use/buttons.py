@@ -1351,5 +1351,5 @@ class SwitchHolder(ButtonHolder):
         if init_lists is None:
             init_lists = [[]]
         self._views = init_lists
-        self.__view = 0
+        self.__view = start_view
         super().__init__(self._views[self.__view], background, _rect, fill_color, outline_color, outline_width, visible_check)
