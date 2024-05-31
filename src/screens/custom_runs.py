@@ -255,14 +255,17 @@ def start_custom(custom: CustomRun):
 	game_states.LAST_AREA = custom.start
 
 	for run in custom.custom_run:
+		seed = game_areas.get_determiner()
 		if isinstance(run, tuple):
 			area_type: Type[game_areas.GameArea]
-			args: FieldOptions
+			args: FieldOption.InitializedFieldOption
 			area_type, args = run
-			area = area_type(game_areas.get_determiner(), game_states.LAST_AREA, customized=True)
-			area.make(*args.finalize())
+			area = area_type(seed, game_states.LAST_AREA, customized=True)
+			area.make(*args.finalize(
+				game_areas.GameArea(game_states.LAST_AREA, seed=game_areas.get_determiner(), customized=True)
+			))
 		else:
-			area = run(game_areas.get_determiner(), game_states.LAST_AREA)
+			area = run(seed, game_states.LAST_AREA)
 			game_structures.AREA_QUEUE.append(area)
 		game_states.LAST_AREA += 1
 
