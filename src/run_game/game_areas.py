@@ -101,6 +101,9 @@ class GameArea:
             cls.__old_init = cls.__init__
             cls.__init__ = cls.__new_init
 
+        if hasattr(cls, "fields"):
+            cls.fields = FieldOptions.Tuple.value(*cls.fields)
+
         super().__init_subclass__()
         cls.tutorial_given = False
         cls.__have_starter = have_starter
@@ -260,6 +263,14 @@ class GameArea:
         raise NotImplementedError(f"method 'make' not implemented for class '{self.__class__.__name__}'")
 
 
+class EnslaughtAreaEventType(enum.Enum):
+    ItemDuplicator = 0
+    Lazers = 10
+    Fish = 15
+    Enemies = 30
+    Spawners = math.inf
+
+
 from screens.custom_runs import FieldOptions
 
 
@@ -290,7 +301,7 @@ class BasicArea(GameArea):
                 return
         self.make(entity_list, False)
 
-    fields = FieldOptions.Tuple.value(
+    fields = (
         FieldOptions.List.value(
             FieldOptions.EntityType.value()
         ),
@@ -366,6 +377,15 @@ class BreakThroughArea(GameArea):
             entity_list.append(entity)
         self.make(spawner_list, entity_list)
 
+    fields = (
+        FieldOptions.List.value(
+            FieldOptions.InstantiatedEntity.value()
+        ),
+        FieldOptions.List.value(
+            FieldOptions.EntityType.value()
+        )
+    )
+
     def make(self, spawner_list: list[entities.Spawner], entity_list: list[Type[entities.Entity]]):
         self.entity_list = spawner_list + [entity.make(self.seed + num + 3, self) for num, entity in enumerate(entity_list)]
 
@@ -409,6 +429,11 @@ class GiftArea(GameArea):
             items.make_random_reusable(self.random, (0, 2 * self.experiment_area_length // 3))
         )
 
+    fields = (
+        FieldOptions.ItemType.value(),
+        FieldOptions.ItemType.value(),
+    )
+
     def make(self, gift1: items.Item, gift2: items.Item):
         spawn = entities.Spawner.make(self.seed, self)
         spawn.y += self.experiment_area_length
@@ -435,14 +460,6 @@ class GiftArea(GameArea):
                     game_structures.TUTORIAL_FONTS[90],
                 )
             ])
-
-
-class EnslaughtAreaEventType(enum.Enum):
-    ItemDuplicator = 0
-    Lazers = 10
-    Fish = 15
-    Enemies = 30
-    Spawners = math.inf
 
 
 class EnslaughtAreaEvent:
@@ -564,6 +581,15 @@ class EnslaughtArea(GameArea, have_starter=True):
                     break
         self.make(event_list)
 
+    fields = (
+        FieldOptions.List.value(
+            FieldOptions.Tuple.value(
+                FieldOptions.EnslaughtEventType.value(),
+                FieldOptions.DifficultyChange.value()
+            )
+        ),
+    )
+
     def make(self, event_list: deque[EnslaughtAreaEvent] | deque[tuple[EnslaughtAreaEventType, int]]):
         self.timer = (len(event_list) + 1) * self.cooldown
         self.max = self.timer
@@ -684,6 +710,10 @@ class MinigameArea(GameArea, have_starter=True):
     def determine_parts(self):
         self.make(self.random.choice(Minigame.minigames))
 
+    fields = (
+        FieldOptions.MinigameType.value(),
+    )
+
     def make(self, typ: Type[Minigame]):
         self.type = typ
         self.type.init(self)
@@ -750,6 +780,10 @@ class BossArea(GameArea):
 
     def determine_parts(self):
         self.make(None)  # TODO
+
+    fields = (
+        FieldOptions.BossType.value(),
+    )
 
     def make(self, boss: Type[bosses.Boss] | None):
         self.boss = boss.make(self.seed, self)

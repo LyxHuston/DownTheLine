@@ -95,3 +95,7 @@ class BodyPart(entities.Entity):
             )
         )
         return self.pos
+
+
+class Placeholder(Boss):
+    """bc otherwise custom_runs errors currently"""

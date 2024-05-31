@@ -25,11 +25,45 @@ from enum import Enum
 
 from data import game_states
 from general_use import game_structures, utility
-from run_game import game_areas, entities, bosses, items
+from run_game import game_areas, entities, bosses, items, minigames
 
 
 def raise_exc(exc: Exception):
 	raise exc
+
+
+@dataclasses.dataclass
+class AtomChoices[T]:
+	default: T
+	prev: Callable[[T], T]
+	next: Callable[[T], T]
+
+
+def tuple_choices(tup: tuple[Any, ...] | Any, *args):
+	if args:
+		tup = tuple([tup] + list(args))
+	return AtomChoices(
+		tup[0],
+		lambda t: tup[tup.index(t) - 1],
+		lambda t: tup[(tup.index(t) + 1) % len(tup)]
+	)
+
+
+def range_choices(low: int | float = None, high: int | float = None, step: int | float = 1):
+	assert step > 0, f"Range step must be > 0 (is {step})"
+	if low is not None and high is not None:
+		assert high >= low, f"Range high must be greater than low (is {low}:{high})"
+		assert ((high - low) / step) % 1 == 0, f"Range with defined high and low must be divisible by step (is {low}:{high}:{step})"
+	return AtomChoices(
+		(0 if high is None else high) if low is None else low,
+		(lambda i: i - step) if low is None else (lambda i: max(i - step, low)),
+		(lambda i: i + step) if high is None else (lambda i: min(i - step, high))
+	)
+
+
+integers = range_choices()
+naturals = range_choices(0)
+positives = range_choices(1)
 
 
 @dataclasses.dataclass
@@ -45,7 +79,7 @@ class FieldOption:
 	class FieldType(Enum):
 		Atom = FieldDatatype(
 			lambda acc, options: acc is FieldOption._no_params and options is not None,
-			lambda fo: fo.options[0]
+			lambda fo: fo.options.default
 		)
 		Constructed = FieldDatatype(
 			lambda acc, options: acc is not FieldOption._no_params and options is None,
@@ -57,16 +91,16 @@ class FieldOption:
 		def __init__(
 				self,
 				typ,
-				options: tuple[Any, ...],
+				options: AtomChoices[Any],
 				finalize: Callable,
 				default: Any,
-				contains: tuple[Self, ...]
+				args: tuple[Self, ...]
 		):
 			self.typ = typ
 			self.options = options
 			self.finalize = finalize
 			self.default = default
-			self.contains = contains
+			self.args = args
 
 		def initialize(self):
 			return FieldOption.InitializedFieldOption(
@@ -74,7 +108,7 @@ class FieldOption:
 				self.options,
 				self.finalize,
 				self.default,
-				tuple(c.initialize() for c in self.contains)
+				tuple(c.initialize() for c in self.args)
 			)
 
 	class InitializedFieldOption:
@@ -82,7 +116,7 @@ class FieldOption:
 		def __init__(
 				self,
 				typ,
-				options: tuple[Any, ...],
+				options: AtomChoices[Any],
 				finalize: Callable,
 				default: Any,
 				contains: tuple[Self, ...]
@@ -102,7 +136,7 @@ class FieldOption:
 			self,
 			typ: FieldType,
 			acceptor: Callable = _no_params,
-			options: tuple[Any, ...] = None,
+			options: AtomChoices[Any] = None,
 			finalize: Callable = lambda x: x,
 			default: Any = _unspecified,
 			default_factory: Any = _unspecified
@@ -146,11 +180,17 @@ boss_types = tuple(game_structures.recursive_subclasses(bosses.Boss))
 
 
 class FieldOptions(Enum):
-	Bool = FieldOption(FieldOption.FieldType.Atom, options=(True, False))
-	EntityType = FieldOption(FieldOption.FieldType.Atom, options=entity_types)
-	InstantiatedEntity = FieldOption(FieldOption.FieldType.Atom, options=entity_types)
-	BossType = FieldOption(FieldOption.FieldType.Atom, options=boss_types)
-	ItemType = FieldOption(FieldOption.FieldType.Atom, options=tuple(items.ItemTypes))
+	Bool = FieldOption(FieldOption.FieldType.Atom, options=tuple_choices(True, False))
+	EntityType = FieldOption(FieldOption.FieldType.Atom, options=tuple_choices(tuple(entity_types)))
+	InstantiatedEntity = FieldOption(FieldOption.FieldType.Atom, options=tuple_choices(tuple(entity_types)))
+	BossType = FieldOption(FieldOption.FieldType.Atom, options=tuple_choices(tuple(boss_types)))
+	ItemType = FieldOption(FieldOption.FieldType.Atom, options=tuple_choices(tuple(items.ItemTypes)))
+
+	EnslaughtEventType = FieldOption(FieldOption.FieldType.Atom, options=tuple_choices(tuple(game_areas.EnslaughtAreaEventType)))
+	MinigameType = FieldOption(FieldOption.FieldType.Atom, options=tuple_choices(tuple(minigames.Minigame.minigames)))
+
+	Difficulty = FieldOption(FieldOption.FieldType.Atom, options=positives)
+	DifficultyChange = FieldOption(FieldOption.FieldType.Atom, options=integers)
 
 	@staticmethod
 	def list_default(_):
@@ -168,7 +208,11 @@ class FieldOptions(Enum):
 	def tuple_default(_):
 		pass
 
-	Tuple = FieldOption(FieldOption.FieldType.Constructed, acceptor=utility.passing)
+	Tuple = FieldOption(
+		FieldOption.FieldType.Constructed,
+		acceptor=utility.passing,
+		default_factory=tuple_default
+	)
 
 	del tuple_default
 
@@ -178,13 +222,11 @@ class FieldOptions(Enum):
 
 	Mapping = FieldOption(
 		FieldOption.FieldType.Constructed,
-		acceptor=lambda args: len(args) == 2 and all(a.t is FieldOption.FieldType.Atom for a in args)
+		acceptor=lambda args: len(args) == 2 and all(a.t is FieldOption.FieldType.Atom for a in args),
+		default_factory=mapping_default
 	)
 
 	del mapping_default
-
-
-print(tuple(FieldOptions))
 
 
 @dataclasses.dataclass
