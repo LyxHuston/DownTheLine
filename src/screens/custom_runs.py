@@ -301,7 +301,10 @@ class FieldOptions(Enum):
 		tuple(game_areas.EnslaughtAreaEventType),
 		to_str=lambda val: val.name
 	))
-	MinigameType = FieldOption(FieldOption.FieldType.Atom, options=tuple_choices(tuple(minigames.Minigame.minigames)))
+	MinigameType = FieldOption(FieldOption.FieldType.Atom, options=tuple_choices(
+		tuple(minigames.Minigame.minigames),
+		to_str=lambda val: val.name
+	))
 
 	Difficulty = FieldOption(FieldOption.FieldType.Atom, options=positives, buttons=make_increment_atom_changer)
 	DifficultyChange = FieldOption(FieldOption.FieldType.Atom, options=integers, buttons=make_increment_atom_changer)

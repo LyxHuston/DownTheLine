@@ -34,6 +34,7 @@ class Minigame:
 
 	def __init__(
 			self,
+			name,
 			*args,
 			**kwargs
 	):
@@ -46,6 +47,8 @@ class Minigame:
 			if i < len(args) and f"{name}_func" in kwargs:
 				raise TypeError(f"{self.__init__} got multiple values for argument '{name}_func'")
 			setattr(self, name, args[i] if i < len(args) else kwargs.get(f"{name}_func", utility.passing))
+
+		self.name = name
 
 		self.minigames.append(self)
 
@@ -71,9 +74,9 @@ class Minigame:
 		) + "]"
 
 
-fish = Minigame()
-notes = Minigame()
-lazers = Minigame()
+fish = Minigame("Fish")
+notes = Minigame("Notes")
+lazers = Minigame("Lazers")
 
 
 def entity_tracker(area): return area.data_pack[0]
