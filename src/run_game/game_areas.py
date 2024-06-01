@@ -489,13 +489,11 @@ class EnslaughtAreaEvent:
             for i in range(target_change):
                 self.add_entities.append(entities.DelayedDeploy(
                     i * 60,
-                    area,
                     entities.TrackingLazer,
                     (
                         (entities.TrackingLazer.TOP, entities.TrackingLazer.BOTTOM)[i % 2],
                         60,
-                        60,
-                        area
+                        60
                     )
                 ))
         elif typ is EnslaughtAreaEventType.Fish:
