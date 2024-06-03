@@ -1093,7 +1093,6 @@ class ScrollableButtonHolder(ButtonHolder):
             start_y: int = 0,
             step: int = 1,
             init_list: list[ButtonHolderTemplate] = None,
-            base_rect: Rect = None,
             fill_color: Union[tuple[int, int, int], tuple[int, int, int, int], None] = None,
             outline_color: Union[tuple[int, int, int], None] = None,
             outline_width: int = 0,
@@ -1117,28 +1116,26 @@ class ScrollableButtonHolder(ButtonHolder):
 
             def determine_pos_and_dimensions() -> tuple[int, int, int, int]:
                 length = visible_cache[0] ** 2 // visible_cache[1]
-                pos: list[int] = [self.window.width - 20, self.window.height - 20]
+                pos: list[int] = [self.rect.width - 20, self.rect.height - 20]
                 dimensions: list[int] = [20, 20]
                 dimensions[direction] = length
-                pos[direction] = ((self.window.size[direction]) * self.clip_rect.topleft[direction]) / self.rect.size[
+                pos[direction] = ((self.rect.size[direction]) * self.clip_rect.topleft[direction]) / self.base_rect.size[
                     direction]
                 return pos[0], pos[1], dimensions[0], dimensions[1]
 
             def scroll_visible():
-                visible = self.scrollable[direction]
-                if visible:
-                    visible = self.clip_rect.size[direction] < self.rect.size[direction]
-                if visible:
-                    visible_cache[0] = self.clip_rect.size[direction]
-                    visible_cache[1] = self.rect.size[direction]
-                    button.rect = pygame.rect.Rect(*determine_pos_and_dimensions())
-                    button.img = pygame.surface.Surface(button.rect.size)
-                return visible
+                if not (self.scrollable[direction] and self.clip_rect.size[direction] < self.base_rect.size[direction]):
+                    return False
+                visible_cache[0] = self.clip_rect.size[direction]
+                visible_cache[1] = self.base_rect.size[direction]
+                button.rect = pygame.rect.Rect(*determine_pos_and_dimensions())
+                button.img = pygame.surface.Surface(button.rect.size)
+                return True
 
             def change_pos(mouse_pos: tuple[int, int]):
                 pos = list(self.clip_rect.topleft)
-                new_pos = (mouse_pos[direction] - button.rect.size[direction] // 2) * self.rect.size[direction] // (self.window.size[direction])
-                pos[direction] = min(max(new_pos, 0), self.rect.size[direction] - self.window.size[direction])
+                new_pos = (mouse_pos[direction] - button.rect.size[direction] // 2) * self.base_rect.size[direction] // (self.rect.size[direction])
+                pos[direction] = min(max(new_pos, 0), self.base_rect.size[direction] - self.rect.size[direction])
                 self.clip_rect.topleft = tuple(pos)
 
             holding = False
@@ -1154,7 +1151,7 @@ class ScrollableButtonHolder(ButtonHolder):
                 if not scroll_visible():
                     return False
                 if click_type == Button.ClickTypes.down:
-                    holding = 0 < self.window.size[1 - direction] - mouse_pos[1 - direction] < 30
+                    holding = 0 < self.rect.size[1 - direction] - mouse_pos[1 - direction] < 30
                 elif click_type == Button.ClickTypes.up:
                     holding = False
                 if holding:
@@ -1202,11 +1199,12 @@ class ScrollableButtonHolder(ButtonHolder):
         if background is None:
             background = pygame.Surface((0, 0))
 
-        super().__init__(init_list, background, base_rect, fill_color, outline_color, outline_width,
+        super().__init__(init_list, background, window_rect, fill_color, outline_color, outline_width,
                          visible_check=visible_check)
-        self.window = window_rect
 
-        self.clip_rect = self.window.copy()
+        self.base_rect = self.background.get_rect()
+
+        self.clip_rect = self.rect.copy()
 
         self.fit_size()
 
@@ -1226,12 +1224,7 @@ class ScrollableButtonHolder(ButtonHolder):
 
     @x.setter
     def x(self, value):
-        if self.rect is not None:
-            if value < 0:
-                self.clip_rect.x = 0
-            if value > self.rect.width - self.window.width:
-                self.clip_rect.x = self.rect.width - self.window.width
-        self.clip_rect.x = value
+        self.clip_rect.x = max(min(value, self.base_rect.width - self.rect.width), 0)
 
     @property
     def y(self):
@@ -1239,12 +1232,7 @@ class ScrollableButtonHolder(ButtonHolder):
 
     @y.setter
     def y(self, value):
-        if self.rect is not None:
-            if value < 0:
-                self.clip_rect.y = 0
-            if value > self.rect.height - self.window.height:
-                self.clip_rect.y = self.rect.height - self.window.height
-        self.clip_rect.y = value
+        self.clip_rect.y = max(min(value, self.base_rect.height - self.rect.height), 0)
 
     def fit_size(self, margin: int = 0):
         self.fit_y(margin)
@@ -1256,7 +1244,7 @@ class ScrollableButtonHolder(ButtonHolder):
             self.background.get_flags(),
             masks=self.background.get_masks()
         )
-        self.rect = self.background.get_rect(topleft=self.rect.topleft)
+        self.base_rect = self.background.get_rect(topleft=self.rect.topleft)
         self.clip_rect.bottomright = (
             min(self.clip_rect.right, size[0]),
             min(self.clip_rect.bottom, size[1])
@@ -1292,7 +1280,7 @@ class ScrollableButtonHolder(ButtonHolder):
         :param mouse_pos:
         :return:
         """
-        return mouse_pos[0] - self.window.x + self.x, mouse_pos[1] - self.window.y + self.y
+        return mouse_pos[0] - self.rect.x + self.x, mouse_pos[1] - self.rect.y + self.y
 
     def do_click(self, mouse_pos: tuple[int, int], click_type) -> bool:
         """
@@ -1301,14 +1289,14 @@ class ScrollableButtonHolder(ButtonHolder):
         """
         if not self.visible():
             return False
-        clip_mouse_pos = (mouse_pos[0] - self.window.left, mouse_pos[1] - self.window.top)
+        clip_mouse_pos = (mouse_pos[0] - self.rect.left, mouse_pos[1] - self.rect.top)
         for scroll in self.scrolls:
             if scroll.do_click(clip_mouse_pos, click_type):
                 return True
         interior_mouse_pos = self.adjust_mouse_pos(mouse_pos)
         if self.rect is None:
             click = True
-        elif self.window.collidepoint(mouse_pos):
+        elif self.rect.collidepoint(mouse_pos):
             click = True
         else:
             return False
@@ -1339,12 +1327,12 @@ class ScrollableButtonHolder(ButtonHolder):
         window = self.background.subsurface(self.clip_rect)
         for scroll in self.scrolls:
             scroll.render_onto(window, on_mouse_pos)
-        onto.blit(window, self.window)
+        onto.blit(window, self.rect)
         if self.outline_width > 0:
             rect(
                 onto,
                 self.outline_color,
-                self.window.inflate(2 * self.outline_width, 2 * self.outline_width),
+                self.rect.inflate(2 * self.outline_width, 2 * self.outline_width),
                 width=self.outline_width
             )
 

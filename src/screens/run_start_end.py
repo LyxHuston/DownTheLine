@@ -49,7 +49,7 @@ def log_area(area: game_areas.GameArea):
 PAUSE_BUTTONS = game_structures.ButtonHolder()
 
 MESSAGE_LOG = game_structures.ScrollableButtonHolder(
-    pygame.rect.Rect(game_states.WIDTH // 4, 0, game_states.WIDTH // 2 + 40, game_states.HEIGHT),
+    pygame.rect.Rect(0, 0, 0, game_states.HEIGHT),
     None,
     scrollable_x=False,
     fill_color=(0, 0, 0),
@@ -83,6 +83,7 @@ def line(onto: pygame.Surface, _: bool, pos: tuple[int, int]):
 
 
 def switch_to_message_log():
+    MESSAGE_LOG.rect.left = (game_states.WIDTH - MESSAGE_LOG.rect.width) // 2
     if MESSAGE_LOG.list:
         rect = max(MESSAGE_LOG.list, key=lambda but: but.rect.y).rect
         y = rect.bottom + 40
