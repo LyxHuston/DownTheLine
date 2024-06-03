@@ -1326,10 +1326,7 @@ class ScrollableButtonHolder(ButtonHolder):
             return
         inside_mouse_pos = self.adjust_mouse_pos(mouse_pos)
         on_mouse_pos = (mouse_pos[0] - self.rect.x, mouse_pos[1] - self.rect.y)
-        if self.fill_color is None:
-            self.background.fill((0, 0, 0, 0))
-        else:
-            self.background.fill(self.fill_color)
+        self.background.fill(self.fill_color, self.clip_rect)
         for button in self.list:
             if button is None or not button.rect.colliderect(self.clip_rect):
                 continue
