@@ -1240,6 +1240,18 @@ class ScrollableButtonHolder(ButtonHolder):
         self.fit_y(margin)
         self.fit_x(margin)
 
+    def change_background_size(self, size: tuple[int, int]):
+        self.background = pygame.Surface(
+            size,
+            self.background.get_flags(),
+            masks=self.background.get_masks()
+        )
+        self.rect = self.background.get_rect(topleft=self.rect.topleft)
+        self.clip_rect.bottomright = (
+            min(self.clip_rect.right, size[0]),
+            min(self.clip_rect.bottom, size[1])
+        )
+
     def fit_y(self, margin: int = 0):
         buttons: list[game_structures.ButtonHolderTemplate] = list(filter(lambda b: b is not None, self.list))
         if buttons:
@@ -1250,14 +1262,7 @@ class ScrollableButtonHolder(ButtonHolder):
             max_y: int = max(max(buttons, key=lambda button: button.rect.bottom).rect.bottom + margin, self.clip_rect.height)
         else:
             max_y: int = self.clip_rect.height
-        self.background = pygame.Surface(
-            (self.background.get_width(), max_y),
-            self.background.get_flags(),
-            masks=self.background.get_masks()
-        )
-        self.rect = self.background.get_rect(topleft=self.rect.topleft)
-        if self.clip_rect.bottom > max_y:
-            self.clip_rect.bottom = max_y
+        self.change_background_size((self.background.get_width(), max_y))
 
     def fit_x(self, margin: int = 0):
         buttons = list(filter(lambda b: b is not None, self.list))
@@ -1269,14 +1274,7 @@ class ScrollableButtonHolder(ButtonHolder):
             max_x = max(max(buttons, key=lambda button: button.rect.right).rect.right + margin, self.clip_rect.width)
         else:
             max_x = self.clip_rect.width
-        self.background = pygame.Surface(
-            (max_x, self.background.get_height()),
-            self.background.get_flags(),
-            masks=self.background.get_masks()
-        )
-        self.rect = self.background.get_rect(topleft=self.rect.topleft)
-        if self.clip_rect.right > max_x:
-            self.clip_rect.right = max_x
+        self.change_background_size((max_x, self.background.get_height()))
 
     def adjust_mouse_pos(self, mouse_pos: tuple[int, int]) -> tuple[int, int]:
         """
