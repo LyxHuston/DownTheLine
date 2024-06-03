@@ -1086,7 +1086,7 @@ class ScrollableButtonHolder(ButtonHolder):
     def __init__(
             self,
             window_rect: Rect,
-            background: Surface,
+            background: Surface = None,
             scrollable_x: bool = True,
             scrollable_y: bool = True,
             start_x: int = 0,
@@ -1199,11 +1199,16 @@ class ScrollableButtonHolder(ButtonHolder):
             ), 1)
         ]
 
+        if background is None:
+            background = pygame.Surface((0, 0))
+
         super().__init__(init_list, background, base_rect, fill_color, outline_color, outline_width,
                          visible_check=visible_check)
         self.window = window_rect
 
         self.clip_rect = self.window.copy()
+
+        self.fit_size()
 
         self.step = step
 
