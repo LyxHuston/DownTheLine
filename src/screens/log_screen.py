@@ -150,6 +150,11 @@ def enter(re_setup: bool = True):
 
     BUTTONS.clear()
 
+    RECORDS.change_background_size(
+        (game_states.WIDTH // 2, game_states.HEIGHT)
+    )
+    RECORDS.change_window((game_states.WIDTH // 4, 0), (game_states.WIDTH // 2, game_states.HEIGHT))
+
     BUTTONS.add_button(RECORDS)
     BUTTONS.add_button(
         game_structures.Button.make_text_button("Back", 75, (game_states.WIDTH, 0), main_screen.main_screen_place.start,
@@ -164,36 +169,26 @@ def enter(re_setup: bool = True):
     RECORDS.clear()
     with open(log_file_name, "r") as log_file:
         line = log_file.readline()
+        i = 0
         while line:
+            i += 1
             make_record(ast.literal_eval(line))
             line = log_file.readline()
     if len(RECORDS) > 0:
-        record_height = (RECORDS[0].rect.height * 1.25)
-        RECORDS.background = pygame.surface.Surface(
-            (game_states.WIDTH // 2 + 40, max(record_height * len(RECORDS), game_states.HEIGHT))
-        )
-        i = 0
+        record_height: int = RECORDS[0].rect.height * 1.25
+        i: int = 0
         for record in RECORDS.list:
             record.rect.y = i * record_height
             record.rect.x = 0
             i += 1
-        RECORDS.rect = pygame.rect.Rect(
-            game_states.WIDTH // 4,
-            0,
-            game_states.WIDTH // 2,
-            max(record_height * len(RECORDS), game_states.HEIGHT)
-        )
+        RECORDS.change_background_size((game_states.WIDTH // 2, i * record_height))
         RECORDS.y = RECORDS.background.get_rect().height - game_states.HEIGHT
     else:
-        RECORDS.background = pygame.surface.Surface(
-            (game_states.WIDTH, game_states.WIDTH)
-        )
         RECORDS.add_button(game_structures.Button.make_text_button("No runs logged.", 80,
                                                                    (game_states.WIDTH // 4, game_states.HEIGHT // 2),
                                                                    None, background_color=(0, 0, 0),
                                                                    outline_color=(255, 255, 255), border_width=0,
                                                                    text_align=0.5))
-        RECORDS.rect.fit(RECORDS.background.get_rect())
     RECORDS.convert()
 
 

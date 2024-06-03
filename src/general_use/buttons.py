@@ -1205,6 +1205,17 @@ class ScrollableButtonHolder(ButtonHolder):
         self.x = start_x
         self.y = start_y
 
+    def change_window(self, pos: tuple[int, int] = None, size: tuple[int, int] = None):
+        if pos is not None:
+            self.rect.topleft = pos
+        if size is not None:
+            self.rect.size = size
+            self.clip_rect.size = size
+            self.clip_rect.bottomright = (
+                min(self.clip_rect.right, self.rect.width),
+                min(self.clip_rect.bottom, self.rect.height)
+            )
+
     def convert(self):
         super().convert()
         for s in self.scrolls:
@@ -1236,7 +1247,7 @@ class ScrollableButtonHolder(ButtonHolder):
             self.background.get_flags(),
             masks=self.background.get_masks()
         )
-        self.base_rect = self.background.get_rect(topleft=self.rect.topleft)
+        self.base_rect.size = self.background.get_size()
         self.clip_rect.bottomright = (
             min(self.clip_rect.right, size[0]),
             min(self.clip_rect.bottom, size[1])
