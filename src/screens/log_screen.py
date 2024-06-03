@@ -38,11 +38,6 @@ RECORDS = game_structures.ScrollableButtonHolder(
     outline_color=(255, 255, 255)
 )
 BUTTONS = game_structures.ButtonHolder()
-BUTTONS.add_button(RECORDS)
-BUTTONS.add_button(
-    game_structures.Button.make_text_button("Back", 75, (game_states.WIDTH, 0), main_screen.main_screen_place.start,
-                                            background_color=(0, 0, 0), outline_color=(255, 255, 255), x_align=1,
-                                            y_align=0))
 
 
 def clear_log():
@@ -53,11 +48,6 @@ def clear_log():
     with open(log_file_name, "w") as log_file:
         log_file.write("")
     screen.start()
-
-
-BUTTONS.add_button(
-    game_structures.Button.make_text_button("Clear Log", 75, (0, 0), clear_log, background_color=(0, 0, 0),
-                                            outline_color=(255, 255, 255), x_align=0, y_align=0))
 
 
 class RunRecord(game_structures.Place, game_structures.Button):
@@ -157,6 +147,18 @@ def enter(re_setup: bool = True):
     :return:
     """
     game_structures.BUTTONS.add_button(BUTTONS)
+
+    BUTTONS.clear()
+
+    BUTTONS.add_button(RECORDS)
+    BUTTONS.add_button(
+        game_structures.Button.make_text_button("Back", 75, (game_states.WIDTH, 0), main_screen.main_screen_place.start,
+                                                background_color=(0, 0, 0), outline_color=(255, 255, 255), x_align=1,
+                                                y_align=0))
+    BUTTONS.add_button(
+        game_structures.Button.make_text_button("Clear Log", 75, (0, 0), clear_log, background_color=(0, 0, 0),
+                                                outline_color=(255, 255, 255), x_align=0, y_align=0))
+
     if not re_setup:
         return
     RECORDS.clear()
