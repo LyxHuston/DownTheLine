@@ -396,3 +396,8 @@ def start_custom(custom: CustomRun):
 		game_states.LAST_AREA += 1
 
 	game_areas.guaranteed_type = custom.guaranteed_type
+
+
+# custom_run_place = game_structures.Place(
+#
+# )

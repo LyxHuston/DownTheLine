@@ -17,6 +17,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 describe the home screen of the game
 """
+from functools import partial
+
 from data import game_states
 from general_use import game_structures
 from run_game import gameboard
@@ -71,20 +73,12 @@ def setup_main_screen():
     game_structures.BUTTONS.add_button(seed_setter_button)
 
 
-def main_screen():
-    """
-    draws main screen.  Actually, just draws what's behind it.
-    :return:
-    """
-    gameboard.tick(False, False)
-
-
 def end():
     game_structures.BUTTONS.clear()
 
 
 main_screen_place = game_structures.Place(
-    tick=main_screen,
+    tick=partial(gameboard.tick, False, False),
     enter=setup_main_screen,
     end=end
 )
