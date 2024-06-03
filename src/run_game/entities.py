@@ -1475,14 +1475,14 @@ class Fish(Glides, track_instances=True):
     fish entity that leaps from the void
     """
 
-    def __init__(self, seed):
+    def __init__(self, seed, difficulty):
         super().__init__(images.EMPTY, 0, (30000, 0))
         # print("new fish")
         self.max_health = 4
         self.state = 3
         self.health = 4
         self.random = random.Random(seed)
-        self.speed = min(area.difficulty // 4, 12)
+        self.speed = min(difficulty // 4, 12)
         self.wait = 0
         self.target_flight = 0
         self.direction = 0

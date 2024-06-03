@@ -499,7 +499,7 @@ class EnslaughtAreaEvent:
         elif typ is EnslaughtAreaEventType.Fish:
             fish = target_change // 3
             for i in range(fish):
-                self.add_entities.append(entities.Fish(area))
+                self.add_entities.append(entities.Fish(area.random.randint(0, 2 ** 32 - 1), area.difficulty))
             self.change_difficulty += 2 * fish
         elif typ is EnslaughtAreaEventType.Enemies:
             allowable_entities = area.get_allowable()
