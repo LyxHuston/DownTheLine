@@ -17,8 +17,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 describe the home screen of the game
 """
-from functools import partial
-
 from data import game_states
 from general_use import game_structures
 from run_game import gameboard
@@ -77,8 +75,16 @@ def end():
     game_structures.BUTTONS.clear()
 
 
+def main_screen():
+    """
+    draws main screen.  Actually, just draws what's behind it.
+    :return:
+    """
+    gameboard.tick(False, False)
+
+
 main_screen_place = game_structures.Place(
-    tick=partial(gameboard.tick, False, False),
+    tick=main_screen,
     enter=setup_main_screen,
     end=end
 )
