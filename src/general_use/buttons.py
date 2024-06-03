@@ -1349,6 +1349,73 @@ class ScrollableButtonHolder(ButtonHolder):
             )
 
 
+class ListHolder(ScrollableButtonHolder):
+    """
+    a ScrollableButtonHolder, except it also enforces an x position, spacing between elements, and window size.
+    """
+
+    def __init__(
+            self,
+            window_rect: Rect,
+            x_pos: int,
+            y_separation: int,
+            min_window_length: int,
+            max_window_length: int,
+            start_x: int = 0,
+            start_y: int = 0,
+            step: int = 1,
+            init_list: list[ButtonHolderTemplate] = None,
+            base_rect: Rect = None,
+            fill_color: Union[tuple[int, int, int], tuple[int, int, int, int], None] = None,
+            outline_color: Union[tuple[int, int, int], None] = None,
+            outline_width: int = 0,
+            visible_check: Callable[[], bool] = utility.passing
+    ):
+        """
+        initializes
+        """
+        self.__x_pos = x_pos
+        self.__y_sep = y_separation
+        self.__snap_window_length = lambda y: min(max(y, min_window_length), max_window_length)
+        self.__last_y = 0
+        super().__init__(
+            window_rect,
+            None,
+            True,
+            True,
+            start_x,
+            start_y,
+            step,
+            init_list,
+            base_rect,
+            fill_color,
+            outline_color,
+            outline_width,
+            visible_check
+        )
+        self.fix_list()
+
+    def fix_list(self):
+        y: int = self.__y_sep
+        i: int = 0
+        while i < len(self.list):
+            button = self.list[i]
+            button.rect.topleft = (self.__x_pos, y)
+            y = button.rect.bottom
+            i += 1
+        if y != self.background.get_height():
+            self.background = pygame.Surface(
+                (self.background.get_width(), y),
+                self.background.get_flags(),
+                masks=self.background.get_masks()
+            )
+        self.change_background_size((self.rect.width, self.__snap_window_length(y)))
+
+    def render_onto(self, onto: Surface, mouse_pos: tuple[int, int]) -> None:
+        self.fix_list()
+        super().render_onto(onto, mouse_pos)
+
+
 class SwitchHolder(ButtonHolder):
     """
     a button holder that has multiple sets of buttons to switch between
