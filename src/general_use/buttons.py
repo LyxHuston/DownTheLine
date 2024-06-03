@@ -873,7 +873,8 @@ class ButtonHolder(BaseButton):
         self.visible = visible_check
 
     def convert(self):
-        self.background.convert()
+        if self.background is not None:
+            self.background.convert()
         for button in self.list:
             button.convert()
 

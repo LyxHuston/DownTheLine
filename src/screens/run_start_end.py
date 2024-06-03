@@ -116,6 +116,7 @@ def switch_to_message_log():
         y += 40
 
     MESSAGE_LOG.fit_y(20)
+    MESSAGE_LOG.convert()
     PAUSE_SWITCHER.view = 1
 
 

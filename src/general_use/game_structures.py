@@ -79,6 +79,7 @@ def switch_to_place(place: Place, *args, **kwargs):
         game_states.PLACE.end(*args, **kwargs)
     game_states.PLACE = place
     game_states.PLACE.enter(*args, **kwargs)
+    BUTTONS.convert()
 
 
 def display_screen():

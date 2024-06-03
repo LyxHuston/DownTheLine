@@ -194,6 +194,7 @@ def enter(re_setup: bool = True):
                                                                    outline_color=(255, 255, 255), border_width=0,
                                                                    text_align=0.5))
         RECORDS.rect.fit(RECORDS.background.get_rect())
+    RECORDS.convert()
 
 
 def end():
