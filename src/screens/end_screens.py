@@ -28,7 +28,7 @@ fade_counter = 0
 tick_counter = 0
 next_tick_max = 0
 
-overlay = pygame.Surface(game_structures.SCREEN.get_size(), pygame.SRCALPHA)
+overlay = None
 
 
 black = (0, 0, 0)
@@ -39,7 +39,10 @@ gold = (204, 175, 38)
 
 def end_maker(reason: run_start_end.RunEndReasons, background: tuple[int, int, int], text: tuple[int, int, int]):
     def inner():
-        global fade_counter, tick_counter, next_tick_max
+        global fade_counter, tick_counter, next_tick_max, overlay
+
+        overlay = pygame.Surface(game_structures.SCREEN.get_size(), pygame.SRCALPHA)
+        overlay.convert()
 
         run_start_end.log_run(reason)
 
