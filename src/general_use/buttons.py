@@ -1215,6 +1215,11 @@ class ScrollableButtonHolder(ButtonHolder):
         self.x = start_x
         self.y = start_y
 
+    def convert(self):
+        super().convert()
+        for s in self.scrolls:
+            s.convert()
+
     @property
     def x(self):
         return self.clip_rect.x
