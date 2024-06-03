@@ -103,6 +103,13 @@ class ButtonHolderTemplate(ABC):
         :return:
         """
 
+    @abstractmethod
+    def convert(self):
+        """
+        converts background/image to proper format, and any contained buttons.
+        :return:
+        """
+
     fonts = game_structures.FONTS
 
     @staticmethod
@@ -745,6 +752,10 @@ class Button(ButtonHolderTemplate):
                 callback(result)
             return result
 
+    def convert(self):
+        if self.img is not None:
+            self.img.convert()
+
 
 class DrawButton(Button):
 
@@ -857,8 +868,6 @@ class ButtonHolder(ButtonHolderTemplate):
         self.list = init_list
         if init_list is None:
             self.list = list()
-        if background is not None:
-            background.convert()
         self.background = background
         if _rect is None and self.background is not None:
             self.rect = self.background.get_rect()
@@ -871,6 +880,11 @@ class ButtonHolder(ButtonHolderTemplate):
         self.outline_width = outline_width
         self.keyed = False
         self.visible = visible_check
+
+    def convert(self):
+        self.background.convert()
+        for button in self.list:
+            button.convert()
 
     def adjust_mouse_pos(self, mouse_pos: tuple[int, int]) -> tuple[int, int]:
         """
