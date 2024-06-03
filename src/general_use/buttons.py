@@ -36,12 +36,10 @@ default_text_color = (255, 255, 255)
 default_background = (0, 0, 0)
 
 
-class ButtonHolderTemplate(ABC):
-    """
-    buttonholder abstract class
-    """
+class BaseButton(ABC):
 
-    rect: pygame.Rect
+    def __init__(self, _rect: pygame.rect.Rect):
+        self.rect = _rect
 
     @abstractmethod
     def render_onto(self, onto: Surface, mouse_pos: tuple[int, int]) -> None:
@@ -274,7 +272,7 @@ class ButtonHolderTemplate(ABC):
         return text_surface
 
 
-class Button(ButtonHolderTemplate):
+class Button(BaseButton):
     """
     dataclass containing information for a button
     """
@@ -343,11 +341,11 @@ class Button(ButtonHolderTemplate):
         :param special_press:
         :param typing_instance:
         """
+        super().__init__(_rect)
         self.clicks = [down_click, up_click, hold_click]
         self.arguments: list[Union[None, dict[str, Any]]] = [down_arguments, up_arguments, hold_arguments]
         self.img: Surface = img
         self.text: str = text
-        self.rect: Rect = _rect
         self.fill_color: Union[tuple[int, int, int], tuple[int, int, int, int], None] = fill_color
         self.outline_color: Union[tuple[int, int, int], None] = outline_color
         self.inflate_center: tuple[float, float] = inflate_center
@@ -576,7 +574,7 @@ class Button(ButtonHolderTemplate):
             font: int,
             center: tuple[int, int],
             instance: int = None,
-            others: list[tuple[ButtonHolderTemplate, float, float, int, int]] = (),
+            others: list[tuple[BaseButton, float, float, int, int]] = (),
             max_line_pixels: int = 0,
             max_width: int = 0,
             y_align: float = 0.5,
@@ -639,7 +637,7 @@ class Button(ButtonHolderTemplate):
             font: int,
             max_characters: int = 0,
             min_characters: int = 0,
-            others: list[tuple[Union[ButtonHolderTemplate], float, float, int, int]] = (),
+            others: list[tuple[Union[BaseButton], float, float, int, int]] = (),
             max_line_pixels: int = 0,
             max_width: int = 0,
             prepend: str = "",
@@ -810,7 +808,7 @@ class DrawButton(Button):
             self.rect = new_rect
 
 
-class ButtonHolder(ButtonHolderTemplate):
+class ButtonHolder(BaseButton):
     """
     holds a list of buttons or button holders
     """
@@ -852,16 +850,10 @@ class ButtonHolder(ButtonHolderTemplate):
                 return value
         return False
 
-    def __init__(
-            self,
-            init_list: list[ButtonHolderTemplate] = None,
-            background: Surface = None,
-            _rect: Rect = None,
-            fill_color: Union[tuple[int, int, int], tuple[int, int, int, int], None] = None,
-            outline_color: Union[tuple[int, int, int], None] = None,
-            outline_width: int = 0,
-            visible_check: Callable[[], bool] = utility.passing
-    ):
+    def __init__(self, init_list: list[BaseButton] = None, background: Surface = None, _rect: Rect = None,
+                 fill_color: Union[tuple[int, int, int], tuple[int, int, int, int], None] = None,
+                 outline_color: Union[tuple[int, int, int], None] = None, outline_width: int = 0,
+                 visible_check: Callable[[], bool] = utility.passing):
         """
         initializes
         """
@@ -870,9 +862,8 @@ class ButtonHolder(ButtonHolderTemplate):
             self.list = list()
         self.background = background
         if _rect is None and self.background is not None:
-            self.rect = self.background.get_rect()
-        else:
-            self.rect = _rect
+            _rect = self.background.get_rect()
+        super().__init__(_rect)
         if fill_color is None:
             fill_color = (0, 0, 0, 0)
         self.fill_color = fill_color
@@ -1017,7 +1008,7 @@ class ButtonHolder(ButtonHolderTemplate):
     def keyed(self, value):
         self._keyed = value
 
-    def add_button(self, button: ButtonHolderTemplate):
+    def add_button(self, button: BaseButton):
         """
         adds a button to the list
         :param button:
@@ -1092,7 +1083,7 @@ class ScrollableButtonHolder(ButtonHolder):
             start_x: int = 0,
             start_y: int = 0,
             step: int = 1,
-            init_list: list[ButtonHolderTemplate] = None,
+            init_list: list[BaseButton] = None,
             fill_color: Union[tuple[int, int, int], tuple[int, int, int, int], None] = None,
             outline_color: Union[tuple[int, int, int], None] = None,
             outline_width: int = 0,
@@ -1251,7 +1242,7 @@ class ScrollableButtonHolder(ButtonHolder):
         )
 
     def fit_y(self, margin: int = 0):
-        buttons: list[game_structures.ButtonHolderTemplate] = list(filter(lambda b: b is not None, self.list))
+        buttons: list[game_structures.BaseButton] = list(filter(lambda b: b is not None, self.list))
         if buttons:
             min_y: int = min(buttons, key=lambda button: button.rect.top).rect.top
             for button in buttons:
@@ -1352,7 +1343,7 @@ class ListHolder(ScrollableButtonHolder):
             start_x: int = 0,
             start_y: int = 0,
             step: int = 1,
-            init_list: list[ButtonHolderTemplate] = None,
+            init_list: list[BaseButton] = None,
             base_rect: Rect = None,
             fill_color: Union[tuple[int, int, int], tuple[int, int, int, int], None] = None,
             outline_color: Union[tuple[int, int, int], None] = None,
@@ -1421,12 +1412,12 @@ class SwitchHolder(ButtonHolder):
         self.__view = val
         self.list = self._views[val]
 
-    def add_view(self, val: list[ButtonHolderTemplate] = None):
+    def add_view(self, val: list[BaseButton] = None):
         if val is None:
             val = []
         self._views.append(val)
 
-    def __init__(self, start_view: int, init_lists: list[list[ButtonHolderTemplate]] = None, background: Surface = None, _rect: Rect = None,
+    def __init__(self, start_view: int, init_lists: list[list[BaseButton]] = None, background: Surface = None, _rect: Rect = None,
                  fill_color: Union[tuple[int, int, int], tuple[int, int, int, int], None] = None,
                  outline_color: Union[tuple[int, int, int], None] = None, outline_width: int = 0,
                  visible_check: Callable[[], bool] = utility.passing):

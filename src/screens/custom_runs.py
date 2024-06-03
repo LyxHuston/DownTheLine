@@ -119,10 +119,10 @@ def atom_changer_with_chars(prev_char: str, next_char: str):
 	return inner
 
 
-make_basic_atom_changer: Callable[[Any, int], game_structures.ButtonHolderTemplate] = atom_changer_with_chars(
+make_basic_atom_changer: Callable[[Any, int], game_structures.BaseButton] = atom_changer_with_chars(
 	"<", ">"
 )
-make_increment_atom_changer: Callable[[Any, int], game_structures.ButtonHolderTemplate] = atom_changer_with_chars(
+make_increment_atom_changer: Callable[[Any, int], game_structures.BaseButton] = atom_changer_with_chars(
 	"-", "+"
 )
 
@@ -156,7 +156,7 @@ def change_atom_val_to(field_option, button: game_structures.Button, val: Any):
 class FieldDatatype:
 	call: Callable
 	default_default_factory: Callable
-	default_buttons: Callable[[Self, int], game_structures.ButtonHolderTemplate]
+	default_buttons: Callable[[Self, int], game_structures.BaseButton]
 
 
 class FieldOption:
@@ -212,7 +212,7 @@ class FieldOption:
 				finalize: Callable,
 				default: Any,
 				contains: tuple[Self, ...],
-				buttons: Callable[[Self, int], game_structures.ButtonHolderTemplate]
+				buttons: Callable[[Self, int], game_structures.BaseButton]
 		):
 			self.typ = typ
 			self.options = options
@@ -224,7 +224,7 @@ class FieldOption:
 		def make(self):
 			return self.finalize(self.val)
 
-		def get_buttons(self, width: int) -> game_structures.ButtonHolderTemplate:
+		def get_buttons(self, width: int) -> game_structures.BaseButton:
 			return self.buttons(self, width)
 
 	_unspecified = object()
@@ -237,7 +237,7 @@ class FieldOption:
 			finalize: Callable = lambda x: x,
 			default: Any = _unspecified,
 			default_factory: Any = _unspecified,
-			buttons: Callable[[Self, int], game_structures.ButtonHolderTemplate] = _unspecified
+			buttons: Callable[[Self, int], game_structures.BaseButton] = _unspecified
 	):
 		if not typ.value.call(acceptor, options):
 			raise ValueError(f"Incorrect acceptor or options for field option of type {typ.name}")
