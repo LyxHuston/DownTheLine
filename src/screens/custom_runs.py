@@ -29,6 +29,8 @@ from data import game_states
 from general_use import game_structures, utility
 from run_game import game_areas, entities, bosses, items, minigames
 
+from screens import main_screen, run_start_end
+
 
 button_font: pygame.font.Font | None = None
 
@@ -398,6 +400,36 @@ def start_custom(custom: CustomRun):
 	game_areas.guaranteed_type = custom.guaranteed_type
 
 
-# custom_run_place = game_structures.Place(
-#
-# )
+LIST = None
+
+
+def first_enter():
+	global LIST
+
+	LIST = game_structures.ListHolder(
+		pygame.rect.Rect(0, 0, game_states.WIDTH, game_states.HEIGHT),
+		10,
+		20,
+		game_states.HEIGHT,
+		game_states.HEIGHT
+	)
+
+
+def setup_custom_run_screen():
+	if LIST is None:
+		first_enter()
+
+	game_structures.BUTTONS.clear()
+
+	game_structures.BUTTONS.add_button(LIST)
+
+	game_structures.BUTTONS.add_button(
+		game_structures.Button.make_text_button(
+			"Back", 75, (game_states.WIDTH, 0), main_screen.main_screen_place.start, x_align=1, y_align=0)
+	)
+
+
+custom_runs_screen = game_structures.Place(
+	tick=utility.passing,
+	enter=setup_custom_run_screen,
+)
