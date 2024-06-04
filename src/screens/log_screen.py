@@ -85,7 +85,7 @@ class RunRecord(game_structures.Place, game_structures.Button):
         self.buttons.add_button(
             game_structures.Button.make_text_button(self.reason, 400, (game_states.WIDTH // 4, 20), None,
                                                     background_color=(0, 0, 0), outline_color=(255, 255, 255),
-                                                    x_align=0, y_align=0)
+                                                    x_align=0, y_align=0, max_width=3 * game_states.WIDTH // 4 - 20)
         )
         self.buttons.add_button(
             game_structures.Button.make_text_button(f"seed: {self.seed}", 50, (game_states.WIDTH // 4, 520),
@@ -150,10 +150,11 @@ def enter(re_setup: bool = True):
 
     BUTTONS.clear()
 
-    RECORDS.change_background_size(
-        (game_states.WIDTH // 2, game_states.HEIGHT)
-    )
-    RECORDS.change_window((game_states.WIDTH // 4, 0), (game_states.WIDTH // 2, game_states.HEIGHT))
+    if re_setup:
+        RECORDS.change_background_size(
+            (game_states.WIDTH // 2, game_states.HEIGHT)
+        )
+        RECORDS.change_window((game_states.WIDTH // 4, 0), (game_states.WIDTH // 2, game_states.HEIGHT))
 
     BUTTONS.add_button(RECORDS)
     BUTTONS.add_button(
