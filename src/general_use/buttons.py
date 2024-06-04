@@ -1300,6 +1300,7 @@ class ScrollableButtonHolder(ButtonHolder):
 class ListHolder(ScrollableButtonHolder):
     """
     a ScrollableButtonHolder, except it also enforces an x position, spacing between elements, and window size.
+    requires all buttons to have a rect
     """
 
     def __init__(
