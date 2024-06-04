@@ -142,132 +142,89 @@ class BaseButton(ABC):
         lines = [""]
         word = ""
         words = 0
+
+        def add_new_line(start: str = ""):
+            nonlocal words
+            words = int(bool(start))  # start with 0 if empty string, start with 1 if non-empty
+            if len(lines) == max_lines:
+                return True
+            lines.append(start)
+
+        def add_word_to_last_line(check_newline: bool = True):
+            nonlocal word, words
+            _new_line = (lines[-1] + " " + word).lstrip(" ")
+            _length = draw_font.size(_new_line)[0]
+            if _length > max_line_pixels > 0:
+                if add_new_line(word):
+                    return True
+            else:
+                lines[-1] = _new_line
+            if word:  # only increment words counter if word actually had something
+                words += 1
+                word = ""
+                if check_newline and words == max_line_words:
+                    return add_new_line()
+            return False
+
         if isinstance(font, int):
             draw_font = ButtonHolder.fonts[font]
         else:
             draw_font = font
-        for char in text + " ":
+
+        i: int = 0
+        while i < len(text):
+            char = text[i]
+            i += 1
+
             if char == "\n":
-                if word != "":
-                    if lines[-1] == "":
-                        lines[-1] = word
-                    else:
-                        lines[-1] += " " + word
-                    word = ""
-                if len(lines) == max_lines:
-                    if draw_font.size(lines[-1] + "...")[0] > max_line_pixels:
-                        backstep = -1
-                        while draw_font.size(lines[-1][:backstep] + "...")[0] > max_line_pixels:
-                            backstep -= 1
-                            if backstep >= len(lines[-1]):
-                                break
-                        lines[-1] = lines[-1][:backstep] + "..."
-                    else:
-                        lines[-1] += "..."
+                if add_word_to_last_line(False):  # add word, don't check if it goes over the line
                     break
-                else:
-                    lines.append("")
-                words = 0
-            elif char == " ":
-                if lines[-1] == "":
-                    lines[-1] = word
-                elif preserve_words and max_line_pixels > 0:
-                    if lines[-1] == "":
-                        length = draw_font.size(word)
-                    else:
-                        length = draw_font.size(lines[-1] + " " + word)[0]
-                    if length > max_line_pixels:
-                        if len(lines) == max_lines:
-                            if draw_font.size(lines[-1] + "...")[0] > max_line_pixels:
-                                backstep = -1
-                                while draw_font.size(lines[-1][:backstep] + "...")[0] > max_line_pixels:
-                                    backstep -= 1
-                                    if backstep >= len(lines[-1]):
-                                        break
-                                lines[-1] = lines[-1][:backstep] + "..."
-                            else:
-                                lines[-1] += "..."
-                            break
-                        else:
-                            lines.append(word)
-                        words = 0
-                    else:
-                        if lines[-1] == "":
-                            lines[-1] = word
-                        else:
-                            lines[-1] += " " + word
-                else:
-                    if lines[-1] == "":
-                        lines[-1] = word
-                    else:
-                        lines[-1] += " " + word
-                word = ""
-                words += 1
-                if words >= max_line_words > 0:
-                    words = 0
-                    if len(lines) == max_lines:
-                        if draw_font.size(lines[-1] + "...")[0] > max_line_pixels:
-                            backstep = -1
-                            while draw_font.size(lines[-1][:backstep] + "...")[0] > max_line_pixels:
-                                backstep -= 1
-                                if backstep >= len(lines[-1]):
-                                    break
-                            lines[-1] = lines[-1][:backstep] + "..."
-                        else:
-                            lines[-1] += "..."
+                if add_new_line():
+                    break
+                continue
+
+            if char == " ":  # check words, not length.  Ok, yes, it also checks length
+                if add_word_to_last_line():
+                    break
+                continue
+
+            if max_line_pixels > 0 and not preserve_words:
+                new_line = (lines[-1] + " " + word).lstrip(" ")
+                length = draw_font.size(new_line + char)[0]
+                if length > max_line_pixels:
+                    lines[-1] = new_line
+                    if add_new_line():
                         break
-                    else:
-                        lines.append("")
-            else:
-                if max_line_pixels > 0:
-                    if lines[-1] == "":
-                        length = draw_font.size(word + char)[0]
-                    else:
-                        length = draw_font.size(lines[-1] + " " + word + char)[0]
-                    if length > max_line_pixels:
-                        if len(lines) == max_lines:
-                            if lines[-1] == "":
-                                lines[-1] = word
-                            else:
-                                lines[-1] += " " + word
-                            if draw_font.size(lines[-1] + "...")[0] > max_line_pixels:
-                                backstep = -1
-                                while draw_font.size(lines[-1][:backstep] + "...")[0] > max_line_pixels:
-                                    backstep -= 1
-                                    if backstep >= len(lines[-1]):
-                                        break
-                                lines[-1] = lines[-1][:backstep] + "..."
-                            else:
-                                lines[-1] += "..."
-                            break
-                        else:
-                            if not preserve_words:
-                                lines[-1] += word
-                                word = ""
-                            lines.append("")
-                        words = 0
-                word += char
-        if max_width > 0:
-            max_length = 0
-            for line in lines:
-                max_length = max(max_length, draw_font.size(line)[0])
-            if max_length > max_width:
-                draw_font = ButtonHolder.fonts[font * max_width / max_length]
-        if enforce_width == 0:
-            max_length = 0
-            for i in range(len(lines)):
-                lines[i] = draw_font.render(lines[i], True, outline_color, None)
-                max_length = max(max_length, lines[i].get_width())
-        else:
+            word += char
+
+        add_word_to_last_line()  # make sure to get the last word out
+
+        if i < len(text):  # if it for some reason quit early (aka there is trailing text)
+            backstep = -1
+            while draw_font.size(lines[-1][:backstep] + "...")[0] > max_line_pixels > 0:
+                backstep -= 1
+                if -1 * backstep >= len(lines[-1]):
+                    break
+            lines[-1] = lines[-1][:backstep] + "..."
+
+        if enforce_width != 0:
             max_length = enforce_width
-            for i in range(len(lines)):
-                lines[i] = draw_font.render(lines[i], True, outline_color, None)
+        elif not lines:
+            max_length = 0
+        else:
+            max_length = max(draw_font.size(line)[0] for line in lines)
+        if max_length > max_width > 0:
+            draw_font = ButtonHolder.fonts[int(font * max_width / max_length)]
         linesize = draw_font.get_linesize()
         text_surface = Surface((max_length, linesize * len(lines)), SRCALPHA)
         if background_color is not None:
             text_surface.fill(background_color)
         for i in range(len(lines)):
-            text_surface.blit(lines[i], (text_align * (max_length - lines[i].get_width()), i * linesize))
+            drawn = draw_font.render(lines[i], True, outline_color, None)
+            text_surface.blit(
+                drawn,
+                (text_align * (max_length - drawn.get_width()), i * linesize)
+            )
         text_surface.convert()
         return text_surface
 
