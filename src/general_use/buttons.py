@@ -1351,7 +1351,8 @@ class ListHolder(ScrollableButtonHolder):
                 continue
             button.rect.topleft = (self.__x_pos, y)
             y = button.rect.bottom
-        if y != self.background.get_height():
+        if y != self.__last_y:
+            self.__last_y = y
             self.background = pygame.Surface(
                 (self.background.get_width(), y),
                 self.background.get_flags(),
