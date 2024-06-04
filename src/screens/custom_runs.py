@@ -19,6 +19,7 @@ handles the custom runs, logic, and starting
 """
 
 import dataclasses
+import math
 
 from typing import Type, Callable, Any, Self
 from enum import Enum
@@ -201,7 +202,6 @@ class FieldOption:
 				self.options,
 				self.finalize,
 				self.default,
-				tuple(c.initialize() for c in self.args),
 				self.buttons
 			)
 
@@ -213,13 +213,11 @@ class FieldOption:
 				options: AtomChoices[Any],
 				finalize: Callable,
 				default: Any,
-				contains: tuple[Self, ...],
 				buttons: Callable[[Self, int], game_structures.BaseButton]
 		):
 			self.typ = typ
 			self.options = options
 			self.finalize = finalize
-			self.contains = contains
 			self.val = default
 			self.buttons = buttons
 
@@ -238,7 +236,7 @@ class FieldOption:
 			options: AtomChoices[Any] = None,
 			finalize: Callable = lambda x: x,
 			default: Any = _unspecified,
-			default_factory: Any = _unspecified,
+			default_factory: Callable[[Self], Any] = _unspecified,
 			buttons: Callable[[Self, int], game_structures.BaseButton] = _unspecified
 	):
 		if not typ.value.call(acceptor, options):
@@ -258,10 +256,12 @@ class FieldOption:
 			self.buttons = self.typ.value.default_buttons
 		else:
 			self.buttons = buttons
+		self.args = None
 
 	def __call__(self, *args):
 		if not self.acceptor(args):
 			raise ValueError(f"Incorrect values to create field of type {self.typ.name}")
+		self.args = list(args)
 		if self.default_factory is not FieldOption._unspecified:
 			default = self.default_factory(self)
 		else:
@@ -321,40 +321,71 @@ class FieldOptions(Enum):
 	DifficultyChange = FieldOption(FieldOption.FieldType.Atom, options=integers, buttons=make_increment_atom_changer)
 
 	@staticmethod
-	def list_default(_):
-		pass
+	def list_init_buttons(ifo, width):
+		lst = [
+				sub_ifo.get_buttons(width - 20) for sub_ifo in ifo.val[0]
+		]
+		holder = game_structures.ListHolder(
+			pygame.rect.Rect(0, 0, width, game_states.HEIGHT),
+			20,
+			20,
+			50,
+			game_states.HEIGHT,
+			init_list=lst
+		)
+
+		def add_new_to_list():
+			typ: FieldOption.ConstructedFieldOption = ifo.val[1]
+			new: FieldOption.InitializedFieldOption = typ.initialize()
+			buttons = new.get_buttons(width - 20)
+			ifo.val[0].append(new)
+			lst.insert(-2, buttons)
+
+		holder.add_button(
+			game_structures.Button.make_text_button(
+				"+",
+				button_font,
+				(0, 0),
+				down_click=add_new_to_list
+			)
+		)
+
+		return holder
 
 	List = FieldOption(
 		FieldOption.FieldType.Constructed,
 		acceptor=lambda args: len(args) == 1,
-		default_factory=list_default
+		default_factory=lambda fo: ([], fo.args[0]),
+		buttons=list_init_buttons
 	)
 
-	del list_default
-
-	@staticmethod
-	def tuple_default(_):
-		pass
+	del list_init_buttons
 
 	Tuple = FieldOption(
 		FieldOption.FieldType.Constructed,
 		acceptor=utility.passing,
-		default_factory=tuple_default
+		default_factory=lambda fo: tuple(f.initialize() for f in fo.args),
+		buttons=lambda ifo, width: game_structures.ListHolder(
+			pygame.rect.Rect(0, 0, width, game_states.HEIGHT),
+			20,
+			20,
+			0,
+			math.inf,
+			init_list=[sub_ifo.get_buttons(width) for sub_ifo in ifo.val[0]]
+		)
 	)
 
-	del tuple_default
-
-	@staticmethod
-	def mapping_default(_):
-		pass
-
-	Mapping = FieldOption(
-		FieldOption.FieldType.Constructed,
-		acceptor=lambda args: len(args) == 2 and all(a.t is FieldOption.FieldType.Atom for a in args),
-		default_factory=mapping_default
-	)
-
-	del mapping_default
+	# @staticmethod
+	# def mapping_default(_):
+	# 	pass
+	#
+	# Mapping = FieldOption(
+	# 	FieldOption.FieldType.Constructed,
+	# 	acceptor=lambda args: len(args) == 2 and all(a.t is FieldOption.FieldType.Atom for a in args),
+	# 	default_factory=mapping_default
+	# )
+	#
+	# del mapping_default
 
 
 @dataclasses.dataclass
