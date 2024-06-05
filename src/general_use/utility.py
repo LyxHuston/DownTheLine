@@ -25,6 +25,11 @@ import functools
 from sys import argv
 import pygame
 
+
+def from_camel(string: str):
+    return ''.join([char if char.islower() else ' ' + char for char in string])[1:]
+
+
 memoize_not_have = object()
 
 

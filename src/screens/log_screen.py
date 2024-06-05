@@ -104,7 +104,7 @@ class RunRecord(game_structures.Place, game_structures.Button):
                     ""
                 ] + [
                     f"""{
-                        ''.join([char if char.islower() else ' ' + char for char in item[0]])[1:]
+                        utility.from_camel(item[0])
                     }: {item[1]}""" for item in sorted(
                         list(ast.literal_eval(self.room_record).items()), key=lambda tup: tup[1]
                     )
