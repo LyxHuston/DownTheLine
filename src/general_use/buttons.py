@@ -877,6 +877,38 @@ class ButtonHolder(BaseButton):
                     width=self.outline_width
                 )
 
+    def fit_size(self, margin: int = 0):
+        self.fit_y(margin)
+        self.fit_x(margin)
+
+    def fit_y(self, margin: int = 0):
+        buttons: list[game_structures.BaseButton] = list(filter(
+            lambda b: b is not None and b.rect is not None, self.list
+        ))
+        if buttons:
+            min_y: int = min(buttons, key=lambda button: button.rect.top).rect.top
+            for button in buttons:
+                button.rect.top += margin - min_y
+            self.rect.top += min_y - margin
+            max_y: int = max(buttons, key=lambda button: button.rect.bottom).rect.bottom + margin
+        else:
+            max_y: int = margin * 2
+        self.rect.height = max_y
+
+    def fit_x(self, margin: int = 0):
+        buttons = list(filter(
+            lambda b: b is not None and b.rect is not None, self.list
+        ))
+        if buttons:
+            min_x = min(buttons, key=lambda button: button.rect.left).rect.left
+            for button in buttons:
+                button.rect.left += margin - min_x
+            self.rect.left += min_x - margin
+            max_x = max(buttons, key=lambda button: button.rect.right).rect.right + margin
+        else:
+            max_x = margin * 2
+        self.rect.width = max_x
+
     def do_click(self, mouse_pos: tuple[int, int], click_type) -> bool:
         """
         checks if mouse is on the button when mouse button is pressed, and if so, recursively
