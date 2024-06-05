@@ -1361,7 +1361,7 @@ class ListHolder(ScrollableButtonHolder):
         super().__init__(
             window_rect,
             None,
-            True,
+            False,
             True,
             start_x,
             start_y,
@@ -1386,12 +1386,71 @@ class ListHolder(ScrollableButtonHolder):
             y = button.rect.bottom
         if y != self.__last_y:
             self.__last_y = y
-            self.background = pygame.Surface(
-                (self.background.get_width(), y),
-                self.background.get_flags(),
-                masks=self.background.get_masks()
-            )
-        self.change_background_size((self.rect.width, self.__snap_window_length(y)))
+            self.change_background_size((self.rect.width, self.__snap_window_length(y)))
+
+    def render_onto(self, onto: Surface, mouse_pos: tuple[int, int]) -> None:
+        self.fix_list()
+        super().render_onto(onto, mouse_pos)
+
+
+class HorizontalListHolder(ScrollableButtonHolder):
+    """
+    a ScrollableButtonHolder, except it also enforces an x position, spacing between elements, and window size.
+    requires all buttons to have a rect
+    """
+
+    def __init__(
+            self,
+            window_rect: Rect,
+            y_pos: int,
+            x_separation: int,
+            min_window_length: int,
+            max_window_length: int,
+            start_x: int = 0,
+            start_y: int = 0,
+            step: int = 1,
+            init_list: list[BaseButton] = None,
+            fill_color: Union[tuple[int, int, int], tuple[int, int, int, int], None] = None,
+            outline_color: Union[tuple[int, int, int], None] = None,
+            outline_width: int = 0,
+            visible_check: Callable[[], bool] = utility.passing
+    ):
+        """
+        initializes
+        """
+        self.__y_pos = y_pos
+        self.__x_sep = x_separation
+        self.__snap_window_length = lambda x: min(max(x, min_window_length), max_window_length)
+        self.__last_x = 0
+        super().__init__(
+            window_rect,
+            None,
+            True,
+            False,
+            start_x,
+            start_y,
+            step,
+            init_list,
+            fill_color,
+            outline_color,
+            outline_width,
+            visible_check
+        )
+        self.fix_list()
+
+    def fix_list(self):
+        x: int = self.__x_sep
+        i: int = 0
+        while i < len(self.list):
+            button = self.list[i]
+            i += 1
+            if not button.visible:
+                continue
+            button.rect.topleft = (x, self.y_pos)
+            x = button.rect.right
+        if x != self.__last_x:
+            self.__last_x = x
+            self.change_background_size((self.__snap_window_length(x), self.rect.height))
 
     def render_onto(self, onto: Surface, mouse_pos: tuple[int, int]) -> None:
         self.fix_list()
