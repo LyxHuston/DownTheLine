@@ -1446,7 +1446,7 @@ class HorizontalListHolder(ScrollableButtonHolder):
             i += 1
             if not button.visible:
                 continue
-            button.rect.topleft = (x, self.y_pos)
+            button.rect.topleft = (x, self.__y_pos)
             x = button.rect.right
         if x != self.__last_x:
             self.__last_x = x
