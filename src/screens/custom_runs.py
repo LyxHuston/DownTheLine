@@ -103,20 +103,20 @@ def atom_changer_with_chars(prev_char: str, next_char: str):
 			game_structures.Button.make_text_button(
 				prev_char,
 				button_font,
-				center=(width - 32, 10),
+				center=(width - 128, 10),
 				x_align=1,
 				y_align=0,
 				down_click=lambda: change_atom_val_to(field_option, button, field_option.options.prev(field_option.val)),
-				border_width=5
+				enforce_width=32
 			),
 			game_structures.Button.make_text_button(
 				next_char,
 				button_font,
-				center=(width, 10),
+				center=(width - 64, 10),
 				x_align=1,
 				y_align=0,
 				down_click=lambda: change_atom_val_to(field_option, button, field_option.options.next(field_option.val)),
-				border_width=5
+				enforce_width=32
 			),
 		], _rect=pygame.rect.Rect(0, 0, width, button.rect.height + 20))
 	return inner
@@ -465,7 +465,7 @@ def add_new_custom_run(area_type: Type[game_areas.GameArea]):
 	fields: FieldOption.ConstructedFieldOption = area_type.fields
 	new_ifo: FieldOption.InitializedFieldOption = fields.initialize()
 	custom_run_list.append(new_ifo)
-	LIST.list.insert(-1, new_ifo.get_buttons(game_states.WIDTH - 20))
+	LIST.list.insert(-1, new_ifo.get_buttons(game_states.WIDTH - game_structures.BUTTONS[1].rect.width - 40))
 
 
 def first_enter():
