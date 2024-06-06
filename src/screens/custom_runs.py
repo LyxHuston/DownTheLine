@@ -373,7 +373,7 @@ class FieldOptions(Enum):
 			new: FieldOption.InitializedFieldOption = typ.initialize()
 			buttons = new.get_buttons(width - 20)
 			ifo.val[0].append(new)
-			lst.insert(-2, buttons)
+			lst.insert(-1, buttons)
 
 		holder.add_button(
 			game_structures.Button.make_text_button(
