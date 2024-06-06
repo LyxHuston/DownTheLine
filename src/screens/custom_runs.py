@@ -187,6 +187,7 @@ class FieldOption:
 				options: AtomChoices[Any],
 				finalize: Callable,
 				default: Any,
+				default_factory,
 				args: tuple[Self, ...],
 				buttons: Callable
 		):
@@ -194,15 +195,20 @@ class FieldOption:
 			self.options = options
 			self.finalize = finalize
 			self.default = default
+			self.default_factory = default_factory
 			self.args = args
 			self.buttons = buttons
 
 		def initialize(self):
+			if self.default_factory is not FieldOption._unspecified:
+				default = self.default_factory(self)
+			else:
+				default = self.default
 			return FieldOption.InitializedFieldOption(
 				self.typ,
 				self.options,
 				self.finalize,
-				self.default,
+				default,
 				self.buttons
 			)
 
@@ -257,21 +263,16 @@ class FieldOption:
 			self.buttons = self.typ.value.default_buttons
 		else:
 			self.buttons = buttons
-		self.args = None
 
 	def __call__(self, *args):
 		if not self.acceptor(args):
 			raise ValueError(f"Incorrect values to create field of type {self.typ.name}")
-		self.args = list(args)
-		if self.default_factory is not FieldOption._unspecified:
-			default = self.default_factory(self)
-		else:
-			default = self.default
 		return FieldOption.ConstructedFieldOption(
 			self.typ,
 			self.options,
 			self.finalize,
-			default,
+			self.default,
+			self.default_factory,
 			tuple(args),
 			self.buttons
 		)
