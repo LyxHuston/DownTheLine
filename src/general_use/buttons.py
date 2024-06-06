@@ -860,7 +860,7 @@ class ButtonHolder(BaseButton):
         mouse_pos = self.adjust_mouse_pos(mouse_pos)
         if self.background is None:
             if self.rect is not None:
-                onto = onto.subsurface(self.rect)
+                onto = onto.subsurface(onto.get_rect().clip(self.rect))
             for button in self.list:
                 if button is None:
                     continue
