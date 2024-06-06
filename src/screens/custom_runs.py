@@ -92,7 +92,7 @@ positives: AtomChoices[int] = range_choices(1)
 def atom_changer_with_chars(prev_char: str, next_char: str):
 	def inner(field_option, width: int):
 		button = game_structures.Button.make_text_button(
-			str(field_option.val),
+			field_option.options.to_str(field_option.val),
 			button_font,
 			center=(0, 0),
 			x_align=0,
@@ -146,12 +146,11 @@ def make_boolean_atom_changer(field_option, width: int):
 
 
 def change_atom_val_to(field_option, button: game_structures.Button, val: Any):
-	print(val)
 	field_option.val = val
 	button.rewrite_button(
-		str(val),
+		field_option.options.to_str(val),
 		button_font,
-		center=(0, 10),
+		center=button.rect.topleft,
 		x_align=0,
 		y_align=0
 	)
@@ -290,8 +289,8 @@ normal_enemy_types = tuple(
 boss_types = tuple(game_structures.recursive_subclasses(bosses.Boss))
 
 
-class_name_getter = lambda val: val.__name__
-enum_name_getter = lambda val: val.name
+class_name_getter = lambda val: utility.from_camel(val.__name__)
+enum_name_getter = lambda val: utility.from_camel(val.name)
 
 
 class FieldOptions(Enum):
