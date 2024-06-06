@@ -477,7 +477,44 @@ def add_new_custom_run(area_type: Type[game_areas.GameArea]):
 	fields: FieldOption.ConstructedFieldOption = area_type.fields
 	new_ifo: FieldOption.InitializedFieldOption = fields.initialize()
 	custom_run_list.append(new_ifo)
-	LIST.list.insert(-1, new_ifo.get_buttons(game_states.WIDTH - game_structures.BUTTONS[1].rect.width - 40))
+	LIST.list.insert(
+		-1,
+		game_structures.ListHolder(
+			pygame.rect.Rect(0, 0, game_states.WIDTH, game_states.HEIGHT),
+			10,
+			20,
+			0,
+			math.inf,
+			init_list=[
+				game_structures.HorizontalListHolder(
+					pygame.rect.Rect(0, 0, 0, 100),
+					10,
+					20,
+					0,
+					game_states.WIDTH,
+					outline_width=5,
+					init_list=[
+						game_structures.Button.make_text_button(
+							utility.from_camel(area_type.__name__),
+							button_font,
+							(0, 0)
+						),
+						game_structures.Button.make_text_button(
+							"delete",
+							button_font,
+							(0, 0)
+						),
+						game_structures.Button.make_text_button(
+							"play",
+							button_font,
+							(0, 0)
+						)
+					]
+				),
+				new_ifo.get_buttons(game_states.WIDTH - game_structures.BUTTONS[1].rect.width - 40)
+			]
+		)
+	)
 
 
 def first_enter():
