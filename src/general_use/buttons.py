@@ -1080,8 +1080,8 @@ class ScrollableButtonHolder(ButtonHolder):
             start_y: int = 0,
             step: int = 1,
             init_list: list[BaseButton] = None,
-            fill_color: Union[tuple[int, int, int], tuple[int, int, int, int], None] = None,
-            outline_color: Union[tuple[int, int, int], None] = None,
+            fill_color: Union[tuple[int, int, int], tuple[int, int, int, int], None] = default_background,
+            outline_color: Union[tuple[int, int, int], None] = default_text_color,
             outline_width: int = 0,
             visible_check: Callable[[], bool] = utility.passing
     ):
@@ -1355,8 +1355,8 @@ class ListHolder(ScrollableButtonHolder):
             start_y: int = 0,
             step: int = 1,
             init_list: list[BaseButton] = None,
-            fill_color: Union[tuple[int, int, int], tuple[int, int, int, int], None] = None,
-            outline_color: Union[tuple[int, int, int], None] = None,
+            fill_color: Union[tuple[int, int, int], tuple[int, int, int, int], None] = default_background,
+            outline_color: Union[tuple[int, int, int], None] = default_text_color,
             outline_width: int = 0,
             visible_check: Callable[[], bool] = utility.passing
     ):
@@ -1392,10 +1392,14 @@ class ListHolder(ScrollableButtonHolder):
             if not button.visible:
                 continue
             button.rect.topleft = (self.__x_pos, y)
-            y = button.rect.bottom
+            y = button.rect.bottom + self.__y_sep
         if y != self.__last_y:
             self.__last_y = y
-            self.change_background_size((self.rect.width, self.__snap_window_length(y)))
+            snapped = self.__snap_window_length(y)
+            if snapped > y:
+                y = snapped
+            self.rect.height = self.clip_rect.height = snapped
+            self.change_background_size((self.rect.width, y))
 
     def render_onto(self, onto: Surface, mouse_pos: tuple[int, int]) -> None:
         self.fix_list()
@@ -1419,8 +1423,8 @@ class HorizontalListHolder(ScrollableButtonHolder):
             start_y: int = 0,
             step: int = 1,
             init_list: list[BaseButton] = None,
-            fill_color: Union[tuple[int, int, int], tuple[int, int, int, int], None] = None,
-            outline_color: Union[tuple[int, int, int], None] = None,
+            fill_color: Union[tuple[int, int, int], tuple[int, int, int, int], None] = default_background,
+            outline_color: Union[tuple[int, int, int], None] = default_text_color,
             outline_width: int = 0,
             visible_check: Callable[[], bool] = utility.passing
     ):
@@ -1456,10 +1460,14 @@ class HorizontalListHolder(ScrollableButtonHolder):
             if not button.visible:
                 continue
             button.rect.topleft = (x, self.__y_pos)
-            x = button.rect.right
+            x = button.rect.right + self.__x_sep
         if x != self.__last_x:
             self.__last_x = x
-            self.change_background_size((self.__snap_window_length(x), self.rect.height))
+            snapped = self.__snap_window_length(x)
+            if snapped > x:
+                x = snapped
+            self.rect.width = self.clip_rect.width = snapped
+            self.change_background_size((x, self.rect.height))
 
     def render_onto(self, onto: Surface, mouse_pos: tuple[int, int]) -> None:
         self.fix_list()
