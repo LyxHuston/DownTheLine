@@ -283,6 +283,9 @@ entity_types = tuple(
 	for e_t in game_structures.recursive_subclasses(entities.Entity)
 	if e_t.make is not entities.Entity.make and not issubclass(e_t, bosses.Boss)
 )
+normal_enemy_types = tuple(
+	e_t for e_t, _ in game_areas.GameArea.allowable_thresh_holds
+)
 
 boss_types = tuple(game_structures.recursive_subclasses(bosses.Boss))
 
@@ -299,6 +302,14 @@ class FieldOptions(Enum):
 	))
 	InstantiatedEntity = FieldOption(FieldOption.FieldType.Atom, options=tuple_choices(
 		tuple(entity_types),
+		to_str=class_name_getter
+	))
+	NormalEntityType = FieldOption(FieldOption.FieldType.Atom, options=tuple_choices(
+		tuple(normal_enemy_types),
+		to_str=class_name_getter
+	))
+	NormalInstantiatedEntity = FieldOption(FieldOption.FieldType.Atom, options=tuple_choices(
+		tuple(normal_enemy_types),
 		to_str=class_name_getter
 	))
 	BossType = FieldOption(FieldOption.FieldType.Atom, options=tuple_choices(

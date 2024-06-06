@@ -308,7 +308,7 @@ class BasicArea(GameArea):
 
     fields = (
         FieldOptions.List.value(
-            FieldOptions.EntityType.value()
+            FieldOptions.NormalEntityType.value()
         ),
         FieldOptions.Label.value(
             "tutorial?",
