@@ -139,9 +139,10 @@ def make_boolean_atom_changer(field_option, width: int):
 		y_align=0,
 		down_click=lambda: change_atom_val_to(field_option, button, not field_option.val)
 	)
-	return game_structures.ButtonHolder([
-		button,
-	], _rect=pygame.rect.Rect(0, 0, width, button.rect.height + 20))
+	return button
+	# return game_structures.ButtonHolder([
+	# 	button,
+	# ], _rect=pygame.rect.Rect(0, 0, width, button.rect.height + 20))
 
 
 def change_atom_val_to(field_option, button: game_structures.Button, val: Any):
