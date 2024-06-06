@@ -1065,6 +1065,56 @@ class ButtonHolder(BaseButton):
         return f"{self.__class__.__name__}[rect:{self.rect}, list:{self.list}]"
 
 
+class FittingButtonHolder(ButtonHolder):
+    """
+    a button holder that always fits the contents, no matter what.  Doesn't have a background
+    """
+
+    def __init__(self, init_list: list[BaseButton] = None, pos: tuple[int, int] = (0, 0), margin: int = 0,
+                 fill_color: Union[tuple[int, int, int], tuple[int, int, int, int], None] = None,
+                 outline_color: Union[tuple[int, int, int], None] = None, outline_width: int = 0,
+                 visible_check: Callable[[], bool] = utility.passing):
+        """
+        initializes
+        """
+        self.margin = margin
+        super().__init__(
+            init_list,
+            None,
+            pygame.rect.Rect(pos[0], pos[1], 0, 0),
+            fill_color,
+            outline_color,
+            outline_width,
+            visible_check
+        )
+        self.fit_size(self.margin)
+
+    def render_onto(self, onto: Surface, mouse_pos: tuple[int, int]) -> None:
+        """
+        draws onto a surface
+        :param onto:
+        :param mouse_pos:
+        :return:
+        """
+        if not self.visible():
+            return
+        self.fit_size(self.margin)
+        mouse_pos = self.adjust_mouse_pos(mouse_pos)
+        for button in self.list:
+            if button is None:
+                continue
+            button.render_onto(onto, mouse_pos)
+        if self.outline_width > 0:
+            rect(
+                onto,
+                self.outline_color,
+                self.rect.inflate(2 * self.outline_width, 2 * self.outline_width),
+                width=self.outline_width
+            )
+
+
+
+
 class ScrollableButtonHolder(ButtonHolder):
     """
     holds a list of buttons or button holders
