@@ -711,6 +711,9 @@ class Button(BaseButton):
         if self.img is not None:
             self.img.convert()
 
+    def __repr__(self):
+        return f"{self.__class__.__name__}[rect:{self.rect}, text:{self.text}]"
+
 
 class DrawButton(Button):
 
@@ -1058,6 +1061,9 @@ class ButtonHolder(BaseButton):
     def __iter__(self):
         return self.list.__iter__()
 
+    def __repr__(self):
+        return f"{self.__class__.__name__}[rect:{self.rect}, list:{self.list}]"
+
 
 class ScrollableButtonHolder(ButtonHolder):
     """
@@ -1327,6 +1333,9 @@ class ScrollableButtonHolder(ButtonHolder):
                 self.rect.inflate(2 * self.outline_width, 2 * self.outline_width),
                 width=self.outline_width
             )
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}[rect: {self.rect}, clip: {self.clip_rect}, list: {self.list}]"
 
 
 class ListHolder(ScrollableButtonHolder):
