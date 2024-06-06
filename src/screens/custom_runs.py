@@ -38,7 +38,7 @@ button_font: pygame.font.Font | None = None
 
 def get_button_font():
 	global button_font
-	button_font = game_structures.TUTORIAL_FONTS[32]
+	button_font = game_structures.TUTORIAL_FONTS[64]
 
 
 def raise_exc(exc: Exception):
@@ -134,7 +134,7 @@ def make_boolean_atom_changer(field_option, width: int):
 	button = game_structures.Button.make_text_button(
 		str(field_option.val),
 		button_font,
-		center=(0, 0),
+		center=(0, 10),
 		x_align=0,
 		y_align=0,
 		down_click=lambda: change_atom_val_to(field_option, button, not field_option.val)
@@ -145,6 +145,7 @@ def make_boolean_atom_changer(field_option, width: int):
 
 
 def change_atom_val_to(field_option, button: game_structures.Button, val: Any):
+	print(val)
 	field_option.val = val
 	button.rewrite_button(
 		str(val),
@@ -320,6 +321,28 @@ class FieldOptions(Enum):
 	Difficulty = FieldOption(FieldOption.FieldType.Atom, options=positives, buttons=make_increment_atom_changer)
 	DifficultyChange = FieldOption(FieldOption.FieldType.Atom, options=integers, buttons=make_increment_atom_changer)
 
+	Label = FieldOption(
+		FieldOption.FieldType.Constructed,
+		acceptor=lambda args:
+			len(args) == 2 and isinstance(args[0], str) and isinstance(args[1], FieldOption.ConstructedFieldOption),
+		default_factory=lambda fo: (fo.args[0], fo.args[1].initialize()),
+		buttons=lambda ifo, width: game_structures.ListHolder(
+			pygame.rect.Rect(0, 0, width, game_states.HEIGHT),
+			20,
+			20,
+			0,
+			math.inf,
+			init_list=[
+				game_structures.Button.make_text_button(
+					ifo.val[0],
+					button_font,
+					(0, 0)
+				),
+				ifo.val[1].get_buttons(width)
+			]
+		)
+	)
+
 	@staticmethod
 	def list_init_buttons(ifo, width):
 		lst = [
@@ -371,7 +394,8 @@ class FieldOptions(Enum):
 			20,
 			0,
 			math.inf,
-			init_list=[sub_ifo.get_buttons(width) for sub_ifo in ifo.val[0]]
+			init_list=[sub_ifo.get_buttons(width) for sub_ifo in ifo.val],
+			outline_width=5
 		)
 	)
 
@@ -431,11 +455,28 @@ def start_custom(custom: CustomRun):
 	game_areas.guaranteed_type = custom.guaranteed_type
 
 
-LIST = None
+LIST: game_structures.ListHolder | None = None
+custom_run_list: list[FieldOption.InitializedFieldOption] = []
+
+area_types = None
+
+
+def add_new_custom_run(area_type: Type[game_areas.GameArea]):
+	fields: FieldOption.ConstructedFieldOption = area_type.fields
+	new_ifo: FieldOption.InitializedFieldOption = fields.initialize()
+	custom_run_list.append(new_ifo)
+	LIST.list.insert(-1, new_ifo.get_buttons(game_states.WIDTH - 20))
 
 
 def first_enter():
-	global LIST
+	global LIST, area_types
+
+	area_types = tuple(sorted(
+		game_structures.recursive_subclasses(game_areas.GameArea),
+		key=lambda cls: cls.first_allowed_spawn
+	))
+
+	get_button_font()
 
 	LIST = game_structures.ListHolder(
 		pygame.rect.Rect(0, 0, game_states.WIDTH, game_states.HEIGHT),
@@ -444,6 +485,64 @@ def first_enter():
 		game_states.HEIGHT,
 		game_states.HEIGHT
 	)
+
+	i = 0
+
+	def change_type(direction: int):
+		nonlocal i
+		i = (i + direction) % len(area_types)
+		show_area_type.rewrite_button(
+			utility.from_camel(area_types[i].__name__),
+			button_font,
+			show_area_type.rect.topleft,
+			y_align=0,
+			x_align=0
+		)
+		adder.fit_size()
+
+	show_area_type = game_structures.Button.make_text_button(
+		"",
+		button_font,
+		(0, 0)
+	)
+
+	adder = game_structures.HorizontalListHolder(
+		pygame.rect.Rect(0, 0, 0, 0),
+		20,
+		20,
+		20,
+		game_states.WIDTH,
+		init_list=[
+			show_area_type,
+			game_structures.Button.make_text_button(
+				"<",
+				button_font,
+				(0, 0),
+				change_type,
+				arguments={"direction": -1}
+			),
+			game_structures.Button.make_text_button(
+				">",
+				button_font,
+				(0, 0),
+				change_type,
+				arguments={"direction": 1}
+			),
+			game_structures.Button.make_text_button(
+				"+",
+				button_font,
+				(0, 0),
+				lambda: add_new_custom_run(area_types[i])
+			)
+		],
+		outline_width=5
+	)
+
+	adder.fit_y(20)
+	adder.rect.height = adder.clip_rect.height = adder.base_rect.height
+	change_type(0)
+
+	LIST.add_button(adder)
 
 
 def setup_custom_run_screen():
@@ -456,7 +555,9 @@ def setup_custom_run_screen():
 
 	game_structures.BUTTONS.add_button(
 		game_structures.Button.make_text_button(
-			"Back", 75, (game_states.WIDTH, 0), main_screen.main_screen_place.start, x_align=1, y_align=0)
+			"Back", 75, (game_states.WIDTH, 0), main_screen.main_screen_place.start, x_align=1,
+			y_align=0, border_width=5
+		)
 	)
 
 

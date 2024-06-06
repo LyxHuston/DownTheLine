@@ -121,10 +121,11 @@ class GameArea:
             self.__class__.seen = True
             self.start_tutorial()
 
-    first_allowed_spawn = 0
+    first_allowed_spawn = -1
     last_spawned = 0
     required_wait_interval = 0
     required_previous = []
+
     @classmethod
     def allowed_at(cls, index: int) -> bool:
         if cls.first_allowed_spawn > index or cls.last_spawned + cls.required_wait_interval >= index:
@@ -259,6 +260,8 @@ class GameArea:
     def determine_parts(self):
         raise NotImplementedError(f"method 'determine parts' not implemented for class '{self.__class__.__name__}'")
 
+    fields = None
+
     def make(self, *args, **kwargs):
         raise NotImplementedError(f"method 'make' not implemented for class '{self.__class__.__name__}'")
 
@@ -278,6 +281,8 @@ class BasicArea(GameArea):
     """
     a basic fight area.  Fight a few monsters and continue.
     """
+
+    first_allowed_spawn = 0
 
     def __init__(self, determiner, count):
         self.difficulty = count
@@ -305,7 +310,10 @@ class BasicArea(GameArea):
         FieldOptions.List.value(
             FieldOptions.EntityType.value()
         ),
-        FieldOptions.Bool.value()
+        FieldOptions.Label.value(
+            "tutorial?",
+            FieldOptions.Bool.value()
+        )
     )
 
     def make(self, entity_list: list[Type[entities.Entity]], tutorial: bool):
@@ -378,11 +386,17 @@ class BreakThroughArea(GameArea):
         self.make(spawner_list, entity_list)
 
     fields = (
-        FieldOptions.List.value(
-            FieldOptions.InstantiatedEntity.value()
+        FieldOptions.Label.value(
+            "Spawner List",
+            FieldOptions.List.value(
+                FieldOptions.InstantiatedEntity.value()
+            )
         ),
-        FieldOptions.List.value(
-            FieldOptions.EntityType.value()
+        FieldOptions.Label.value(
+            "Entity List",
+            FieldOptions.List.value(
+                FieldOptions.EntityType.value()
+            )
         )
     )
 
@@ -580,10 +594,13 @@ class EnslaughtArea(GameArea, have_starter=True):
         self.make(event_list)
 
     fields = (
-        FieldOptions.List.value(
-            FieldOptions.Tuple.value(
-                FieldOptions.EnslaughtEventType.value(),
-                FieldOptions.DifficultyChange.value()
+        FieldOptions.Label.value(
+            "Event List",
+            FieldOptions.List.value(
+                FieldOptions.Tuple.value(
+                    FieldOptions.EnslaughtEventType.value(),
+                    FieldOptions.DifficultyChange.value()
+                )
             )
         ),
     )
@@ -709,7 +726,10 @@ class MinigameArea(GameArea, have_starter=True):
         self.make(self.random.choice(Minigame.minigames))
 
     fields = (
-        FieldOptions.MinigameType.value(),
+        FieldOptions.Label.value(
+            "Minigame Type",
+            FieldOptions.MinigameType.value(),
+        ),
     )
 
     def make(self, typ: Type[Minigame]):
@@ -780,7 +800,10 @@ class BossArea(GameArea):
         self.make(None)  # TODO
 
     fields = (
-        FieldOptions.BossType.value(),
+        FieldOptions.Label.value(
+            "Boss type",
+            FieldOptions.BossType.value()
+        ),
     )
 
     def make(self, boss: Type[bosses.Boss] | None):
