@@ -359,7 +359,7 @@ class FieldOptions(Enum):
 	@staticmethod
 	def list_init_buttons(ifo, width):
 		lst = [
-				sub_ifo.get_buttons(width - 20) for sub_ifo in ifo.val[0]
+				sub_ifo.get_buttons(width - 128) for sub_ifo in ifo.val[0]
 		]
 		holder = game_structures.ListHolder(
 			pygame.rect.Rect(0, 0, width, game_states.HEIGHT),
@@ -373,7 +373,18 @@ class FieldOptions(Enum):
 		def add_new_to_list():
 			typ: FieldOption.ConstructedFieldOption = ifo.val[1]
 			new: FieldOption.InitializedFieldOption = typ.initialize()
-			buttons = new.get_buttons(width - 20)
+			ifo_buttons = new.get_buttons(width - 64)
+			buttons = game_structures.ButtonHolder(
+				[ifo_buttons],
+				_rect=pygame.rect.Rect(0, 0, width - 20, ifo_buttons.rect.height)
+			)
+			buttons.add_button(
+				game_structures.Button.make_text_button(
+					"-", button_font, (width - 96, 10),
+					down_click=functools.partial(remove_from_list, ifo.val[0], lst, new, buttons),
+					x_align=0, y_align=0
+				)
+			)
 			ifo.val[0].append(new)
 			lst.insert(-1, buttons)
 
@@ -474,10 +485,15 @@ custom_run_list: list[FieldOption.InitializedFieldOption] = []
 area_types = None
 
 
-def remove_from_list(ifo: FieldOption.InitializedFieldOption, button: game_structures.BaseButton):
+def remove_from_list(
+		ifo_list: list[FieldOption.InitializedFieldOption],
+		button_list: list[game_structures.BaseButton],
+		ifo: FieldOption.InitializedFieldOption,
+		button: game_structures.BaseButton
+):
 	try:
-		custom_run_list.remove(ifo)
-		LIST.list.remove(button)
+		ifo_list.remove(ifo)
+		button_list.remove(button)
 	except ValueError:
 		pass
 
@@ -513,7 +529,7 @@ def add_new_custom_run(area_type: Type[game_areas.GameArea]):
 				"delete",
 				button_font,
 				(0, 0),
-				down_click=functools.partial(remove_from_list, new_ifo, buttons)
+				down_click=functools.partial(remove_from_list, custom_run_list, LIST.list, new_ifo, buttons)
 			),
 			game_structures.Button.make_text_button(
 				"play",

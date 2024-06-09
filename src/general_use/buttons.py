@@ -1073,6 +1073,7 @@ class FittingButtonHolder(ButtonHolder):
         initializes
         """
         self.margin = margin
+        self.pos = pos
         super().__init__(
             init_list,
             None,
@@ -1082,7 +1083,33 @@ class FittingButtonHolder(ButtonHolder):
             outline_width,
             visible_check
         )
-        self.fit_size(self.margin)
+
+    @property
+    def rect(self):
+        rct: pygame.rect.Rect = pygame.rect.Rect(0, 0, 0, 0)
+        rct.unionall_ip(
+            tuple(button.rect for button in self.list if button.rect is not None)
+        )
+        self.pos = (self.__rect.left - self.margin, self.__rect.top - self.margin)
+        rct.topleft = self.pos
+        rct.inflate_ip(self.margin * 2, self.margin * 2)
+        self.__rect.update(rct)
+        return self.__rect
+
+    @rect.setter
+    def rect(self, val: pygame.rect.Rect):
+        self.pos = val.topleft
+        val.top -= self.margin
+        val.left -= self.margin
+        self.__rect = val
+
+    def adjust_mouse_pos(self, mouse_pos: tuple[int, int]) -> tuple[int, int]:
+        """
+        adjust mouse position passed based on the holder's rect
+        :param mouse_pos:
+        :return:
+        """
+        return mouse_pos[0] - self.pos[0], mouse_pos[1] - self.pos[1]
 
     def render_onto(self, onto: Surface, mouse_pos: tuple[int, int]) -> None:
         """
@@ -1093,8 +1120,9 @@ class FittingButtonHolder(ButtonHolder):
         """
         if not self.visible():
             return
-        self.fit_size(self.margin)
         mouse_pos = self.adjust_mouse_pos(mouse_pos)
+        rct: pygame.Rect = self.rect
+        onto = onto.subsurface(onto.get_rect().clip(rct))
         for button in self.list:
             if button is None:
                 continue
@@ -1103,7 +1131,7 @@ class FittingButtonHolder(ButtonHolder):
             rect(
                 onto,
                 self.outline_color,
-                self.rect.inflate(2 * self.outline_width, 2 * self.outline_width),
+                rct.inflate(2 * self.outline_width, 2 * self.outline_width),
                 width=self.outline_width
             )
 
