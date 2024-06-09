@@ -19,6 +19,7 @@ handles the custom runs, logic, and starting
 """
 
 import dataclasses
+import functools
 import math
 
 from typing import Type, Callable, Any, Self
@@ -473,47 +474,58 @@ custom_run_list: list[FieldOption.InitializedFieldOption] = []
 area_types = None
 
 
+def remove_from_list(ifo: FieldOption.InitializedFieldOption, button: game_structures.BaseButton):
+	try:
+		custom_run_list.remove(ifo)
+		LIST.list.remove(button)
+	except ValueError:
+		pass
+
+
 def add_new_custom_run(area_type: Type[game_areas.GameArea]):
 	fields: FieldOption.ConstructedFieldOption = area_type.fields
 	new_ifo: FieldOption.InitializedFieldOption = fields.initialize()
 	custom_run_list.append(new_ifo)
-	LIST.list.insert(
-		-1,
-		game_structures.ListHolder(
+	buttons: game_structures.ButtonHolder = game_structures.ListHolder(
 			pygame.rect.Rect(0, 0, game_states.WIDTH, game_states.HEIGHT),
 			10,
 			20,
 			0,
 			math.inf,
 			init_list=[
-				game_structures.HorizontalListHolder(
-					pygame.rect.Rect(0, 0, 0, 100),
-					10,
-					20,
-					0,
-					game_states.WIDTH,
-					outline_width=5,
-					init_list=[
-						game_structures.Button.make_text_button(
-							utility.from_camel(area_type.__name__),
-							button_font,
-							(0, 0)
-						),
-						game_structures.Button.make_text_button(
-							"delete",
-							button_font,
-							(0, 0)
-						),
-						game_structures.Button.make_text_button(
-							"play",
-							button_font,
-							(0, 0)
-						)
-					]
-				),
 				new_ifo.get_buttons(game_states.WIDTH - game_structures.BUTTONS[1].rect.width - 40)
 			]
 		)
+	name_bar: game_structures.ButtonHolder = game_structures.HorizontalListHolder(
+		pygame.rect.Rect(0, 0, 0, 100),
+		10,
+		20,
+		0,
+		game_states.WIDTH,
+		outline_width=5,
+		init_list=[
+			game_structures.Button.make_text_button(
+				utility.from_camel(area_type.__name__),
+				button_font,
+				(0, 0)
+			),
+			game_structures.Button.make_text_button(
+				"delete",
+				button_font,
+				(0, 0),
+				down_click=functools.partial(remove_from_list, new_ifo, buttons)
+			),
+			game_structures.Button.make_text_button(
+				"play",
+				button_font,
+				(0, 0)
+			)
+		]
+	)
+	buttons.list.insert(0, name_bar)
+	LIST.list.insert(
+		-1,
+		buttons
 	)
 
 
