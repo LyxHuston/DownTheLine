@@ -919,19 +919,14 @@ class ButtonHolder(BaseButton):
         """
         if not self.visible():
             return False
-        mouse_pos = self.adjust_mouse_pos(mouse_pos)
-        if self.rect is None:
-            click = True
-        elif self.rect.collidepoint(mouse_pos):
-            click = True
-        else:
+        if self.rect is not None and not self.rect.collidepoint(mouse_pos):
             return False
-        if click:
-            for button in self.list:
-                if button is None:
-                    continue
-                if button.do_click(mouse_pos, click_type):
-                    return True
+        mouse_pos = self.adjust_mouse_pos(mouse_pos)
+        for button in self.list:
+            if button is None:
+                continue
+            if button.do_click(mouse_pos, click_type):
+                return True
         return False
 
     def do_key(self, click_type) -> bool:
@@ -1111,8 +1106,6 @@ class FittingButtonHolder(ButtonHolder):
                 self.rect.inflate(2 * self.outline_width, 2 * self.outline_width),
                 width=self.outline_width
             )
-
-
 
 
 class ScrollableButtonHolder(ButtonHolder):
@@ -1342,18 +1335,13 @@ class ScrollableButtonHolder(ButtonHolder):
             if scroll.do_click(clip_mouse_pos, click_type):
                 return True
         interior_mouse_pos = self.adjust_mouse_pos(mouse_pos)
-        if self.rect is None:
-            click = True
-        elif self.rect.collidepoint(mouse_pos):
-            click = True
-        else:
+        if self.rect is not None and not self.rect.collidepoint(mouse_pos):
             return False
-        if click:
-            for button in self.list:
-                if button is None or not button.rect.colliderect(self.clip_rect):
-                    continue
-                if button.do_click(interior_mouse_pos, click_type):
-                    return True
+        for button in self.list:
+            if button is None or not (button.rect is not None and button.rect.colliderect(self.clip_rect)):
+                continue
+            if button.do_click(interior_mouse_pos, click_type):
+                return True
         return False
 
     def render_onto(self, onto: Surface, mouse_pos: tuple[int, int]) -> None:
