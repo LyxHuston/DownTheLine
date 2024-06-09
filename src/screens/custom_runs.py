@@ -29,7 +29,8 @@ import pygame
 
 from data import game_states
 from general_use import game_structures, utility
-from run_game import game_areas, entities, bosses, items, minigames
+
+from run_game import game_areas, items, minigames
 
 from screens import main_screen, run_start_end
 
@@ -48,7 +49,7 @@ def raise_exc(exc: Exception):
 
 @dataclasses.dataclass
 class AtomChoices[T]:
-	default: T
+	default: T | Callable[[], T]
 	to_str: Callable[[T], str]
 	prev: Callable[[T], T]
 	next: Callable[[T], T]
@@ -61,7 +62,7 @@ def tuple_choices(tup: tuple[Any, ...] | Any, *args, to_str: Callable[[Any], str
 	if args:
 		tup = tuple([tup] + list(args))
 	return AtomChoices(
-		tup[0],
+		tup[0] if tup else lambda: tup[0],
 		to_str,
 		lambda t: tup[tup.index(t) - 1],
 		lambda t: tup[(tup.index(t) + 1) % len(tup)]
@@ -171,7 +172,7 @@ class FieldOption:
 	class FieldType(Enum):
 		Atom = FieldDatatype(
 			lambda acc, options: acc is FieldOption._no_params and options is not None,
-			lambda fo: fo.options.default,
+			lambda fo: fo.options.default() if isinstance(fo.options.default, Callable) else fo.options.default,
 			make_basic_atom_changer
 		)
 		Constructed = FieldDatatype(
@@ -279,16 +280,18 @@ class FieldOption:
 		)
 
 
-entity_types = tuple(
-	e_t
-	for e_t in game_structures.recursive_subclasses(entities.Entity)
-	if e_t.make is not entities.Entity.make and not issubclass(e_t, bosses.Boss)
-)
-normal_enemy_types = tuple(
-	e_t for e_t, _ in game_areas.GameArea.allowable_thresh_holds
-)
+entity_types = []
+normal_enemy_types = []
 
-boss_types = tuple(game_structures.recursive_subclasses(bosses.Boss))
+customizable_enemy_types = []
+
+boss_types = []
+
+item_types = []
+
+enslaught_event_type = []
+
+minigame_type = []
 
 
 class_name_getter = lambda val: utility.from_camel(val.__name__)
@@ -298,36 +301,36 @@ enum_name_getter = lambda val: utility.from_camel(val.name)
 class FieldOptions(Enum):
 	Bool = FieldOption(FieldOption.FieldType.Atom, options=bool_choices, buttons=make_boolean_atom_changer)
 	EntityType = FieldOption(FieldOption.FieldType.Atom, options=tuple_choices(
-		tuple(entity_types),
+		entity_types,
 		to_str=class_name_getter
 	))
 	InstantiatedEntity = FieldOption(FieldOption.FieldType.Atom, options=tuple_choices(
-		tuple(entity_types),
+		entity_types,
 		to_str=class_name_getter
 	))
 	NormalEntityType = FieldOption(FieldOption.FieldType.Atom, options=tuple_choices(
-		tuple(normal_enemy_types),
+		normal_enemy_types,
 		to_str=class_name_getter
 	))
 	NormalInstantiatedEntity = FieldOption(FieldOption.FieldType.Atom, options=tuple_choices(
-		tuple(normal_enemy_types),
+		normal_enemy_types,
 		to_str=class_name_getter
 	))
 	BossType = FieldOption(FieldOption.FieldType.Atom, options=tuple_choices(
-		tuple(boss_types),
+		boss_types,
 		to_str=class_name_getter
 	))
 	ItemType = FieldOption(FieldOption.FieldType.Atom, options=tuple_choices(
-		tuple(items.ItemTypes),
+		item_types,
 		to_str=enum_name_getter
 	))
 
 	EnslaughtEventType = FieldOption(FieldOption.FieldType.Atom, options=tuple_choices(
-		tuple(game_areas.EnslaughtAreaEventType),
+		enslaught_event_type,
 		to_str=enum_name_getter
 	))
 	MinigameType = FieldOption(FieldOption.FieldType.Atom, options=tuple_choices(
-		tuple(minigames.Minigame.minigames),
+		minigame_type,
 		to_str=enum_name_getter
 	))
 
@@ -423,17 +426,17 @@ class FieldOptions(Enum):
 		)
 	)
 
-	# @staticmethod
-	# def mapping_default(_):
-	# 	pass
-	#
-	# Mapping = FieldOption(
-	# 	FieldOption.FieldType.Constructed,
-	# 	acceptor=lambda args: len(args) == 2 and all(a.t is FieldOption.FieldType.Atom for a in args),
-	# 	default_factory=mapping_default
-	# )
-	#
-	# del mapping_default
+	@staticmethod
+	def mapping_default(_):
+		pass
+
+	Mapping = FieldOption(
+		FieldOption.FieldType.Constructed,
+		acceptor=lambda args: len(args) == 2 and all(a.t is FieldOption.FieldType.Atom for a in args),
+		default_factory=mapping_default
+	)
+
+	del mapping_default
 
 
 @dataclasses.dataclass
@@ -442,9 +445,9 @@ class CustomRun:
 	tutorial: tuple[int, int, int] = (True, True, True)
 	start: int = 3
 	custom_run: list[
-		tuple[Type[game_areas.GameArea], FieldOption.InitializedFieldOption] | Type[game_areas.GameArea]
+		tuple[Type[Any], FieldOption.InitializedFieldOption] | Type[Any]
 	] = dataclasses.field(default_factory=list)
-	guaranteed_type: Type[game_areas.GameArea] = None
+	guaranteed_type: Type[Any] = None
 
 
 def start_custom(custom: CustomRun):
@@ -498,7 +501,7 @@ def remove_from_list(
 		pass
 
 
-def add_new_custom_run(area_type: Type[game_areas.GameArea]):
+def add_new_custom_run(area_type: Type[Any]):
 	fields: FieldOption.ConstructedFieldOption = area_type.fields
 	new_ifo: FieldOption.InitializedFieldOption = fields.initialize()
 	custom_run_list.append(new_ifo)
@@ -547,6 +550,25 @@ def add_new_custom_run(area_type: Type[game_areas.GameArea]):
 
 def first_enter():
 	global LIST, area_types
+
+	from run_game import entities, bosses, items, minigames
+
+	# set tuple/iterable things to get around import order
+	entity_types.extend(
+		e_t
+		for e_t in game_structures.recursive_subclasses(entities.Entity)
+		if e_t.make is not entities.Entity.make and not issubclass(e_t, bosses.Boss)
+	)
+	normal_enemy_types.extend(
+		e_t for e_t, _ in game_areas.GameArea.allowable_thresh_holds
+	)
+	customizable_enemy_types.extend(
+		e_t for e_t in entity_types if e_t.fields is not None
+	)
+	boss_types.extend(game_structures.recursive_subclasses(bosses.Boss))
+	item_types.extend(items.ItemTypes)
+	enslaught_event_type.extend(game_areas.EnslaughtAreaEventType)
+	minigame_type.extend(minigames.Minigame.minigames)
 
 	area_types = tuple(sorted(
 		game_structures.recursive_subclasses(game_areas.GameArea),

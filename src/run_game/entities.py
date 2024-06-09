@@ -128,7 +128,15 @@ class Entity(game_structures.Body):
         self.__y_shake: int = 0
         self.__shake_limit: int = 0
 
+    fields = None
+
     def __init_subclass__(cls, track_instances=False):
+
+        if isinstance(cls.fields, tuple):
+            cls.fields = FieldOptions.Tuple.value(*cls.fields)
+        else:
+            cls.fields = None
+
         if track_instances:
             cls.track_instances = True
             cls.__instances = list()
@@ -370,6 +378,9 @@ class Entity(game_structures.Body):
 
     def pick_up(self):
         raise TypeError("Non-item entity picked up")
+
+
+from screens.custom_runs import FieldOptions
 
 
 EntityType = Type[Entity]

@@ -40,7 +40,7 @@ def visual_distance() -> int:
     return game_states.RECORD_DISTANCE // 512
 
 
-def log_area(area: game_areas.GameArea):
+def log_area(area):
     game_states.AREAS_PASSED += 1
     if area.__class__.__name__ in GameAreaLog.areas_dict:
         GameAreaLog.areas_dict[area.__class__.__name__] += 1
