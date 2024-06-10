@@ -1495,3 +1495,69 @@ class SwitchHolder(ButtonHolder):
         self._views = init_lists
         self.__view = start_view
         super().__init__(self._views[self.__view], background, _rect, fill_color, outline_color, outline_width, visible_check)
+
+
+class PassThroughSwitchHolder(BaseButton):
+    """
+    a button holder that has multiple buttons to switch between.  Like SwitchHolder but only one button per view, which allows for some
+    """
+
+    def do_key(self, click_type) -> bool:
+        return self.on.do_key(click_type)
+
+    def iter_key(self) -> int:
+        return self.on.iter_key()
+
+    @property
+    def keyed(self) -> bool:
+        return self.on.keyed
+
+    def set_keyed(self, value: bool = True) -> bool:
+        return self.on.set_keyed()
+
+    def get_hover_keyed_text(self) -> Union[str, None]:
+        return self.on.get_hover_keyed_text()
+
+    def convert(self):
+        for button in self._views:
+            button.convert()
+
+    def do_click(self, mouse_pos: tuple[int, int], click_type) -> bool:
+        return self.visible() and self.on.do_click(mouse_pos, click_type)
+
+    @property
+    def view(self):
+        return self.__view
+
+    @view.setter
+    def view(self, val: int):
+        if val < 0:
+            val = len(self._views) + val
+        self._views[self.__view] = self.on
+        self.__view = val
+        self.on = self._views[val]
+
+    def add_view(self, val: BaseButton = None):
+        if val is None:
+            val = []
+        self._views.append(val)
+
+    def __init__(self, start_view: int, init_list: list[BaseButton],
+                 visible_check: Callable[[], bool] = utility.passing):
+        self._views = init_list
+        self.on = init_list[start_view]
+        self.__view = start_view
+        self.visible = visible_check
+        super().__init__(self.on.rect)
+
+    @property
+    def rect(self):
+        return self.on.rect
+
+    @rect.setter
+    def rect(self, val: pygame.rect.Rect):
+        self.on.rect = val
+
+    def render_onto(self, onto: Surface, mouse_pos: tuple[int, int]) -> None:
+        if self.visible():
+            self.on.render_onto(onto, mouse_pos)
