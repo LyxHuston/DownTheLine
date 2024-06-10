@@ -245,8 +245,8 @@ class FieldOption:
 			options: AtomChoices[Any] = None,
 			finalize: Callable = lambda x: x,
 			default: Any = _unspecified,
-			default_factory: Callable[[Self], Any] = _unspecified,
-			buttons: Callable[[Self, int], game_structures.BaseButton] = _unspecified
+			default_factory: Callable[[ConstructedFieldOption], Any] = _unspecified,
+			buttons: Callable[[InitializedFieldOption, int], game_structures.BaseButton] = _unspecified
 	):
 		if not typ.value.call(acceptor, options):
 			raise ValueError(f"Incorrect acceptor or options for field option of type {typ.name}")
@@ -360,7 +360,7 @@ class FieldOptions(Enum):
 	)
 
 	@staticmethod
-	def list_init_buttons(ifo, width):
+	def list_init_buttons(ifo: FieldOption.InitializedFieldOption, width: int) -> game_structures.BaseButton:
 		lst = [
 				sub_ifo.get_buttons(width - 128) for sub_ifo in ifo.val[0]
 		]
