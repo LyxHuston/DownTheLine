@@ -474,10 +474,11 @@ class FieldOptions(Enum):
 	Mapping = FieldOption(
 		FieldOption.FieldType.Constructed,
 		acceptor=lambda args:
-			isinstance(args, dict) and
+			len(args) == 1 and
+			isinstance(args[0], dict) and
 			all(
 				isinstance(name, str) and isinstance(val, FieldOption.ConstructedFieldOption)
-				for name, val in args.items()
+				for name, val in args[0].items()
 			),
 		default_factory=lambda fo: [
 				0, tuple(sorted(((name, val.initialize()) for name, val in fo.args.items()), key=lambda item: item[0]))
