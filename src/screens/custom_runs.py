@@ -459,7 +459,7 @@ class FieldOptions(Enum):
 			0, [sub_ifo.get_buttons(width - 20) for _, sub_ifo in ifo.val[1]]
 		)
 
-		game_structures.ListHolder(
+		return game_structures.ListHolder(
 			pygame.rect.Rect(0, 0, width, game_states.HEIGHT),
 			10,
 			20,
