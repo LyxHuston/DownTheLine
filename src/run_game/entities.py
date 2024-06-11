@@ -1303,10 +1303,6 @@ class Lazer(InvulnerableEntity):
                 ComponentEntity(images.LAZER_END.img, self, 90, (-game_states.WIDTH // 2 + 100, y)),
                 ComponentEntity(images.LAZER_END.img, self, 270, (game_states.WIDTH // 2 - 100, y))
             ]
-        if area.entity_list is None:
-            gameboard.NEW_ENTITIES.extend(self.ends)
-        else:
-            area.entity_list.extend(self.ends)
         self.random = random.Random(seed)
         self.charge_time = charge_time
         self.cooldown = 0
@@ -1402,6 +1398,11 @@ class Lazer(InvulnerableEntity):
                     game_structures.to_screen_pos((0, intercept)),
                     radius
                 )
+
+    def final_load(self) -> None:
+        [entity.final_load() for entity in self.ends]
+        gameboard.ENTITY_BOARD.extend(self.ends)
+        super().final_load()
 
 
 class TrackingLazer(Lazer):
