@@ -133,7 +133,11 @@ class Entity(game_structures.Body):
     def __init_subclass__(cls, track_instances=False):
 
         if isinstance(cls.fields, tuple):
-            cls.fields = FieldOptions.Tuple.value(*cls.fields)
+            cls.fields = FieldOptions.InstanceMaker.value(
+                cls,
+                cls.fields,
+                False
+            )
         else:
             cls.fields = None
 
