@@ -38,8 +38,9 @@ default_background = (0, 0, 0)
 
 class BaseButton(ABC):
 
-    def __init__(self, _rect: pygame.rect.Rect):
+    def __init__(self, _rect: pygame.rect.Rect, visible_check: Callable[[], bool]):
         self.rect = _rect
+        self.visible = visible_check
 
     @abstractmethod
     def render_onto(self, onto: Surface, mouse_pos: tuple[int, int]) -> None:
@@ -298,7 +299,7 @@ class Button(BaseButton):
         :param special_press:
         :param typing_instance:
         """
-        super().__init__(_rect)
+        super().__init__(_rect, visible_check)
         self.clicks = [down_click, up_click, hold_click]
         self.arguments: list[Union[None, dict[str, Any]]] = [down_arguments, up_arguments, hold_arguments]
         self.img: Surface = img
@@ -311,7 +312,6 @@ class Button(BaseButton):
         self.special_press: tuple = special_press
         self.typing_instance: int = typing_instance
         self.keyed = False
-        self.visible = visible_check
 
     @staticmethod
     def make_img_button(
@@ -823,14 +823,13 @@ class ButtonHolder(BaseButton):
         self.background = background
         if _rect is None and self.background is not None:
             _rect = self.background.get_rect()
-        super().__init__(_rect)
+        super().__init__(_rect, visible_check)
         if fill_color is None:
             fill_color = (0, 0, 0, 0)
         self.fill_color = fill_color
         self.outline_color = outline_color
         self.outline_width = outline_width
         self.keyed = False
-        self.visible = visible_check
 
     def convert(self):
         if self.background is not None:
@@ -1296,7 +1295,7 @@ class ScrollableButtonHolder(ButtonHolder):
                 return True
         return False
 
-    def render_onto(self, onto: Surface, mouse_pos: tuple[int, int]) -> None:
+    def render_onto(self, onto: Surfacde, mouse_pos: tuple[int, int]) -> None:
         """
         draws onto a surface
         :param onto:
@@ -1547,8 +1546,7 @@ class PassThroughSwitchHolder(BaseButton):
         self._views = init_list
         self.on = init_list[start_view]
         self.__view = start_view
-        self.visible = visible_check
-        super().__init__(self.on.rect)
+        super().__init__(self.on.rect, visible_check)
 
     @property
     def rect(self):
