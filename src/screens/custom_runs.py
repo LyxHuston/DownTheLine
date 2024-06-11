@@ -349,6 +349,10 @@ class FieldOptions(Enum):
 		FieldOption.FieldType.Atom, options=integers, buttons=lambda _, __: None,
 		finalize=lambda _, area: area.get_next_seed()
 	)
+	Area = FieldOption(
+		FieldOption.FieldType.Atom, options=integers, buttons=lambda _, __: None,
+		finalize=lambda _, area: area
+	)
 
 	NONE = FieldOption(
 		FieldOption.FieldType.Atom, options=integers, buttons=lambda _, __: None,
