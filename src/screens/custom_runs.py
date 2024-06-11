@@ -230,8 +230,8 @@ class FieldOption:
 			self.val = default
 			self.buttons = buttons
 
-		def make(self):
-			return self.finalize(self.val)
+		def make(self, area: game_areas.GameArea):
+			return self.finalize(self.val, area)
 
 		def get_buttons(self, width: int) -> game_structures.BaseButton:
 			return self.buttons(self, width)
@@ -243,7 +243,7 @@ class FieldOption:
 			typ: FieldType,
 			acceptor: Callable = _no_params,
 			options: AtomChoices[Any] = None,
-			finalize: Callable = lambda x: x,
+			finalize: Callable = lambda x, _: x,
 			default: Any = _unspecified,
 			default_factory: Callable[[ConstructedFieldOption], Any] = _unspecified,
 			buttons: Callable[[InitializedFieldOption, int], game_structures.BaseButton] = _unspecified
@@ -471,7 +471,7 @@ class FieldOptions(Enum):
 				0, tuple(sorted(((name, val.initialize()) for name, val in fo.args.items()), key=lambda item: item[0]))
 			],
 		buttons=mapping_init_buttons,
-		finalize=lambda val: val[1][val[0]][1].finalize()
+		finalize=lambda val, _: val[1][val[0]][1].finalize()
 	)
 
 	del mapping_init_buttons
@@ -509,7 +509,7 @@ def start_custom(custom: CustomRun):
 			args: FieldOption.InitializedFieldOption
 			area_type, args = run
 			area = area_type(seed, game_states.LAST_AREA, customized=True)
-			area.make(*args.finalize(
+			area.make(*args.make(
 				game_areas.GameArea(game_states.LAST_AREA, seed=game_areas.get_determiner(), customized=True)
 			))
 		else:
