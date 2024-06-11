@@ -489,6 +489,32 @@ class FieldOptions(Enum):
 
 	del mapping_init_buttons
 
+	InstanceMaker = FieldOption(
+		FieldOption.FieldType.Constructed,
+		acceptor=lambda args:
+			isinstance(args[0], type) and
+			isinstance(args[1], tuple) and
+			all(isinstance(sub_arg, FieldOption.ConstructedFieldOption) for sub_arg in args[1]) and
+			(len(args == 2) or (len(args == 3) and isinstance(args[2], bool))),  # third arg is should label be, default True
+		default_factory=lambda cfo: (cfo.args[0], tuple(sub_cfo.initialize() for sub_cfo in cfo.args[1])),
+		buttons=lambda ifo, width: game_structures.ListHolder(
+			pygame.rect.Rect(0, 0, width, game_states.HEIGHT),
+			20,
+			20,
+			0,
+			math.inf,
+			init_list=(
+				[
+					game_structures.Button.make_text_button(
+						utility.from_camel(ifo.val[0].__name__), button_font, (0, 0)
+					)
+				] if len(ifo.val) == 2 or ifo.val[2] else []
+			) + [sub_ifo.get_buttons(width) for sub_ifo in ifo.val[1]],
+			outline_width=5
+		),
+		finalize=lambda val, area: val[0](*(sub_ifo.make(area) for sub_ifo in val[1]))
+	)
+
 
 @dataclasses.dataclass
 class CustomRun:
