@@ -298,6 +298,10 @@ class_name_getter = lambda val: utility.from_camel(val.__name__)
 enum_name_getter = lambda val: utility.from_camel(val.name)
 
 
+def and_lambda(func1: Callable[[], bool], func2: Callable[[], bool]) -> Callable[[], bool]:
+	return lambda: func1() and func2()
+
+
 class FieldOptions(Enum):
 	Bool = FieldOption(FieldOption.FieldType.Atom, options=bool_choices, buttons=make_boolean_atom_changer)
 	EntityType = FieldOption(FieldOption.FieldType.Atom, options=tuple_choices(
@@ -350,6 +354,42 @@ class FieldOptions(Enum):
 		FieldOption.FieldType.Atom, options=integers, buttons=lambda _, __: None,
 		finalize=lambda _, __: None
 	)
+
+	@staticmethod
+	def or_none_buttons(ifo: FieldOption.InitializedFieldOption, width: int) -> game_structures.BaseButton:
+		switch_button_img = pygame.surface.Surface((10, 10))
+		pygame.draw.rect(switch_button_img, (255, 255, 255), switch_button_img.get_rect(), width=5)
+
+		def switch():
+			ifo.val[0] ^= True  # should be equivalent to ifo.val[0] = not ifo.val[0]
+
+		switch_button = game_structures.Button.make_img_button(
+			switch,
+			switch_button_img,
+			(15, 15),
+			"switch to/from None"
+		)
+
+		def set_length():
+			buttons.rect.height = 20 + max(10, held_buttons.rect.height if ifo.val[0] else 0)
+			return ifo.val[0]
+
+		held_buttons: game_structures.BaseButton = ifo.val[1].get_buttons(width - 40)
+		held_buttons.visible = and_lambda(set_length, held_buttons.visible)
+		held_buttons.rect.x = 30
+		buttons = game_structures.ButtonHolder(
+			[switch_button, held_buttons],
+			_rect=pygame.rect.Rect(0, 0, width, 30)
+		)
+		return buttons
+
+	OrNone = FieldOption(
+		FieldOption.FieldType.Constructed, buttons=or_none_buttons,
+		acceptor=lambda args: len(args) == 1 and isinstance(args[0], FieldOption.ConstructedFieldOption),
+		default_factory=lambda cfo: [0, cfo.args[0].initialize]
+	)
+
+	del or_none_buttons
 
 	Difficulty = Positive
 	DifficultyChange = Integer
