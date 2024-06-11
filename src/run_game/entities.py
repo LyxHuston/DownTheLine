@@ -130,16 +130,27 @@ class Entity(game_structures.Body):
 
     fields = None
 
-    def __init_subclass__(cls, track_instances=False):
+    @classmethod
+    def instance_maker_with_label(cls):
+        assert cls.fields is not None, ("Tried to get an instance maker with a label from a class not given "
+                                        "customizable fields")
+        return FieldOptions.InstanceMaker.value(
+            cls,
+            cls.fields.val[1],
+            True
+        )
 
-        if isinstance(cls.fields, tuple):
-            cls.fields = FieldOptions.InstanceMaker.value(
-                cls,
-                cls.fields,
-                False
-            )
-        else:
-            cls.fields = None
+    def __init_subclass__(cls, track_instances=False, use_parents_fields=False):
+
+        if not use_parents_fields:
+            if isinstance(cls.fields, tuple):
+                cls.fields = FieldOptions.InstanceMaker.value(
+                    cls,
+                    cls.fields,
+                    False
+                )
+            else:
+                cls.fields = None
 
         if track_instances:
             cls.track_instances = True
@@ -728,6 +739,24 @@ class Obstacle(Entity, track_instances=True):
     half = images.WALL_HALF
     fragile = images.WALL_FRAGILE
 
+    fields = (
+        FieldOptions.Label.value(
+            "Rotation",
+            FieldOptions.Degrees.value()
+        ),
+        FieldOptions.Label.value(
+            "Position",
+            FieldOptions.Tuple.value(
+                FieldOptions.Integer.value(),
+                FieldOptions.Positive.value()
+            )
+        ),
+        FieldOptions.Label.value(
+            "Health",
+            FieldOptions.Positive.value()
+        )
+    )
+
     def __init__(self, rotation: int = 0, pos: tuple[int, int] = (0, 0), health: int = 10):
         super().__init__(self.full.img, rotation, pos)
         self.max_health = health
@@ -779,6 +808,21 @@ class Slime(Glides):
     alert = images.SLIME_ALERT
     imgs = images.SLIME
     seen = True
+
+    fields = (
+        FieldOptions.Label.value(
+            "Position",
+            FieldOptions.Tuple.value(
+                FieldOptions.Integer.value(),
+                FieldOptions.Positive.value()
+            )
+        ),
+        FieldOptions.Seed.value(),
+        FieldOptions.Label.value(
+            "Difficulty",
+            FieldOptions.Difficulty.value()
+        )
+    )
 
     def __init__(self, pos: tuple[int, int] = (0, 0), seed: int = 0, difficulty: int = 0):
         if isinstance(self.imgs[0], images.Image):
@@ -878,6 +922,20 @@ class Crawler(Glides, track_instances=True):
 
     tutorial_text = "Beware of the crawler.  As soon as they see you they are relentless at hunting you down."
 
+    fields = (
+        FieldOptions.Label.value(
+            "Position",
+            FieldOptions.Tuple.value(
+                FieldOptions.Integer.value(),
+                FieldOptions.Positive.value()
+            )
+        ),
+        FieldOptions.Label.value(
+            "Speed",
+            FieldOptions.Positive.value()
+        )
+    )
+
     def __init__(self, pos: tuple[int, int], speed: int):
         super().__init__(images.CRAWLER_1.img, 0, pos)
         self.speed = speed * 2
@@ -959,6 +1017,20 @@ class Fencer(Glides):
     cost = 10
 
     tutorial_text = "The fencer.  His lunge is dangerous."
+
+    fields = (
+        FieldOptions.Label.value(
+            "Position",
+            FieldOptions.Tuple.value(
+                FieldOptions.Integer.value(),
+                FieldOptions.Positive.value()
+            )
+        ),
+        FieldOptions.Label.value(
+            "Difficulty",
+            FieldOptions.Difficulty.value()
+        )
+    )
 
     def __init__(self, pos: tuple[int, int], difficulty: int):
         super().__init__(self.imgs[0].img, 0, pos)
@@ -1106,6 +1178,21 @@ class Archer(Glides):
 
     tutorial_text = "Ah, the archer.  Not much on their own, just hit down their arrows and chase them down."
 
+    fields = (
+        FieldOptions.Label.value(
+            "Position",
+            FieldOptions.Tuple.value(
+                FieldOptions.Integer.value(),
+                FieldOptions.Positive.value()
+            )
+        ),
+        FieldOptions.Label.value(
+            "Speed",
+            FieldOptions.Positive.value()
+        ),
+        FieldOptions.Seed.value()
+    )
+
     def __init__(self, pos: tuple[int, int], difficulty: int, seed: int):
         super().__init__(images.ARCHER_RELAXED.img, 0, pos)
         self.max_health = 1
@@ -1163,9 +1250,31 @@ class Knight(Glides, CarriesItems):
 
     tutorial_text = "The knights are very resilient and use weapons similar to yours.  This is the last of this sort of opponent they will send you."
 
+    # cannot be made yet: need a similar mapping as what I'm working towards for entities for instantiating items
+    # fields = (
+    #     FieldOptions.Label.value(
+    #         "Rotation",
+    #         FieldOptions.Degrees.value()
+    #     ),
+    #     FieldOptions.Label.value(
+    #         "Position",
+    #         FieldOptions.Tuple.value(
+    #             FieldOptions.Integer.value(),
+    #             FieldOptions.Positive.value()
+    #         )
+    #     ),
+    #     FieldOptions.Label.value(
+    #         "Hands",
+    #         FieldOptions.Tuple.value(
+    #             FieldOptions.ItemType.value(),
+    #             FieldOptions.ItemType.value()
+    #         )
+    #     )
+    # )
+
     def __init__(self, rotation: int, pos: tuple[int, int], hands):
         Glides.__init__(self, self.top.img, rotation, pos)
-        CarriesItems.__init__(self, hands)
+        CarriesItems.__init__(self, list(hands))
         self.frame = 0
         self.max_health = 20
         self.health = 20
@@ -1299,6 +1408,30 @@ class Lazer(InvulnerableEntity):
             return game_states.CAMERA_BOTTOM + game_states.HEIGHT + 20
         return y
 
+    fields = (
+        FieldOptions.Label.value(
+            "Y start",
+            FieldOptions.Integer.value()
+        ),
+        FieldOptions.Label.value(
+            "Charge time",
+            FieldOptions.Positive.value()
+        ),
+        FieldOptions.Label.value(
+            "Duration",
+            FieldOptions.Positive.value()
+        ),
+        FieldOptions.Seed.value(),
+        FieldOptions.Label.value(
+            "Repeats",
+            FieldOptions.Positive.value()
+        ),
+        FieldOptions.Label.value(
+            "Damage",
+            FieldOptions.Positive.value()
+        )
+    )
+
     def __init__(self, y: int, charge_time: int, duration: int, seed, repeats: int | None = 1, damage: int = 1):
         # print("new lazer at:", y)
         super().__init__(images.EMPTY, 0, (0, y))
@@ -1409,10 +1542,7 @@ class Lazer(InvulnerableEntity):
         super().final_load()
 
 
-class TrackingLazer(Lazer):
-    """
-    lazer subclass that chases the player while not firing
-    """
+class TrackingLazer(Lazer, use_parents_fields=True):
 
     def __init__(self, y: int | Literal[Lazer.TOP, Lazer.BOTTOM], charge_time: int, duration: int, seed: int,
                  repeats: int | None = 1, damage: int = 1):
@@ -1439,6 +1569,28 @@ class PathedLazer(Lazer):
     """
     lazer moves with acceleration like a TrackingLazer, except towards fixed targets
     """
+
+    fields = (
+        FieldOptions.Label.value(
+            "Ys",
+            FieldOptions.List.value(
+                FieldOptions.Integer.value()
+            )
+        ),
+        FieldOptions.Label.value(
+            "Charge time",
+            FieldOptions.Positive.value()
+        ),
+        FieldOptions.Label.value(
+            "Duration",
+            FieldOptions.Positive.value()
+        ),
+        FieldOptions.Seed.value(),
+        FieldOptions.Label.value(
+            "Damage",
+            FieldOptions.Positive.value()
+        )
+    )
 
     def __init__(
             self, ys: list[int | Literal[Lazer.TOP, Lazer.BOTTOM]], charge_time: int, duration: int, seed, damage: int = 1
@@ -1490,6 +1642,14 @@ class Fish(Glides, track_instances=True):
     """
     fish entity that leaps from the void
     """
+
+    fields = (
+        FieldOptions.Seed.value(),
+        FieldOptions.Label.value(
+            "Difficulty",
+            FieldOptions.Difficulty.value()
+        )
+    )
 
     def __init__(self, seed, difficulty):
         super().__init__(images.EMPTY, 0, (30000, 0))
@@ -1590,6 +1750,32 @@ class Spawner(Entity):
     @property
     def spawning(self):
         return self.__spawning
+
+    fields = (
+        FieldOptions.Label.value(
+            "Position",
+            FieldOptions.Tuple.value(
+                FieldOptions.Integer.value(),
+                FieldOptions.Positive.value()
+            )
+        ),
+        FieldOptions.Label.value(
+            "Delay",
+            FieldOptions.Positive.value()
+        ),
+        FieldOptions.EntityType.value(),
+        FieldOptions.Label.value(
+            "Deposit",
+            FieldOptions.Tuple.value(
+                FieldOptions.OrNone.value(FieldOptions.Integer.value()),
+                FieldOptions.OrNone.value(FieldOptions.Integer.value())
+            )
+        ),
+        FieldOptions.Label.value(
+            "Deposit Speed",
+            FieldOptions.Positive.value()
+        )
+    )
 
     def __init__(self, pos: tuple[int, int], limit: int | None, delay: int, entity: EntityType, deposit: tuple[int | None, int | None], speed: int):
         super().__init__(self.imgs[0].img if isinstance(self.imgs[0], images.Image) else self.imgs[0], 0, pos)
@@ -2537,3 +2723,8 @@ class PlayerEntity(Glides, CarriesItems):
     def tick(self):
         # ticks are also still handled in gameboard, to keep computation precedence
         pass
+
+
+entity_construction_map = FieldOptions.Mapping.value(
+    {utility.from_camel(cls.__name__): cls.fields for cls in game_structures.recursive_subclasses(Entity) if cls.fields is not None}
+)
