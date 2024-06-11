@@ -142,15 +142,20 @@ class Entity(game_structures.Body):
 
     def __init_subclass__(cls, track_instances=False, use_parents_fields=False):
 
-        if not use_parents_fields:
-            if isinstance(cls.fields, tuple):
-                cls.fields = FieldOptions.InstanceMaker.value(
-                    cls,
-                    cls.fields,
-                    False
-                )
-            else:
-                cls.fields = None
+        if use_parents_fields:
+            cls.fields = FieldOptions.InstanceMaker.value(
+                cls,
+                cls.fields.val[1],
+                False
+            )
+        elif isinstance(cls.fields, tuple):
+            cls.fields = FieldOptions.InstanceMaker.value(
+                cls,
+                cls.fields,
+                False
+            )
+        else:
+            cls.fields = None
 
         if track_instances:
             cls.track_instances = True
