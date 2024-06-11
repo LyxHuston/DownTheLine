@@ -334,8 +334,12 @@ class FieldOptions(Enum):
 		to_str=enum_name_getter
 	))
 
-	Difficulty = FieldOption(FieldOption.FieldType.Atom, options=positives, buttons=make_increment_atom_changer)
-	DifficultyChange = FieldOption(FieldOption.FieldType.Atom, options=integers, buttons=make_increment_atom_changer)
+	Degrees = FieldOption(FieldOption.FieldType.Atom, options=range_choices(0, 360, 45), buttons=make_increment_atom_changer)
+	Integer = FieldOption(FieldOption.FieldType.Atom, options=integers, buttons=make_increment_atom_changer)
+	Positive = FieldOption(FieldOption.FieldType.Atom, options=positives, buttons=make_increment_atom_changer)
+
+	Difficulty = Positive
+	DifficultyChange = Integer
 
 	Label = FieldOption(
 		FieldOption.FieldType.Constructed,
