@@ -230,7 +230,7 @@ class FieldOption:
 			self.val = default
 			self.buttons = buttons
 
-		def make(self, area: game_areas.GameArea):
+		def make(self, area):
 			return self.finalize(self.val, area)
 
 		def get_buttons(self, width: int) -> game_structures.BaseButton:
@@ -344,6 +344,11 @@ class FieldOptions(Enum):
 	Seed = FieldOption(
 		FieldOption.FieldType.Atom, options=integers, buttons=lambda _, __: None,
 		finalize=lambda _, area: area.get_next_seed()
+	)
+
+	NONE = FieldOption(
+		FieldOption.FieldType.Atom, options=integers, buttons=lambda _, __: None,
+		finalize=lambda _, __: None
 	)
 
 	Difficulty = Positive
@@ -495,7 +500,7 @@ class FieldOptions(Enum):
 			isinstance(args[0], type) and
 			isinstance(args[1], tuple) and
 			all(isinstance(sub_arg, FieldOption.ConstructedFieldOption) for sub_arg in args[1]) and
-			(len(args == 2) or (len(args == 3) and isinstance(args[2], bool))),  # third arg is should label be, default True
+			(len(args) == 2 or (len(args) == 3 and isinstance(args[2], bool))),  # third arg is should label be, default True
 		default_factory=lambda cfo: (cfo.args[0], tuple(sub_cfo.initialize() for sub_cfo in cfo.args[1])),
 		buttons=lambda ifo, width: game_structures.ListHolder(
 			pygame.rect.Rect(0, 0, width, game_states.HEIGHT),
