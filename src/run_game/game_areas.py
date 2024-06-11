@@ -136,6 +136,9 @@ class GameArea:
     def required_at(cls, index: int) -> bool:
         return cls.last_spawned + cls.required_wait_interval * 2 <= index
 
+    def get_next_seed(self):
+        return self.random.randint(0, 2 ** 32 - 1)
+
     def start_tutorial(self):
         pass
 

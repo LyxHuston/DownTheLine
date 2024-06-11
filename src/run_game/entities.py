@@ -855,7 +855,7 @@ class Slime(Glides):
     def make(cls, determiner: int, area):
         new_slime = cls(
             (0, area.random.randint(area.length // 3, area.length)),
-            area.random.randint(0, 2 ** 32 - 1),
+            area.get_next_seed(),
             area.difficulty,
         )
         return new_slime
@@ -1140,7 +1140,7 @@ class Archer(Glides):
     def make(cls, determiner: int, area):
         return cls(
             (0, area.random.randint(area.length // 3, 2 * area.length // 3)), area.difficulty,
-            area.random.randint(0, 2 ** 32 - 1))
+            area.get_next_seed())
 
 
 class Knight(Glides, CarriesItems):
@@ -1427,7 +1427,7 @@ class TrackingLazer(Lazer):
     def make(cls, determiner: int, area):
         return cls(
             area.start_coordinate + area.random.randint(0, 1) * area.length, 120, 60,
-            area.random.randint(0, 2 ** 32 - 1), 1, 1
+            area.get_next_seed(), 1, 1
         )
 
 
@@ -1978,7 +1978,7 @@ class NoteSpawner(InvulnerableEntity):
         self.area = area
         self.padding = 360 // round(math.sqrt(area.difficulty))
         self.last_y = 0
-        self.random = random.Random(area.random.randint(0, 2 ** 32 - 1))
+        self.random = random.Random(area.get_next_seed())
         self.start_track = start_track
         self.cooldown_track = 0
         self.last_dash_arpeggio = 0

@@ -246,7 +246,7 @@ class FieldOption:
 			finalize: Callable = lambda x, _: x,
 			default: Any = _unspecified,
 			default_factory: Callable[[ConstructedFieldOption], Any] = _unspecified,
-			buttons: Callable[[InitializedFieldOption, int], game_structures.BaseButton] = _unspecified
+			buttons: Callable[[InitializedFieldOption, int], game_structures.BaseButton | None] = _unspecified
 	):
 		if not typ.value.call(acceptor, options):
 			raise ValueError(f"Incorrect acceptor or options for field option of type {typ.name}")
@@ -334,9 +334,17 @@ class FieldOptions(Enum):
 		to_str=enum_name_getter
 	))
 
-	Degrees = FieldOption(FieldOption.FieldType.Atom, options=range_choices(0, 360, 45), buttons=make_increment_atom_changer)
+	Degrees = FieldOption(
+		FieldOption.FieldType.Atom, options=range_choices(0, 360, 45),
+		buttons=make_increment_atom_changer
+	)
 	Integer = FieldOption(FieldOption.FieldType.Atom, options=integers, buttons=make_increment_atom_changer)
 	Positive = FieldOption(FieldOption.FieldType.Atom, options=positives, buttons=make_increment_atom_changer)
+
+	Seed = FieldOption(
+		FieldOption.FieldType.Atom, options=integers, buttons=lambda _, __: None,
+		finalize=lambda _, area: area.get_next_seed()
+	)
 
 	Difficulty = Positive
 	DifficultyChange = Integer
