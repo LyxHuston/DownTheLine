@@ -427,16 +427,54 @@ class FieldOptions(Enum):
 	)
 
 	@staticmethod
-	def mapping_default(_):
-		pass
+	def mapping_init_buttons(ifo: FieldOption.InitializedFieldOption, width: int) -> game_structures.BaseButton:
+
+		def make_step(direction: int):
+			def step(i: int):
+				ifo.val[0] = (i + direction) % ifo.val[0]
+				switcher.view = ifo.val[0]
+				return ifo.val[0]
+			return step
+
+		keys = AtomChoices(
+			0,
+			lambda i: ifo.val[1][i][0],
+			make_step(-1),
+			make_step(1)
+		)
+		top_buttons = FieldOption(FieldOption.FieldType.Atom, options=keys)().initialize().get_buttons(width - 20)
+		switcher = game_structures.PassThroughSwitchHolder(
+			0, [sub_ifo.get_buttons(width - 20) for _, sub_ifo in ifo.val[1]]
+		)
+
+		game_structures.ListHolder(
+			pygame.rect.Rect(0, 0, width, game_states.HEIGHT),
+			10,
+			20,
+			0,
+			math.inf,
+			init_list=[
+				top_buttons,
+				switcher
+			]
+		)
 
 	Mapping = FieldOption(
 		FieldOption.FieldType.Constructed,
-		acceptor=lambda args: len(args) == 2 and all(a.t is FieldOption.FieldType.Atom for a in args),
-		default_factory=mapping_default
+		acceptor=lambda args:
+			isinstance(args, dict) and
+			all(
+				isinstance(name, str) and isinstance(val, FieldOption.ConstructedFieldOption)
+				for name, val in args.items()
+			),
+		default_factory=lambda fo: [
+				0, tuple(sorted(((name, val.initialize()) for name, val in fo.args.items()), key=lambda item: item[0]))
+			],
+		buttons=mapping_init_buttons,
+		finalize=lambda val: val[1][val[0]][1].finalize()
 	)
 
-	del mapping_default
+	del mapping_init_buttons
 
 
 @dataclasses.dataclass
