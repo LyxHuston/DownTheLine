@@ -1295,7 +1295,7 @@ class ScrollableButtonHolder(ButtonHolder):
                 return True
         return False
 
-    def render_onto(self, onto: Surfacde, mouse_pos: tuple[int, int]) -> None:
+    def render_onto(self, onto: Surface, mouse_pos: tuple[int, int]) -> None:
         """
         draws onto a surface
         :param onto:
