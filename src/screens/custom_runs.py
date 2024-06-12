@@ -310,8 +310,8 @@ class FieldOptions(Enum):
 	))
 	InstantiatedEntity = FieldOption(FieldOption.FieldType.Atom, options=tuple_choices(
 		entity_types,
-		to_str=class_name_getter
-	))
+		to_str=class_name_getter,
+	), finalize=lambda val, area: val.make(area))
 	NormalEntityType = FieldOption(FieldOption.FieldType.Atom, options=tuple_choices(
 		normal_enemy_types,
 		to_str=class_name_getter
@@ -319,7 +319,7 @@ class FieldOptions(Enum):
 	NormalInstantiatedEntity = FieldOption(FieldOption.FieldType.Atom, options=tuple_choices(
 		normal_enemy_types,
 		to_str=class_name_getter
-	))
+	), finalize=lambda val, area: val.make(area))
 	BossType = FieldOption(FieldOption.FieldType.Atom, options=tuple_choices(
 		boss_types,
 		to_str=class_name_getter
@@ -390,7 +390,8 @@ class FieldOptions(Enum):
 	OrNone = FieldOption(
 		FieldOption.FieldType.Constructed, buttons=or_none_buttons,
 		acceptor=lambda args: len(args) == 1 and isinstance(args[0], FieldOption.ConstructedFieldOption),
-		default_factory=lambda cfo: [0, cfo.args[0].initialize]
+		default_factory=lambda cfo: [False, cfo.args[0].initialize],
+		finalize=lambda val, area: val[1].make(area) if val[0] else None
 	)
 
 	del or_none_buttons
@@ -417,7 +418,7 @@ class FieldOptions(Enum):
 				),
 				ifo.val[1].get_buttons(width)
 			]
-		)
+		), finalize=lambda val, area: val[1].make(area)
 	)
 
 	@staticmethod
@@ -467,7 +468,8 @@ class FieldOptions(Enum):
 		FieldOption.FieldType.Constructed,
 		acceptor=lambda args: len(args) == 1,
 		default_factory=lambda fo: ([], fo.args[0]),
-		buttons=list_init_buttons
+		buttons=list_init_buttons,
+		finalize=lambda val, area: [sub_ifo.make(area) for sub_ifo in val[0]]
 	)
 
 	del list_init_buttons
@@ -484,7 +486,7 @@ class FieldOptions(Enum):
 			math.inf,
 			init_list=[sub_ifo.get_buttons(width) for sub_ifo in ifo.val],
 			outline_width=5
-		)
+		), finalize=lambda val, area: tuple(sub_ifo.make(area) for sub_ifo in val)
 	)
 
 	@staticmethod
@@ -561,7 +563,7 @@ class FieldOptions(Enum):
 			) + [sub_ifo.get_buttons(width) for sub_ifo in ifo.val[1]],
 			outline_width=5
 		),
-		finalize=lambda val, area: val[0](*(sub_ifo.make(area) for sub_ifo in val[1]))
+		finalize=lambda val, area: val[0](*(sub_ifo.make() for sub_ifo in val[1]))
 	)
 
 
