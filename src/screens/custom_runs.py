@@ -600,7 +600,7 @@ def start_custom(custom: CustomRun):
 			area_type, args = run
 			area = area_type(seed, game_states.LAST_AREA, customized=True)
 			area.make(*args.make(
-				game_areas.GameArea(game_states.LAST_AREA, seed=game_areas.get_determiner(), customized=True)
+				area
 			))
 		else:
 			area = run(seed, game_states.LAST_AREA)
