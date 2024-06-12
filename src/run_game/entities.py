@@ -258,10 +258,9 @@ class Entity(game_structures.Body):
             self.first_seen()
 
     @classmethod
-    def make(cls, determiner: int, area) -> Self:
+    def make(cls, area) -> Self:
         """
         makes an entity in the given area of the specific entity
-        :param determiner:
         :param area:
         :return:
         """
@@ -621,7 +620,7 @@ def make_item_duplicator(item: items.Item):
     class ItemDuplicator(ItemEntity):
 
         @classmethod
-        def make(cls, determiner: int, area):
+        def make(cls, area):
             return cls(items.Item(
                 action,
                 release,
@@ -905,7 +904,7 @@ class Slime(Glides):
                 self.__class__.imgs[i] = self.__class__.imgs[i].img
 
     @classmethod
-    def make(cls, determiner: int, area):
+    def make(cls, area):
         new_slime = cls(
             (0, area.random.randint(area.length // 3, area.length)),
             area.get_next_seed(),
@@ -1003,7 +1002,7 @@ class Crawler(Glides, track_instances=True):
         ]
 
     @classmethod
-    def make(cls, determiner: int, area):
+    def make(cls, area):
         return cls(
             (0, area.random.randint(area.length // 3, area.length)),
             area.random.randint(1, min(max(area.difficulty // 4, 1), 5))
@@ -1109,7 +1108,7 @@ class Fencer(Glides):
         self.start_glide(25, 10, 15, ((self.y - y) > 0) * 2 - 1)
 
     @classmethod
-    def make(cls, determiner: int, area):
+    def make(cls, area):
         return cls((0, area.random.randint(area.length // 3, 2 * area.length // 3)), area.difficulty)
 
 
@@ -1233,7 +1232,7 @@ class Archer(Glides):
                 self.__class__.imgs[i] = self.__class__.imgs[i].img
 
     @classmethod
-    def make(cls, determiner: int, area):
+    def make(cls, area):
         return cls(
             (0, area.random.randint(area.length // 3, 2 * area.length // 3)), area.difficulty,
             area.get_next_seed())
@@ -1389,7 +1388,7 @@ class Knight(Glides, CarriesItems):
             self.hands[i].pos = (self, i)
 
     @classmethod
-    def make(cls, determiner: int, area):
+    def make(cls, area):
         making = cls(0, (0, 200), [items.random_simple_stab(1, area.random), None])
         # making.enter()
         # print("Used make method for knight")
@@ -1563,7 +1562,7 @@ class TrackingLazer(Lazer, use_parents_fields=True):
         super().tick()
 
     @classmethod
-    def make(cls, determiner: int, area):
+    def make(cls, area):
         return cls(
             area.start_coordinate + area.random.randint(0, 1) * area.length, 120, 60,
             area.get_next_seed(), 1, 1
@@ -1856,7 +1855,7 @@ class Spawner(Entity):
         if self.timer >= self.delay:
             # print("spawning")
             self.timer = -1
-            self.__spawning = SpawnerHolder(self.entity.make(self.area.random.randint(0, 2 ** 16 - 1), self.area),
+            self.__spawning = SpawnerHolder(self.entity.make(self.area),
                                             self, self.__check, self.__destination)
             self.__spawning.final_load()
             gameboard.NEW_ENTITIES.append(self.__spawning)
@@ -1893,7 +1892,7 @@ class Spawner(Entity):
         self.despawn()
 
     @classmethod
-    def make(cls, determiner: int, area):
+    def make(cls, area):
         index = 0
         while index < len(cls.allowable) - 1:
             if area.difficulty < cls.allowable[index][1] or not area.previously_seen(cls.allowable[index][0]):

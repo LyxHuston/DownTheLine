@@ -322,7 +322,7 @@ class BasicArea(GameArea):
     def make(self, entity_list: list[Type[entities.Entity]], tutorial: bool):
         if tutorial:
             typ = entity_list[0]
-            add = typ.make(self.seed, self)
+            add = typ.make(self)
             typ.first_occurs = self.index
             self.length = 1500
             add.y = self.length // 2
@@ -338,7 +338,7 @@ class BasicArea(GameArea):
 
             self.cross_boundary = first_see_of_entity
         else:
-            self.entity_list.extend([entity.make(self.seed, self) for entity in entity_list])
+            self.entity_list.extend([entity.make(self) for entity in entity_list])
 
 
     # methods to keep rarer/more interesting areas from getting overshadowed
@@ -369,7 +369,7 @@ class BreakThroughArea(GameArea):
         allowance = self.difficulty
         spawner_list = []
         while allowance > 0:
-            spawner = entities.Spawner.make(self.seed + allowance, self)
+            spawner = entities.Spawner.make(self)
             spawner_list.append(spawner)
             if spawner.limit is None:
                 allowance -= 2 * (spawner.delay // 200 + 1) * (spawner.entity.cost + 1) ** 2
@@ -404,7 +404,7 @@ class BreakThroughArea(GameArea):
     )
 
     def make(self, spawner_list: list[entities.Spawner], entity_list: list[Type[entities.Entity]]):
-        self.entity_list = spawner_list + [entity.make(self.seed + num + 3, self) for num, entity in enumerate(entity_list)]
+        self.entity_list = spawner_list + [entity.make(self) for num, entity in enumerate(entity_list)]
 
     def cross_boundary(self):
         if not BreakThroughArea.tutorial_given:
@@ -452,7 +452,7 @@ class GiftArea(GameArea):
     )
 
     def make(self, gift1: items.Item, gift2: items.Item):
-        spawn = entities.Spawner.make(self.seed, self)
+        spawn = entities.Spawner.make(self)
         spawn.y += self.experiment_area_length
         self.length += self.experiment_area_length
         self.entity_list.append(spawn)
@@ -543,7 +543,7 @@ class EnslaughtAreaEvent:
 
         elif typ is EnslaughtAreaEventType.Spawners:
             for i in range(target_change // 15):
-                spawner = entities.Spawner.make(area.random.randint(0, 2 ** 31), area)
+                spawner = entities.Spawner.make(area)
                 if spawner.limit is None:
                     self.change_difficulty += (spawner.delay // 200 + 1) * (spawner.entity.cost + 1) ** 2
                 else:
@@ -810,7 +810,7 @@ class BossArea(GameArea):
     )
 
     def make(self, boss: Type[bosses.Boss] | None):
-        self.boss = boss.make(self.seed, self)
+        self.boss = boss.make(self)
         self.entity_list.append(self.end_wall)
         self.entity_list.append(self.boss)
 
