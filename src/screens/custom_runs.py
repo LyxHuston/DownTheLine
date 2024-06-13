@@ -797,6 +797,7 @@ def add_new_custom_run():
 		tutorial_buttons[i].rewrite_button(
 			str(custom_run.tutorial[i]), button_font, tutorial_buttons[i].rect.center,
 		)
+		change_difficulty(0)
 
 	buttons.add_button(game_structures.Button.make_text_button("Do tutorials?", button_font, (0, 0)))
 
@@ -815,6 +816,38 @@ def add_new_custom_run():
 	tutorial_buttons.rect.size = tutorial_buttons.base_rect.size
 
 	buttons.add_button(tutorial_buttons)
+
+	def change_difficulty(direction: int):
+		custom_run.start = max(custom_run.start + direction, custom_run.tutorial.count(True))
+		difficulty_indicator.rewrite_button(str(custom_run.start), button_font, (0, 0))
+
+	difficulty_indicator = game_structures.Button.make_text_button(
+		str(custom_run.start), button_font, (0, 0)
+	)
+
+	difficulty_bar = game_structures.HorizontalListHolder(
+		pygame.rect.Rect(0, 0, 0, 0), 10, 20,
+		0, game_states.WIDTH, outline_width=5,
+		init_list=[
+			game_structures.Button.make_text_button(
+				"Start difficulty", button_font, (0, 0)
+			),
+			difficulty_indicator,
+			game_structures.Button.make_text_button(
+				"-", button_font, (0, 0), down_click=functools.partial(change_difficulty, -1)
+			),
+			game_structures.Button.make_text_button(
+				"+", button_font, (0, 0), down_click=functools.partial(change_difficulty, 1)
+			)
+		]
+	)
+
+	difficulty_bar.fit_y(5)
+	difficulty_bar.fit_x(20)
+	difficulty_bar.clip_rect.size = difficulty_bar.base_rect.size
+	difficulty_bar.rect.size = difficulty_bar.base_rect.size
+
+	buttons.add_button(difficulty_bar)
 
 	area_buttons: game_structures.ButtonHolder = game_structures.ListHolder(
 		pygame.rect.Rect(0, 0, game_states.WIDTH, game_states.HEIGHT),
