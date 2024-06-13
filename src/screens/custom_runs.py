@@ -569,6 +569,7 @@ class FieldOptions(Enum):
 
 @dataclasses.dataclass
 class CustomRun:
+	name: str = "New custom run"
 	seed: int | None = None
 	tutorial: tuple[int, int, int] = (True, True, True)
 	start: int = 3
@@ -611,15 +612,15 @@ def start_custom(custom: CustomRun):
 
 
 LIST: game_structures.ListHolder | None = None
-custom_run_list: list[FieldOption.InitializedFieldOption] = []
+custom_run_list: list[CustomRun] = []
 
 area_types = None
 
 
-def remove_from_list(
-		ifo_list: list[FieldOption.InitializedFieldOption],
+def remove_from_list[T](
+		ifo_list: list[T],
 		button_list: list[game_structures.BaseButton],
-		ifo: FieldOption.InitializedFieldOption,
+		ifo: T,
 		button: game_structures.BaseButton
 ):
 	try:
@@ -629,20 +630,57 @@ def remove_from_list(
 		pass
 
 
-def add_new_custom_run(area_type: Type[Any]):
+def change_new_area_type(
+		i: list[int], show_area_type: game_structures.Button, adder: game_structures.ButtonHolder, direction: int
+):
+	i[0] = (i[0] + direction) % len(area_types)
+	show_area_type.rewrite_button(
+		utility.from_camel(area_types[i[0]].__name__),
+		button_font,
+		show_area_type.rect.topleft,
+		y_align=0,
+		x_align=0
+	)
+	adder.fit_size()
+
+
+def new_custom_area(
+		custom_run_list: list[tuple[Type[Any], FieldOption.InitializedFieldOption] | Type[Any]],
+		button_list: list[game_structures.BaseButton],
+		area_type
+):
 	fields: FieldOption.ConstructedFieldOption = area_type.fields
 	new_ifo: FieldOption.InitializedFieldOption = fields.initialize()
-	custom_run_list.append(new_ifo)
 	buttons: game_structures.ButtonHolder = game_structures.ListHolder(
-			pygame.rect.Rect(0, 0, game_states.WIDTH, game_states.HEIGHT),
-			10,
-			20,
-			0,
-			math.inf,
-			init_list=[
-				new_ifo.get_buttons(game_states.WIDTH - game_structures.BUTTONS[1].rect.width - 40)
-			]
+		pygame.rect.Rect(0, 0, game_states.WIDTH, game_states.HEIGHT),
+		10,
+		20,
+		0,
+		math.inf
+	)
+
+	customized = [True]
+
+	def switch_customized():
+		customized[0] ^= True
+		customized_button.rewrite_button(
+			f"customized: {customized[0]}",
+			button_font,
+			(0, 0)
 		)
+		custom_run_list[button_list.index(buttons)] = (area_type, new_ifo) if customized[0] else (area_type)
+
+	def remove():
+		i = button_list.index(buttons)
+		del custom_run_list[i]
+		del button_list[i]
+
+	customized_button = game_structures.Button.make_text_button(
+		f"customized: {customized[0]}",
+		button_font,
+		(0, 0),
+		down_click=switch_customized
+	)
 	name_bar: game_structures.ButtonHolder = game_structures.HorizontalListHolder(
 		pygame.rect.Rect(0, 0, 0, 100),
 		10,
@@ -656,11 +694,60 @@ def add_new_custom_run(area_type: Type[Any]):
 				button_font,
 				(0, 0)
 			),
+			customized_button,
 			game_structures.Button.make_text_button(
 				"delete",
 				button_font,
 				(0, 0),
-				down_click=functools.partial(remove_from_list, custom_run_list, LIST.list, new_ifo, buttons)
+				down_click=remove
+			)
+		]
+	)
+	buttons.add_button(name_bar)
+	new_buttons = new_ifo.get_buttons(game_states.WIDTH - 80)
+	new_buttons.visible = and_lambda(lambda: customized[0], new_buttons.visible)
+	buttons.add_button(new_buttons)
+
+	button_list.append(buttons)
+	custom_run_list.append((area_type, new_ifo))
+
+
+def add_new_custom_run():
+	custom_run = CustomRun()
+	custom_run_list.append(custom_run)
+	buttons: game_structures.ButtonHolder = game_structures.ListHolder(
+		pygame.rect.Rect(0, 0, game_states.WIDTH, game_states.HEIGHT),
+		10,
+		20,
+		0,
+		math.inf,
+	)
+
+	name_button = game_structures.Button.make_text_button(
+		custom_run.name,
+		button_font,
+		(0, 0),
+		down_click=lambda: name_button.write_button_text(
+			button_font,
+			min_characters=1,
+			callback=lambda res: setattr(custom_run, "name", res)
+		)
+	)
+
+	name_bar: game_structures.ButtonHolder = game_structures.HorizontalListHolder(
+		pygame.rect.Rect(0, 0, 0, 100),
+		10,
+		20,
+		0,
+		game_states.WIDTH,
+		outline_width=5,
+		init_list=[
+			name_button,
+			game_structures.Button.make_text_button(
+				"delete",
+				button_font,
+				(0, 0),
+				down_click=functools.partial(remove_from_list, custom_run_list, LIST.list, custom_run, buttons)
 			),
 			game_structures.Button.make_text_button(
 				"play",
@@ -669,7 +756,67 @@ def add_new_custom_run(area_type: Type[Any]):
 			)
 		]
 	)
-	buttons.list.insert(0, name_bar)
+	buttons.add_button(name_bar)
+
+	area_buttons: game_structures.ButtonHolder = game_structures.ListHolder(
+		pygame.rect.Rect(0, 0, game_states.WIDTH, game_states.HEIGHT),
+		10,
+		20,
+		0,
+		math.inf,
+	)
+
+	buttons.add_button(area_buttons)
+
+	show_area_type = game_structures.Button.make_text_button(
+		"",
+		button_font,
+		(0, 0)
+	)
+
+	adder = game_structures.HorizontalListHolder(
+		pygame.rect.Rect(0, 0, 0, 0),
+		20,
+		20,
+		20,
+		game_states.WIDTH,
+		outline_width=5
+	)
+
+	i = [0]
+
+	change_type = functools.partial(change_new_area_type, i, show_area_type, adder)
+
+	adder.list = [
+		show_area_type,
+		game_structures.Button.make_text_button(
+			"<",
+			button_font,
+			(0, 0),
+			change_type,
+			arguments={"direction": -1}
+		),
+		game_structures.Button.make_text_button(
+			">",
+			button_font,
+			(0, 0),
+			change_type,
+			arguments={"direction": 1}
+		),
+		game_structures.Button.make_text_button(
+			"+",
+			button_font,
+			(0, 0),
+			lambda: new_custom_area(custom_run.custom_run, area_buttons.list, area_types[i[0]])
+		)
+	]
+
+	adder.fit_y(20)
+	adder.rect.height = adder.clip_rect.height = adder.base_rect.height
+	change_type(0)
+
+	buttons.add_button(adder)
+
 	LIST.list.insert(
 		-1,
 		buttons
@@ -713,63 +860,16 @@ def first_enter():
 		game_states.HEIGHT
 	)
 
-	i = 0
-
-	def change_type(direction: int):
-		nonlocal i
-		i = (i + direction) % len(area_types)
-		show_area_type.rewrite_button(
-			utility.from_camel(area_types[i].__name__),
-			button_font,
-			show_area_type.rect.topleft,
-			y_align=0,
-			x_align=0
-		)
-		adder.fit_size()
-
-	show_area_type = game_structures.Button.make_text_button(
-		"",
-		button_font,
-		(0, 0)
+	add_button = game_structures.Button.make_img_button(
+		add_new_custom_run,
+		button_font.render("  +  ", False, (255, 255, 255), (0, 0, 0)),
+		(0, 0),
+		"add new area"
 	)
+	add_button.outline_width = 5
+	add_button.outline_color = (255, 255, 255)
 
-	adder = game_structures.HorizontalListHolder(
-		pygame.rect.Rect(0, 0, 0, 0),
-		20,
-		20,
-		20,
-		game_states.WIDTH,
-		init_list=[
-			show_area_type,
-			game_structures.Button.make_text_button(
-				"<",
-				button_font,
-				(0, 0),
-				change_type,
-				arguments={"direction": -1}
-			),
-			game_structures.Button.make_text_button(
-				">",
-				button_font,
-				(0, 0),
-				change_type,
-				arguments={"direction": 1}
-			),
-			game_structures.Button.make_text_button(
-				"+",
-				button_font,
-				(0, 0),
-				lambda: add_new_custom_run(area_types[i])
-			)
-		],
-		outline_width=5
-	)
-
-	adder.fit_y(20)
-	adder.rect.height = adder.clip_rect.height = adder.base_rect.height
-	change_type(0)
-
-	LIST.add_button(adder)
+	LIST.add_button(add_button)
 
 
 def setup_custom_run_screen():
