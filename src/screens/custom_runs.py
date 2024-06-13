@@ -908,6 +908,49 @@ def add_new_custom_run():
 
 	buttons.add_button(adder)
 
+	guaranteed_type: list[int] = [0]
+
+	def change_guaranteed_type(direction: int):
+		guaranteed_type[0] = (guaranteed_type[0] + direction) % len(area_types)
+		guarantee_indicator.rewrite_button(
+			utility.from_camel(area_types[guaranteed_type[0]].__name__), button_font, guarantee_indicator.rect.center
+		)
+
+	guarantee_indicator = game_structures.Button.make_text_button(
+		utility.from_camel(area_types[guaranteed_type[0]].__name__), button_font, (0, 0),
+		visible_check=lambda: custom_run.guaranteed_type is not None
+	)
+
+	guarantee_bar = game_structures.HorizontalListHolder(
+		pygame.rect.Rect(0, 0, 0, 0), 10, 20,
+		0, game_states.WIDTH, outline_width=5,
+		init_list=[
+			game_structures.Button.make_text_button(
+				"Guarantee future types?", button_font, (0, 0),
+				down_click=lambda: setattr(
+					custom_run, "guaranteed_type",
+					area_types[guaranteed_type[0]] if custom_run.guaranteed_type is None else None
+				)
+			),
+			guarantee_indicator,
+			game_structures.Button.make_text_button(
+				"<", button_font, (0, 0), down_click=functools.partial(change_guaranteed_type, -1),
+				visible_check=lambda: custom_run.guaranteed_type is not None
+			),
+			game_structures.Button.make_text_button(
+				">", button_font, (0, 0), down_click=functools.partial(change_guaranteed_type, 1),
+				visible_check=lambda: custom_run.guaranteed_type is not None
+			)
+		]
+	)
+
+	guarantee_bar.fit_y(5)
+	guarantee_bar.fit_x(20)
+	guarantee_bar.clip_rect.size = guarantee_bar.base_rect.size
+	guarantee_bar.rect.size = guarantee_bar.base_rect.size
+
+	buttons.add_button(guarantee_bar)
+
 	LIST.list.insert(
 		-1,
 		buttons
