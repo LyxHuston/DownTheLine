@@ -1163,7 +1163,7 @@ class ScrollableButtonHolder(ButtonHolder):
                 pygame.Rect(0, 0, 0, 0),
                 fill_color=(0, 0, 0),
                 outline_color=(255, 255, 255),
-                outline_width=2,
+                outline_width=5,
                 scale_factor=1
             ), 0),
             make_scroll_button(Button(
@@ -1172,7 +1172,7 @@ class ScrollableButtonHolder(ButtonHolder):
                 pygame.Rect(0, 0, 0, 0),
                 fill_color=(0, 0, 0),
                 outline_color=(255, 255, 255),
-                outline_width=2,
+                outline_width=5,
                 scale_factor=1
             ), 1)
         ]
