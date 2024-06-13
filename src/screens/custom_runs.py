@@ -571,7 +571,7 @@ class FieldOptions(Enum):
 class CustomRun:
 	name: str = "New custom run"
 	seed: int | None = None
-	tutorial: tuple[int, int, int] = (True, True, True)
+	tutorial: list[bool] = dataclasses.field(default_factory=lambda: [True, True, True])
 	start: int = 3
 	custom_run: list[
 		tuple[Type[Any], FieldOption.InitializedFieldOption] | Type[Any]
@@ -757,6 +757,30 @@ def add_new_custom_run():
 		]
 	)
 	buttons.add_button(name_bar)
+
+	def change_tutorial_do(i: int):
+		custom_run.tutorial[i] ^= True
+		tutorial_buttons[i].rewrite_button(
+			str(custom_run.tutorial[i]), button_font, tutorial_buttons[i].rect.center,
+		)
+
+	buttons.add_button(game_structures.Button.make_text_button("Do tutorials?", button_font, (0, 0)))
+
+	tutorial_buttons: game_structures.HorizontalListHolder = game_structures.HorizontalListHolder(
+		pygame.rect.Rect(0, 0, 0, 0),
+		10, 20, 0, game_states.WIDTH,
+		init_list=[game_structures.Button.make_text_button(
+			str(custom_run.tutorial[i]), button_font, (0, 0), down_click=functools.partial(change_tutorial_do, i)
+		) for i in range(3)],
+		outline_width=5
+	)
+
+	tutorial_buttons.fit_y(5)
+	tutorial_buttons.fit_x(20)
+	tutorial_buttons.clip_rect.size = tutorial_buttons.base_rect.size
+	tutorial_buttons.rect.size = tutorial_buttons.base_rect.size
+
+	buttons.add_button(tutorial_buttons)
 
 	area_buttons: game_structures.ButtonHolder = game_structures.ListHolder(
 		pygame.rect.Rect(0, 0, game_states.WIDTH, game_states.HEIGHT),
