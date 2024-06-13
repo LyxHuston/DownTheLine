@@ -1378,7 +1378,7 @@ class ListHolder(ScrollableButtonHolder):
         while i < len(self.list):
             button = self.list[i]
             i += 1
-            if not button.visible:
+            if not button.visible():
                 continue
             button.rect.topleft = (self.__x_pos, y)
             y = button.rect.bottom + self.__y_sep
@@ -1446,7 +1446,7 @@ class HorizontalListHolder(ScrollableButtonHolder):
         while i < len(self.list):
             button = self.list[i]
             i += 1
-            if not button.visible:
+            if not button.visible():
                 continue
             button.rect.topleft = (x, self.__y_pos)
             x = button.rect.right + self.__x_sep
