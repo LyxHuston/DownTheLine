@@ -758,6 +758,40 @@ def add_new_custom_run():
 	)
 	buttons.add_button(name_bar)
 
+	seed: list[int] = [0]
+
+	def set_seed(text: str):
+		try:
+			seed[0] = int(text)
+		except ValueError:
+			seed[0] = hash(text)
+		custom_run.seed = seed[0]
+
+	def swap_custom_seed():
+		custom_run.seed = seed[0] if custom_run.seed is None else None
+
+	custom_seed_button = game_structures.Button.make_text_button(
+		"Custom seed?", button_font, (0, 0), swap_custom_seed
+	)
+
+	seed_setter_button = game_structures.Button.make_text_button(
+		str(seed[0]), button_font, (0, 0),
+		lambda: seed_setter_button.write_button_text(button_font, callback=set_seed),
+		visible_check=lambda: custom_run.seed is not None
+	)
+
+	seed_bar: game_structures.HorizontalListHolder = game_structures.HorizontalListHolder(
+		pygame.rect.Rect(0, 0, 0, 0), 10, 20, 0, game_states.WIDTH,
+		init_list=[custom_seed_button, seed_setter_button], outline_width=5
+	)
+
+	seed_bar.fit_y(5)
+	seed_bar.fit_x(20)
+	seed_bar.clip_rect.size = seed_bar.base_rect.size
+	seed_bar.rect.size = seed_bar.base_rect.size
+
+	buttons.add_button(seed_bar)
+
 	def change_tutorial_do(i: int):
 		custom_run.tutorial[i] ^= True
 		tutorial_buttons[i].rewrite_button(
