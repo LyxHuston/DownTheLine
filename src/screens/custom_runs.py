@@ -704,7 +704,7 @@ def new_custom_area(
 		]
 	)
 	buttons.add_button(name_bar)
-	new_buttons = new_ifo.get_buttons(game_states.WIDTH - 80)
+	new_buttons = new_ifo.get_buttons(game_states.WIDTH - 100)
 	new_buttons.visible = and_lambda(lambda: customized[0], new_buttons.visible)
 	buttons.add_button(new_buttons)
 
@@ -720,8 +720,14 @@ def add_new_custom_run():
 		10,
 		20,
 		0,
-		math.inf,
+		math.inf
 	)
+
+	expanded = [True]
+
+	def change_expanded():
+		expanded[0] ^= True
+		expanded_button.rewrite_button("hide" if expanded[0] else "show", button_font, expanded_button.rect.center)
 
 	name_button = game_structures.Button.make_text_button(
 		custom_run.name,
@@ -734,6 +740,13 @@ def add_new_custom_run():
 		)
 	)
 
+	expanded_button = game_structures.Button.make_text_button(
+		"hide",
+		button_font,
+		(0, 0),
+		down_click=change_expanded
+	)
+
 	name_bar: game_structures.ButtonHolder = game_structures.HorizontalListHolder(
 		pygame.rect.Rect(0, 0, 0, 100),
 		10,
@@ -743,6 +756,7 @@ def add_new_custom_run():
 		outline_width=5,
 		init_list=[
 			name_button,
+			expanded_button,
 			game_structures.Button.make_text_button(
 				"delete",
 				button_font,
@@ -757,6 +771,15 @@ def add_new_custom_run():
 		]
 	)
 	buttons.add_button(name_bar)
+
+	expanded_buttons: game_structures.ButtonHolder = game_structures.ListHolder(
+		pygame.rect.Rect(0, 0, game_states.WIDTH, game_states.HEIGHT),
+		10,
+		20,
+		0,
+		math.inf,
+		visible_check=lambda: expanded[0]
+	)
 
 	seed: list[int] = [0]
 
@@ -790,7 +813,7 @@ def add_new_custom_run():
 	seed_bar.clip_rect.size = seed_bar.base_rect.size
 	seed_bar.rect.size = seed_bar.base_rect.size
 
-	buttons.add_button(seed_bar)
+	expanded_buttons.add_button(seed_bar)
 
 	def change_tutorial_do(i: int):
 		custom_run.tutorial[i] ^= True
@@ -799,7 +822,7 @@ def add_new_custom_run():
 		)
 		change_difficulty(0)
 
-	buttons.add_button(game_structures.Button.make_text_button("Do tutorials?", button_font, (0, 0)))
+	expanded_buttons.add_button(game_structures.Button.make_text_button("Do tutorials?", button_font, (0, 0)))
 
 	tutorial_buttons: game_structures.HorizontalListHolder = game_structures.HorizontalListHolder(
 		pygame.rect.Rect(0, 0, 0, 0),
@@ -815,7 +838,7 @@ def add_new_custom_run():
 	tutorial_buttons.clip_rect.size = tutorial_buttons.base_rect.size
 	tutorial_buttons.rect.size = tutorial_buttons.base_rect.size
 
-	buttons.add_button(tutorial_buttons)
+	expanded_buttons.add_button(tutorial_buttons)
 
 	def change_difficulty(direction: int):
 		custom_run.start = max(custom_run.start + direction, custom_run.tutorial.count(True))
@@ -847,7 +870,7 @@ def add_new_custom_run():
 	difficulty_bar.clip_rect.size = difficulty_bar.base_rect.size
 	difficulty_bar.rect.size = difficulty_bar.base_rect.size
 
-	buttons.add_button(difficulty_bar)
+	expanded_buttons.add_button(difficulty_bar)
 
 	area_buttons: game_structures.ButtonHolder = game_structures.ListHolder(
 		pygame.rect.Rect(0, 0, game_states.WIDTH, game_states.HEIGHT),
@@ -857,7 +880,7 @@ def add_new_custom_run():
 		math.inf,
 	)
 
-	buttons.add_button(area_buttons)
+	expanded_buttons.add_button(area_buttons)
 
 	show_area_type = game_structures.Button.make_text_button(
 		"",
@@ -906,7 +929,7 @@ def add_new_custom_run():
 	adder.rect.height = adder.clip_rect.height = adder.base_rect.height
 	change_type(0)
 
-	buttons.add_button(adder)
+	expanded_buttons.add_button(adder)
 
 	guaranteed_type: list[int] = [0]
 
@@ -949,7 +972,9 @@ def add_new_custom_run():
 	guarantee_bar.clip_rect.size = guarantee_bar.base_rect.size
 	guarantee_bar.rect.size = guarantee_bar.base_rect.size
 
-	buttons.add_button(guarantee_bar)
+	expanded_buttons.add_button(guarantee_bar)
+
+	buttons.add_button(expanded_buttons)
 
 	LIST.list.insert(
 		-1,
