@@ -651,6 +651,17 @@ def new_custom_area(
 ):
 	fields: FieldOption.ConstructedFieldOption = area_type.fields
 	new_ifo: FieldOption.InitializedFieldOption = fields.initialize()
+	add_custom_area_buttons_to_list(custom_run_list, button_list, area_type, new_ifo, True)
+	custom_run_list.append((area_type, new_ifo))
+
+
+def add_custom_area_buttons_to_list(
+		custom_run_list: list[tuple[Type[Any], FieldOption.InitializedFieldOption] | Type[Any]],
+		button_list: list[game_structures.BaseButton],
+		area_type: Type[Any],
+		ifo: FieldOption.InitializedFieldOption,
+		_customized: bool
+):
 	buttons: game_structures.ButtonHolder = game_structures.ListHolder(
 		pygame.rect.Rect(0, 0, game_states.WIDTH, game_states.HEIGHT),
 		10,
@@ -659,7 +670,7 @@ def new_custom_area(
 		math.inf
 	)
 
-	customized = [True]
+	customized = [_customized]
 
 	def switch_customized():
 		customized[0] ^= True
@@ -668,7 +679,7 @@ def new_custom_area(
 			button_font,
 			(0, 0)
 		)
-		custom_run_list[button_list.index(buttons)] = (area_type, new_ifo) if customized[0] else (area_type)
+		custom_run_list[button_list.index(buttons)] = (area_type, ifo) if customized[0] else (area_type)
 
 	def remove():
 		i = button_list.index(buttons)
@@ -704,16 +715,19 @@ def new_custom_area(
 		]
 	)
 	buttons.add_button(name_bar)
-	new_buttons = new_ifo.get_buttons(game_states.WIDTH - 100)
+	new_buttons = ifo.get_buttons(game_states.WIDTH - 100)
 	new_buttons.visible = and_lambda(lambda: customized[0], new_buttons.visible)
 	buttons.add_button(new_buttons)
 
 	button_list.append(buttons)
-	custom_run_list.append((area_type, new_ifo))
 
 
 def add_new_custom_run():
 	custom_run = CustomRun()
+	add_from_custom_run(custom_run, True)
+
+
+def add_from_custom_run(custom_run: CustomRun, _expanded: bool = False):
 	custom_run_list.append(custom_run)
 	buttons: game_structures.ButtonHolder = game_structures.ListHolder(
 		pygame.rect.Rect(0, 0, game_states.WIDTH, game_states.HEIGHT),
@@ -723,7 +737,7 @@ def add_new_custom_run():
 		math.inf
 	)
 
-	expanded = [True]
+	expanded = [_expanded]
 
 	def change_expanded():
 		expanded[0] ^= True
@@ -741,7 +755,7 @@ def add_new_custom_run():
 	)
 
 	expanded_button = game_structures.Button.make_text_button(
-		"hide",
+		"hide" if expanded[0] else "show",
 		button_font,
 		(0, 0),
 		down_click=change_expanded
@@ -782,7 +796,7 @@ def add_new_custom_run():
 		visible_check=lambda: expanded[0]
 	)
 
-	seed: list[int] = [0]
+	seed: list[int] = [0 if custom_run.seed is None else custom_run.seed]
 
 	def set_seed(text: str):
 		try:
@@ -882,6 +896,23 @@ def add_new_custom_run():
 	)
 
 	expanded_buttons.add_button(area_buttons)
+
+	for area in custom_run.custom_run:
+		if isinstance(area, tuple):
+			area_type, ifo = area
+			customized = True
+		else:
+			area_type = area
+			ifo = area_type.fields.initialize()
+			customized = False
+		add_custom_area_buttons_to_list(
+			custom_run.custom_run,
+			area_buttons.list,
+			area_type,
+			ifo,
+			customized
+		)
+
 
 	show_area_type = game_structures.Button.make_text_button(
 		"",
