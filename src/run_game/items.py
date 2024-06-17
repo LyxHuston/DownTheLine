@@ -27,6 +27,7 @@ import functools
 from run_game import entities, tutorials, abilities, ingame, gameboard
 import math
 import enum
+import random
 from data import draw_constants, game_states, images, switches
 from general_use import utility, game_structures
 
@@ -49,7 +50,8 @@ def damage_description(d: int) -> str:
 class ItemType:
 
     first: int = -1  # first possible appearance, -1 for never (aka abstract or not fully implemented)
-    constructor: Callable = lambda difficulty, random, pos: raise_abstract_item_type()  # constructor for item types
+    constructor: Callable = staticmethod(lambda difficulty, random, pos: raise_abstract_item_type())  # constructor for item types
+    generate_parts: Callable = staticmethod(lambda difficulty, random, pos: raise_abstract_item_type())  # generate parts for constructor
     description: Callable = (lambda item: f"{item.type.name}: {item.data_pack}", "Empty")  # get string description
     get_range: Callable = (utility.passing(0), 0)  # range, used for calculations when held by monsters
     action_available: Callable = (utility.make_simple_always(False), False)  # check if an action is available
@@ -62,15 +64,18 @@ class ItemType:
     prevent_other_use: Callable = (utility.make_simple_always(False), False)  # check if it prevents other items from being in use
     swappable: Callable = (utility.passing, True)  # check if it is swappable with other items
 
-    def __init__(self, first=-1, parent: Self = None, **kwargs):
+    def __init__(self, first=-1, parent: Self = None, fields: tuple = None, **kwargs):
         self.__dict__.update(
             {
                 k: v[0]
                 for k, v in self.__class__.__dict__.items()
-                if not k.startswith("_") and k != "first" and k != "constructor"
+                if not k.startswith("_") and isinstance(v, tuple)
             }
         )
         self.constructor = self.__class__.constructor
+        self.generate_parts = self.__class__.generate_parts
+        if fields is not None:
+            self.fields = FieldOptions.ItemMaker.value(self, fields)
         for k in kwargs:
             if k.startswith("_") or k not in self.__dict__:
                 raise TypeError(f"'{k}' is an invalid keyword argument for ItemType()")
@@ -78,6 +83,12 @@ class ItemType:
             self.__dict__.update(parent.__dict__)
         self.__dict__.update(kwargs)
         self.first = first
+
+    def construct(self, strength: int, random: random.Random, pos: tuple[int, int]):
+        return self.constructor(*self.generate_parts(strength, random, pos))
+
+
+from screens.custom_runs import FieldOptions
 
 
 simple_stab_imgs = [images.SIMPLE_SPEAR, images.SIMPLE_SWORD, images.SIMPLE_DAGGER]
@@ -1170,7 +1181,7 @@ def make_random_reusable(random, pos):
         typ for typ in ItemTypes if 0 <= typ.value.first <= game_states.LAST_AREA
     ))
     try:
-        return choice.value.constructor(game_states.LAST_AREA, random, pos)
+        return choice.value.construct(game_states.LAST_AREA, random, pos)
     except Exception as e:
         e.add_note(f"Error occurred during construction of {choice.name} item type.")
         raise e
@@ -1205,6 +1216,7 @@ def simple_stab(cooldown: int, duration: int, img: pygame.Surface, ground_img: p
         ItemTypes.SimpleStab
     )
 
+
 def simple_shield(pos: tuple[int, int]):
     """
     generate a simple shield item
@@ -1221,3 +1233,8 @@ def simple_shield(pos: tuple[int, int]):
         [False, []],
         ItemTypes.SimpleShield
     )
+
+
+item_construction_map = FieldOptions.Mapping.value(
+    {utility.from_camel(item_type.name): item_type.fields for item_type in ItemTypes if hasattr(item_type, "fields")}
+)
