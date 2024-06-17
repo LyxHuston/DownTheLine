@@ -581,6 +581,7 @@ class CustomRun:
 
 def start_custom(custom: CustomRun):
 	from screens import run_start_end
+	from run_game import ingame
 	run_start_end.setup()
 
 	if custom.seed is not None:
@@ -605,10 +606,12 @@ def start_custom(custom: CustomRun):
 			))
 		else:
 			area = run(seed, game_states.LAST_AREA)
-			game_structures.AREA_QUEUE.append(area)
+		game_structures.NEW_AREAS.append(area)
 		game_states.LAST_AREA += 1
 
 	game_areas.guaranteed_type = custom.guaranteed_type
+	run_start_end.populate_area_queue()
+	ingame.screen.start(was_customized=True)
 
 
 LIST: game_structures.ListHolder | None = None

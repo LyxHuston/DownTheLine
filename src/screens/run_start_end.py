@@ -317,12 +317,18 @@ def setup(with_seed: int = None, full: bool = True):
         ])
 
 
-def start(with_seed: int = None, full: bool = True):
+def populate_area_queue():
+    for i in range(game_states.AREA_QUEUE_MAX_LENGTH - len(game_structures.AREA_QUEUE) - len(game_structures.NEW_AREAS)):
+        game_areas.add_game_area()
+
+
+def start(with_seed: int = None, full: bool = True, was_customized: bool = False):
+    if was_customized:
+        return
     setup(with_seed, full)
     if full:
         game_areas.add_game_area().join()
-        for i in range(game_states.AREA_QUEUE_MAX_LENGTH - 1):
-            game_areas.add_game_area()
+        populate_area_queue()
 
 
 class GameAreaLog:
