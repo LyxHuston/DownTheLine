@@ -853,6 +853,24 @@ class BossArea(GameArea):
             ])
 
 
+class EndRun(GameArea):
+    """
+    area to end custom runs.  When entered, it wins the game.
+    """
+
+    def __init__(self, _, count):
+        super().__init__(count, length=0, seed=0)
+
+    fields = ()
+
+    def make(self):
+        pass
+
+    def cross_boundary(self):
+        from screens import end_screens
+        end_screens.win.start()
+
+
 guaranteed_type: Type[GameArea] | None = None
 
 
