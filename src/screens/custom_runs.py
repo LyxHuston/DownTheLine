@@ -766,7 +766,8 @@ def add_new_custom_run():
 			game_structures.Button.make_text_button(
 				"play",
 				button_font,
-				(0, 0)
+				(0, 0),
+				down_click=functools.partial(start_custom, custom_run)
 			)
 		]
 	)
