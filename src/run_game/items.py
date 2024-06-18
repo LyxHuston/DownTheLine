@@ -75,7 +75,7 @@ class ItemType:
         self.constructor = self.__class__.constructor
         self.generate_parts = self.__class__.generate_parts
         if fields is not None:
-            self.fields = FieldOptions.ItemMaker.value(self, fields)
+            self.fields = custom_runs.FieldOptions.ItemMaker.value(self, fields)
         for k in kwargs:
             if k.startswith("_") or k not in self.__dict__:
                 raise TypeError(f"'{k}' is an invalid keyword argument for ItemType()")
@@ -88,7 +88,7 @@ class ItemType:
         return self.constructor(*self.generate_parts(strength, random, pos))
 
 
-from screens.custom_runs import FieldOptions
+from screens import custom_runs
 
 
 simple_stab_imgs = [images.SIMPLE_SPEAR, images.SIMPLE_SWORD, images.SIMPLE_DAGGER]
