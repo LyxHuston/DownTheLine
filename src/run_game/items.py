@@ -496,7 +496,7 @@ globals().update({
     name: none_check(val[1])(maker(name))
     for name, val in
     ItemType.__dict__.items()
-    if not name.startswith("_") and name != "first" and name != "constructor"
+    if not name.startswith("_") and isinstance(val, tuple)
 })
 
 del maker
