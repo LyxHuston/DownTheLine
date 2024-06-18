@@ -1276,6 +1276,27 @@ class Knight(Glides, CarriesItems):
     #     )
     # )
 
+    fields = (
+        FieldOptions.Label.value(
+            "Rotation",
+            FieldOptions.Degrees.value()
+        ),
+        FieldOptions.Label.value(
+            "Position",
+            FieldOptions.Tuple.value(
+                FieldOptions.Integer.value(),
+                FieldOptions.Positive.value()
+            )
+        ),
+        FieldOptions.Label.value(
+            "Hands",
+            FieldOptions.Tuple.value(
+                items.item_construction_map,
+                items.item_construction_map
+            )
+        )
+    )
+
     def __init__(self, rotation: int, pos: tuple[int, int], hands):
         Glides.__init__(self, self.top.img, rotation, pos)
         CarriesItems.__init__(self, list(hands))
