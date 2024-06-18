@@ -75,7 +75,17 @@ class ItemType:
         self.constructor = self.__class__.constructor
         self.generate_parts = self.__class__.generate_parts
         if fields is not None:
-            self.fields = custom_runs.FieldOptions.ItemMaker.value(self, fields)
+            self.fields = custom_runs.FieldOptions.ItemMaker.value(self, tuple(list(fields) +
+                [
+                    custom_runs.FieldOptions.Label.value(
+                        "Position",
+                        custom_runs.FieldOptions.Tuple.value(
+                            custom_runs.FieldOptions.Integer.value(),
+                            custom_runs.FieldOptions.Positive.value()
+                        )
+                    )
+                ]
+            ))
         for k in kwargs:
             if k.startswith("_") or k not in self.__dict__:
                 raise TypeError(f"'{k}' is an invalid keyword argument for ItemType()")
