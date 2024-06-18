@@ -1235,6 +1235,6 @@ def simple_shield(pos: tuple[int, int]):
     )
 
 
-item_construction_map = FieldOptions.Mapping.value(
+item_construction_map = custom_runs.FieldOptions.Mapping.value(
     {utility.from_camel(item_type.name): item_type.fields for item_type in ItemTypes if hasattr(item_type, "fields")}
 )
