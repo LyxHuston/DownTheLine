@@ -529,7 +529,7 @@ class EnslaughtAreaEvent:
                 target_change -= e.cost + allowable_entities[index][1] ** 2
                 self.change_difficulty += e.cost + allowable_entities[index][1] ** 2
                 allowable_entities[index][1] += 1
-                made_entity = e.make(determiner, area)
+                made_entity = e.make(area)
                 made_entity.y += area.start_coordinate
                 self.add_entities.append(made_entity)
 
