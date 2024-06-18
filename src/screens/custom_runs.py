@@ -30,7 +30,7 @@ import pygame
 from data import game_states
 from general_use import game_structures, utility
 
-from run_game import game_areas, items, minigames
+from run_game import game_areas
 
 from screens import main_screen, run_start_end
 
@@ -302,6 +302,10 @@ def and_lambda(func1: Callable[[], bool], func2: Callable[[], bool]) -> Callable
 	return lambda: func1() and func2()
 
 
+def make_atom_with_tuple_choice(tuple_choice: AtomChoices):
+	return FieldOption(FieldOption.FieldType.Atom, options=tuple_choice)
+
+
 class FieldOptions(Enum):
 	Bool = FieldOption(FieldOption.FieldType.Atom, options=bool_choices, buttons=make_boolean_atom_changer)
 	EntityType = FieldOption(FieldOption.FieldType.Atom, options=tuple_choices(
@@ -566,13 +570,20 @@ class FieldOptions(Enum):
 		),
 		finalize=lambda val, area: val[0](*(sub_ifo.make() for sub_ifo in val[1]))
 	)
-	ItemMaker = FieldOption(
-		FieldOption.FieldType.Constructed,
-		acceptor=lambda args:
+
+	@staticmethod
+	def itemmaker_acceptor(args):
+		from run_game import items
+		return (
 			isinstance(args[0], items.ItemType) and
 			isinstance(args[1], tuple) and
 			all(isinstance(sub_arg, FieldOption.ConstructedFieldOption) for sub_arg in args[1]) and
-			(len(args) == 2 or (len(args) == 3 and isinstance(args[2], bool))),
+			(len(args) == 2 or (len(args) == 3 and isinstance(args[2], bool)))
+		)
+
+	ItemMaker = FieldOption(
+		FieldOption.FieldType.Constructed,
+		acceptor=itemmaker_acceptor,
 			# third arg is should label be shown, default True
 		default_factory=lambda cfo: (cfo.args[0], tuple(sub_cfo.initialize() for sub_cfo in cfo.args[1])),
 		buttons=lambda ifo, width: game_structures.ListHolder(
@@ -592,6 +603,11 @@ class FieldOptions(Enum):
 		),
 		finalize=lambda val, area: val[0](*(sub_ifo.make() for sub_ifo in val[1]))
 	)
+
+	del itemmaker_acceptor
+
+
+from run_game import items
 
 
 items.generate_item_construction_map()
