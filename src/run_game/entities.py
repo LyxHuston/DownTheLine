@@ -1389,7 +1389,7 @@ class Knight(Glides, CarriesItems):
 
     @classmethod
     def make(cls, area):
-        making = cls(0, (0, 200), [items.random_simple_stab(1, area.random), None])
+        making = cls(0, (0, 200), [items.ItemTypes.SimpleStab.value.construct(1, area.random, (0, 0)), None])
         # making.enter()
         # print("Used make method for knight")
         return making

@@ -94,10 +94,8 @@ from screens import custom_runs
 simple_stab_imgs = [images.SIMPLE_SPEAR, images.SIMPLE_SWORD, images.SIMPLE_DAGGER]
 
 
-def random_simple_stab(strength: int, random, pos: tuple[int, int] | None = None):
+def random_simple_stab(strength: int, random):
     damage = random.randint(2, 4)
-    image = simple_stab_imgs[damage - 2]
-    img = image.img
 
     choose = random.randint(1, 3)
     if choose == 1:
@@ -113,15 +111,24 @@ def random_simple_stab(strength: int, random, pos: tuple[int, int] | None = None
     if cooldown < 30:
         cooldown = 30
 
-    return simple_stab(cooldown, duration, img, image.outlined_img, pos, damage)
+    return cooldown, duration, damage
 
 
-def random_simple_shield(strength, random, pos=None):
-    return simple_shield(pos)
+def simple_stab_from_parts(cooldown, duration, damage, pos):
+    image = simple_stab_imgs[damage - 2]
+    return simple_stab(cooldown, duration, image.img, image.outlined_img, pos, damage)
 
 
-def boomerang(strength, random, pos):
+def random_simple_shield(strength, random):
+    return ()
+
+
+def boomerang(strength, random):
     throw_strength = random.choice((5, 10, 15))
+    return throw_strength
+
+
+def boomerang_from_parts(throw_strength, pos):
     return Item(
         simple_boomerang_action,
         passing,
@@ -136,9 +143,13 @@ def boomerang(strength, random, pos):
     )
 
 
-def random_simple_throwable(strength, random, pos):
+def random_simple_throwable(strength, random):
     # current only reusable throwable is hatchet
     throw_strength = random.choice((25, 35))
+    return throw_strength
+
+
+def simple_throwable_from_parts(throw_strength, pos):
     item = simple_throwable(
         images.HATCHET.img,
         images.HATCHET.outlined_img,
@@ -157,7 +168,7 @@ def random_simple_throwable(strength, random, pos):
 bow_charge_per_damage = 40
 
 
-def bow(strength, random, pos):
+def bow(strength, random):
 
     max_bonus_damage = random.randint(1, strength // 5)
     pierce = random.choice(list(range(min(strength // 10, 2), 1 + strength // 5)) + ([-1] if strength >= 30 else []))
@@ -170,6 +181,10 @@ def bow(strength, random, pos):
     else:
         growth_rate = max_bonus_damage / (max_charge * (0.5 + pierce / 2))
 
+    return cooldown, max_charge, pierce, growth_rate
+
+
+def bow_from_parts(cooldown, max_charge, pierce, growth_rate, pos):
     return Item(
         bow_action,
         bow_release,
@@ -184,7 +199,11 @@ def bow(strength, random, pos):
     )
 
 
-def hammer(strength, random, pos):
+def hammer(strength, random):
+    return ()
+
+
+def hammer_from_parts(pos):
     cooldown = 240
     duration = 120
     knockback_duration = 120
@@ -216,7 +235,8 @@ class ItemTypes(enum.Enum):
     SimpleStab: ItemType = ItemType(
         0,
         SimpleCooldownAction,
-        constructor=random_simple_stab,
+        generate_parts=random_simple_stab,
+        constructor=simple_stab_from_parts,
         description=lambda item:  # state, tracker, cooldown ticks, duration ticks, damage, hit tracker
         f"{('Spear', 'Sword', 'Dagger')[item.data_pack[-2] - 2]}\n\n"
         f"Deals {damage_description(item.data_pack[-2])} damage to enemies it hits.\n"
@@ -227,7 +247,8 @@ class ItemTypes(enum.Enum):
     )
     SimpleShield: ItemType = ItemType(
         0,
-        constructor=random_simple_shield,
+        generate_parts=random_simple_shield,
+        constructor=lambda pos: simple_shield(pos),
         description=lambda _:
         "Shield\n\n"
         "Protects you from damage in a direction, in exchange for preventing use of other items.\n"
@@ -239,7 +260,8 @@ class ItemTypes(enum.Enum):
     )
     SimpleThrowable: ItemType = ItemType(
         10,
-        constructor=random_simple_throwable,
+        generate_parts=random_simple_throwable,
+        constructor=simple_throwable_from_parts,
         description=lambda item: item.data_pack[-1],
         get_range=lambda item: item.data_pack[0].find_range(*item.data_pack[1]),
         action_available=lambda item: True
@@ -247,7 +269,8 @@ class ItemTypes(enum.Enum):
     Bow: ItemType = ItemType(
         12,
         SimpleCooldownAction,
-        constructor=bow,
+        generate_parts=bow,
+        constructor=bow_from_parts,
         description=lambda item:
         "Bow\n\n"
         f"Hold it to charge up and shoot an arrow in a given direction, dealing {damage_description(1)} damage.  "
@@ -260,7 +283,8 @@ class ItemTypes(enum.Enum):
     Boomerang: ItemType = ItemType(
         15,
         SimpleCooldownAction,
-        constructor=boomerang,
+        generate_parts=boomerang,
+        constructor=boomerang_from_parts,
         description=lambda item:
         "Boomerang\n\n"
         f"A throwable weapon that returns to the user.  It deals {damage_description(1)} "
@@ -273,7 +297,8 @@ class ItemTypes(enum.Enum):
     Hammer: ItemType = ItemType(
         10,
         SimpleCooldownAction,
-        constructor=hammer,
+        generate_parts=hammer,
+        constructor=hammer_from_parts,
         description=lambda item:
         "Hammer\n\n"
         f"After a long charge-up deal {damage_description(5)} damage to the closest enemy in range.  "
