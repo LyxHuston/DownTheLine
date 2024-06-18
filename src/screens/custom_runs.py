@@ -594,6 +594,9 @@ class FieldOptions(Enum):
 	)
 
 
+items.generate_item_construction_map()
+
+
 @dataclasses.dataclass
 class CustomRun:
 	name: str = "New custom run"
