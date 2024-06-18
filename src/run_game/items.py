@@ -50,8 +50,8 @@ def damage_description(d: int) -> str:
 class ItemType:
 
     first: int = -1  # first possible appearance, -1 for never (aka abstract or not fully implemented)
-    constructor: Callable = staticmethod(lambda difficulty, random, pos: raise_abstract_item_type())  # constructor for item types
-    generate_parts: Callable = staticmethod(lambda difficulty, random, pos: raise_abstract_item_type())  # generate parts for constructor
+    constructor: Callable = staticmethod(lambda *args: raise_abstract_item_type())  # constructor for item types
+    generate_parts: Callable = staticmethod(lambda difficulty, random: raise_abstract_item_type())  # generate parts for constructor
     description: Callable = (lambda item: f"{item.type.name}: {item.data_pack}", "Empty")  # get string description
     get_range: Callable = (utility.passing(0), 0)  # range, used for calculations when held by monsters
     action_available: Callable = (utility.make_simple_always(False), False)  # check if an action is available
