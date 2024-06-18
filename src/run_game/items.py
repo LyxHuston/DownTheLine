@@ -234,6 +234,9 @@ def hammer_from_parts(pos):
 in_use_basic = lambda item: item.data_pack[0]
 
 
+from screens import custom_runs
+
+
 class ItemTypes(enum.Enum):
     """
     enum of item types
@@ -246,6 +249,20 @@ class ItemTypes(enum.Enum):
         0,
         SimpleCooldownAction,
         generate_parts=random_simple_stab,
+        fields=(
+            custom_runs.FieldOptions.Label.value(
+                "Cooldown",
+                custom_runs.make_atom_with_tuple_choice(custom_runs.range_choices(10, step=10))()
+            ),
+            custom_runs.FieldOptions.Label.value(
+                "Duration",
+                custom_runs.make_atom_with_tuple_choice(custom_runs.range_choices(10, step=10))()
+            ),
+            custom_runs.FieldOptions.Label.value(
+                "Damage",
+                custom_runs.make_atom_with_tuple_choice(custom_runs.range_choices(2, 4))()
+            )
+        ),
         constructor=simple_stab_from_parts,
         description=lambda item:  # state, tracker, cooldown ticks, duration ticks, damage, hit tracker
         f"{('Spear', 'Sword', 'Dagger')[item.data_pack[-2] - 2]}\n\n"
@@ -257,6 +274,7 @@ class ItemTypes(enum.Enum):
     )
     SimpleShield: ItemType = ItemType(
         0,
+        fields=(),
         generate_parts=random_simple_shield,
         constructor=lambda pos: simple_shield(pos),
         description=lambda _:
@@ -270,6 +288,11 @@ class ItemTypes(enum.Enum):
     )
     SimpleThrowable: ItemType = ItemType(
         10,
+        fields=(
+            custom_runs.FieldOptions.Label.value(
+                "Throw Strength",
+                custom_runs.make_atom_with_tuple_choice(custom_runs.range_choices(5, step=5))()
+            ),),
         generate_parts=random_simple_throwable,
         constructor=simple_throwable_from_parts,
         description=lambda item: item.data_pack[-1],
@@ -279,6 +302,24 @@ class ItemTypes(enum.Enum):
     Bow: ItemType = ItemType(
         12,
         SimpleCooldownAction,
+        fields=(
+            custom_runs.FieldOptions.Label.value(
+                "Cooldown",
+                custom_runs.make_atom_with_tuple_choice(custom_runs.range_choices(10, step=10))()
+            ),
+            custom_runs.FieldOptions.Label.value(
+                "Max Charge",
+                custom_runs.make_atom_with_tuple_choice(custom_runs.range_choices(10, step=10))()
+            ),
+            custom_runs.FieldOptions.Label.value(
+                "Pierce",
+                custom_runs.make_atom_with_tuple_choice(custom_runs.range_choices(-1))()
+            ),
+            custom_runs.FieldOptions.Label.value(
+                "Growth Rate",
+                custom_runs.make_atom_with_tuple_choice(custom_runs.range_choices(0, step=10))()
+            )
+        ),
         generate_parts=bow,
         constructor=bow_from_parts,
         description=lambda item:
@@ -293,6 +334,12 @@ class ItemTypes(enum.Enum):
     Boomerang: ItemType = ItemType(
         15,
         SimpleCooldownAction,
+        fields=(
+            custom_runs.FieldOptions.Label.value(
+                "Throw Strength",
+                custom_runs.make_atom_with_tuple_choice(custom_runs.range_choices(5, step=5))()
+            ),
+        ),
         generate_parts=boomerang,
         constructor=boomerang_from_parts,
         description=lambda item:
@@ -307,6 +354,7 @@ class ItemTypes(enum.Enum):
     Hammer: ItemType = ItemType(
         10,
         SimpleCooldownAction,
+        fields=(),
         generate_parts=hammer,
         constructor=hammer_from_parts,
         description=lambda item:
