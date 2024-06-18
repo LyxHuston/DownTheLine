@@ -85,7 +85,7 @@ class ItemType:
         self.first = first
 
     def construct(self, strength: int, random: random.Random, pos: tuple[int, int]):
-        return self.constructor(*self.generate_parts(strength, random, pos))
+        return self.constructor(*self.generate_parts(strength, random), pos)
 
 
 from screens import custom_runs
