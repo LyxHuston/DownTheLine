@@ -55,12 +55,18 @@ def outline_text_button(button: game_structures.Button):
         button.rect.height += 2 * width
 
 
+__last_on_pause = [None, None]
+
+
 def pause():
     global paused
     paused = True
     run_start_end.switch_to_main_pause()
     width = (game_states.WIDTH - 768) // 2 - 40
     for i, item in enumerate(game_structures.HANDS):
+        if item is __last_on_pause[i]:
+            continue
+        __last_on_pause[i] = item
         item: items.Item
         holder: game_structures.ScrollableButtonHolder = run_start_end.PAUSE_BUTTONS[i + 3]
         holder.clear()
