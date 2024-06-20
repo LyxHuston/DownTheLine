@@ -30,6 +30,35 @@ def from_camel(string: str):
     return ''.join([char if char.islower() else ' ' + char for char in string])[1:]
 
 
+import cProfile
+import atexit
+import pstats
+
+
+__output_lock = threading.Lock()
+
+
+def profile_func(func: Callable):
+    profile = cProfile.Profile()
+    profile.disable()
+
+    def inner(*args, **kwargs):
+        with profile:
+            return func(*args, **kwargs)
+
+    def output():
+        profile.create_stats()
+        stats = pstats.Stats(profile)
+        stats.sort_stats("cumulative")
+        with __output_lock:
+            print(f"{func.__name__} profile:")
+            stats.print_stats()
+
+    atexit.register(output)
+
+    return inner
+
+
 memoize_not_have = object()
 
 
