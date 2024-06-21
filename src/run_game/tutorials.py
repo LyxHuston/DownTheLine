@@ -129,7 +129,7 @@ def add_text(text: str, font: pygame.font.Font, sound: pygame.mixer.Sound = None
     LOG.append(tt)
 
 
-def add_texts(texts: list[tuple[str, pygame.font.Font, [pygame.mixer.Sound]]]):
+def add_texts(texts: list[tuple[str, pygame.font.Font, pygame.mixer.Sound] | tuple[str, pygame.font.Font]]):
     if LOG:
         LOG.append(None)
     for text in texts:

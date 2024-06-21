@@ -331,7 +331,7 @@ class BasicArea(GameArea):
             self.entity_list.append(entities.Obstacle(pos=(0, self.length // 4), health=5))
 
             def first_see_of_entity():
-                if not add.tutorial_given:
+                if not add.tutorial_given and add.tutorial_text:
                     add.tutorial_given = True
                     tutorials.clear_tutorial_text()
                     tutorials.add_texts([(add.tutorial_text, game_structures.FONTS[100])])
