@@ -18,6 +18,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 entities file, but only for bosses
 """
 import dataclasses
+import math
 
 from run_game import entities, gameboard
 from data import images
@@ -163,6 +164,29 @@ class Serpent(Boss):
             part.body_part.pos = last.position
             part.body_part.rotation = last.rotation
 
+    def get_image_from_index(self, i: int) -> pygame.Surface:
+        # equation: https://www.desmos.com/calculator/j0qun80i6c idk how long that will be valid
+        # constants that let it expand if necessary
+        l = len(images.SERPENT_BODY)  # length of the images options.  Range of graph.
+        m = self.body_length  # number of body parts.  Domain of graph.
+        # constants that affect the shape of the graph
+        c = 1/3  # center of main body hump
+        d = 3  # dampener for the hump
+        bfl = 1/4  # body flattening constant
+        nfl = 1/4  # neck flattening constant
+
+        f_1 = math.sin(1 / (bfl * (i - c * m) ** 2 + d)) / math.sin(1/d)  # calculate main body hump
+        f_1 *= i * (m - 1) / ((m / 2) ** 2)  # make sure it's 0 at the edges
+
+        f_2 = 1 / (1 + i / (nfl * m)) - i / m * 1 / (1 + 1 / nfl)  # calculate neck width
+
+        # join f_1 and f_2 smoothly.  Basically has each of them be a percent of height remaining
+        final = 1 - (1 - f_1) * (1 - f_2)
+
+        index = round((l - 1) * final)
+
+        return images.SERPENT_BODY[index].img
+
     def final_load(self) -> None:
         super().final_load()
         self.area_start = self.y
@@ -174,7 +198,7 @@ class Serpent(Boss):
                 deque()
             ),
             *(Serpent.PathTracker(
-                BodyPart(images.SERPENT_BODY[round(len(images.SERPENT_BODY) * (1 - i / self.body_length)) - 1].img, 0, (0, 0), self),
+                BodyPart(self.get_image_from_index(i), 0, (0, 0), self),
                 deque()
             ) for i in range(self.body_length))
         )
