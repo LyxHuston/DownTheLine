@@ -124,7 +124,11 @@ class Serpent(Boss):
     class PathItem:
         rotation: int
         position: tuple[int, int]
-        bodypart: BodyPart
+
+    @dataclasses.dataclass
+    class PathTracker:
+        body_part: BodyPart
+        path_parts: deque
 
     fields = (
         FieldOptions.Area.value()
@@ -133,7 +137,7 @@ class Serpent(Boss):
 
     def __init__(self, area):
         super().__init__(images.EMPTY, 0, (0, 0))
-        self.path: deque[Serpent.PathItem] = deque()
+        self.parts: tuple[Serpent.PathTracker] | None = None
         self.health = 50
         self.area_length: int = area.length
         self.area_start = 0
@@ -144,56 +148,37 @@ class Serpent(Boss):
     def make(cls, area) -> Self:
         return cls(area)
 
-    def next_path_item(self, head: BodyPart):
+    def next_path_item(self) -> PathItem:
         return Serpent.PathItem(
             self.rotation,
-            self.pos,
-            head
+            self.pos
         )
 
     def tick(self):
-        last = None
-        for part in self.path:
-            if last is not None:
-                last.pos = part.position
-                last.rotation = part.rotation
-            part.bodypart, last = last, part.bodypart
-        self.path.popleft()
-        self.path.append(self.next_path_item(last))
+        last: Serpent.PathItem = self.next_path_item()
+        part: Serpent.PathTracker
+        for part in self.parts:
+            part.path_parts.append(last)
+            last = part.path_parts.popleft()
+            part.body_part.pos = last.position
+            part.body_part.rotation = last.rotation
 
     def final_load(self) -> None:
         super().final_load()
         self.area_start = self.y
         self.area_end = self.area_start + self.area_length
         self.y += self.area_length * 2
-        self.path.extend(
-            Serpent.PathItem(
-                0,
-                self.pos,
-                BodyPart(
-                    images.SERPENT_BODY[len(images.SERPENT_BODY) * i // (self.body_part_sep * self.body_length)].img,
-                    0,
-                    self.pos,
-                    self
-                )
-                if i % self.body_part_sep == 0 else
-                None
-            )
-            for i in range(self.body_length * self.body_part_sep)
+        self.parts = (
+            Serpent.PathTracker(
+                BodyPart(images.SERPENT_HEAD.img, 0, (0, 0), self),
+                deque()
+            ),
+            *(Serpent.PathTracker(
+                BodyPart(images.SERPENT_BODY[round(len(images.SERPENT_BODY) * (1 - i / self.body_length)) - 1].img, 0, (0, 0), self),
+                deque()
+            ) for i in range(self.body_length))
         )
-        self.path.append(
-            Serpent.PathItem(
-                0,
-                self.pos,
-                BodyPart(
-                    images.SERPENT_HEAD.img,
-                    0,
-                    self.pos,
-                    self
-                )
-            )
-        )
-        parts: tuple[BodyPart] = tuple(filter(None, map(lambda part: part.bodypart, self.path)))
+        parts: tuple[BodyPart] = tuple(part.body_part for part in self.parts)
         part: BodyPart
         for part in parts:
             part.final_load()
