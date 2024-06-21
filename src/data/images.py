@@ -125,11 +125,7 @@ TARGET: Image = Image("entities/target/target")
 
 #bosses
 SERPENT_HEAD: Image = Image("entities/serpent/serpent_head")
-SERPENT_BODY: list[Image] = [
-    Image("entities/serpent/serpent_body_1"),
-    Image("entities/serpent/serpent_body_2"),
-    Image("entities/serpent/serpent_body_3"),
-    Image("entities/serpent/serpent_body_4")]
+SERPENT_BODY: list[Image] = img_range("entities/serpent/serpent_body", 4)
 
 # items
 SIMPLE_SPEAR: Image = Image("items/simple_spear")

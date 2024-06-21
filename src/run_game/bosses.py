@@ -17,10 +17,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 entities file, but only for bosses
 """
+import dataclasses
 
-from run_game import entities
+from run_game import entities, gameboard
+from data import images
 import pygame
 from general_use import game_structures
+from collections import deque
 
 
 class Boss(entities.Entity):
@@ -104,6 +107,80 @@ class BodyPart(entities.Entity):
             )
         )
         return self.pos
+
+
+class Serpent(Boss):
+    """
+    a serpent that coils around the track
+    """
+
+    body_length = 20
+    body_part_sep = 5
+    speed = 5
+
+    @dataclasses.dataclass
+    class PathItem:
+        rotation: int
+        position: tuple[int, int]
+        bodypart: BodyPart
+
+    def __init__(self, length: int):
+        super().__init__(images.EMPTY, 0, (0, 0))
+        self.path: deque[Serpent.PathItem] = deque()
+        self.health = 50
+        self.area_length: int = length
+
+    def next_path_item(self, head: BodyPart):
+        return Serpent.PathItem(
+            0,
+            (0, self.y + self.area_length * 2),
+            head
+        )
+
+    def tick(self):
+        last = None
+        for part in self.path:
+            if last is not None:
+                last.pos = part.position
+                last.rotation = part.rotation
+            part.bodypart, last = last, part.bodypart
+        self.path.popleft()
+        self.path.append(self.next_path_item(last))
+
+    def final_load(self) -> None:
+        super().final_load()
+        self.path.extend(
+            Serpent.PathItem(
+                0,
+                (0, self.y + self.area_length * 2),
+                BodyPart(
+                    images.SERPENT_BODY[len(images.SERPENT_BODY) * i // (self.body_part_sep * self.body_length)].img,
+                    0,
+                    (0, self.y + self.area_length * 2),
+                    self
+                )
+                if i % self.body_part_sep == 0 else
+                None
+            )
+            for i in range(self.body_length * self.body_part_sep)
+        )
+        self.path.append(
+            Serpent.PathItem(
+                0,
+                (0, self.y + self.area_length * 2),
+                BodyPart(
+                    images.SERPENT_HEAD.img,
+                    0,
+                    (0, self.y + self.area_length * 2),
+                    self
+                )
+            )
+        )
+        parts: tuple[BodyPart] = tuple(filter(None, map(lambda part: part.bodypart, self.path)))
+        part: BodyPart
+        for part in parts:
+            part.final_load()
+        gameboard.NEW_ENTITIES.extend(parts)
 
 
 class Placeholder(Boss):
