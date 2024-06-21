@@ -795,12 +795,12 @@ class BossArea(GameArea):
     def __init__(self, determiner, count):
         super(BossArea, self).__init__(count, game_states.HEIGHT * 4, seed=determiner)
         self.difficulty = count
-        self.boss: bosses.Boss | None = None  # TODO make boss options
+        self.boss: bosses.Boss | None = None
         self.state = 0
         self.end_wall = entities.InvulnerableObstacle(pos=(0, self.length), health=1)
 
     def determine_parts(self):
-        self.make(None)  # TODO
+        self.make(random.choice(bosses.boss_types))
 
     fields = (
         FieldOptions.Label.value(
@@ -809,7 +809,7 @@ class BossArea(GameArea):
         ),
     )
 
-    def make(self, boss: Type[bosses.Boss] | None):
+    def make(self, boss: Type[bosses.Boss]):
         self.boss = boss.make(self)
         self.entity_list.append(self.end_wall)
         self.entity_list.append(self.boss)

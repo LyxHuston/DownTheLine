@@ -24,6 +24,8 @@ from data import images
 import pygame
 from general_use import game_structures
 from collections import deque
+from typing import Self
+from screens.custom_runs import FieldOptions
 
 
 class Boss(entities.Entity):
@@ -198,5 +200,4 @@ class Serpent(Boss):
         gameboard.NEW_ENTITIES.extend(parts)
 
 
-class Placeholder(Boss):
-    """bc otherwise custom_runs errors currently"""
+boss_types = game_structures.recursive_subclasses(Boss)
