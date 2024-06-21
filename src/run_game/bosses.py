@@ -132,8 +132,8 @@ class Serpent(Boss):
 
     def next_path_item(self, head: BodyPart):
         return Serpent.PathItem(
-            0,
-            (0, self.y + self.area_length * 2),
+            self.rotation,
+            self.pos,
             head
         )
 
