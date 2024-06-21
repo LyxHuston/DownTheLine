@@ -818,6 +818,7 @@ class BossArea(GameArea):
         ret = super().tick()
         if self.state == 0:
             if game_states.DISTANCE > self.start_coordinate + self.length // 2:
+                self.state = 1
                 gameboard.NEW_ENTITIES.append(entities.InvulnerableObstacle(pos=(0, self.start_coordinate), health=1))
         elif self.state == 1:
             if not self.boss.alive:
