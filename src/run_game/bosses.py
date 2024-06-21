@@ -129,6 +129,8 @@ class Serpent(Boss):
         self.path: deque[Serpent.PathItem] = deque()
         self.health = 50
         self.area_length: int = length
+        self.area_start = 0
+        self.area_end = 0
 
     def next_path_item(self, head: BodyPart):
         return Serpent.PathItem(
@@ -149,14 +151,17 @@ class Serpent(Boss):
 
     def final_load(self) -> None:
         super().final_load()
+        self.area_start = self.y
+        self.area_end = self.area_start + self.area_length
+        self.y += self.area_length
         self.path.extend(
             Serpent.PathItem(
                 0,
-                (0, self.y + self.area_length * 2),
+                self.pos,
                 BodyPart(
                     images.SERPENT_BODY[len(images.SERPENT_BODY) * i // (self.body_part_sep * self.body_length)].img,
                     0,
-                    (0, self.y + self.area_length * 2),
+                    self.pos,
                     self
                 )
                 if i % self.body_part_sep == 0 else
@@ -167,11 +172,11 @@ class Serpent(Boss):
         self.path.append(
             Serpent.PathItem(
                 0,
-                (0, self.y + self.area_length * 2),
+                self.pos,
                 BodyPart(
                     images.SERPENT_HEAD.img,
                     0,
-                    (0, self.y + self.area_length * 2),
+                    self.pos,
                     self
                 )
             )
