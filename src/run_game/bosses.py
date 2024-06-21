@@ -37,14 +37,15 @@ class Boss(entities.Entity):
     def player_entered(self):
         pass
 
-    def hit(self, damage: int, source):
+    def hit(self, damage: int, source) -> bool:
         if source not in self.hit_track:
             self.health -= damage
             self.hit_track.append(source)
+            return True
+        return False
 
-    def tick(self) -> bool:
+    def tick(self):
         self.hit_track.clear()
-        return self.health > 0
 
 
 class BodyPart(entities.Entity):
@@ -58,18 +59,25 @@ class BodyPart(entities.Entity):
     def __init__(self, img: pygame.Surface, rotation: int, pos: tuple[int, int], boss, damage: int = 5,
                  collides: bool = True):
         super().__init__(img, rotation, pos)
-        self.boss = boss
-        self.collides = collides
-        self.damage = damage
+        self.boss: Boss = boss
+        self.collides: bool = collides
+        self.damage: int = damage
 
-    def tick(self) -> bool:
-        if not self.boss.alive:
-            return False
-        if not self.collides:
-            return True
-        if self.rect.colliderect():
-            game_structures.PLAYER_ENTITY.hit(self.damage, self)
+    @property
+    def alive(self) -> bool:
         return self.boss.alive
+
+    @alive.setter
+    def alive(self, val):
+        self.boss.alive = val
+
+    def tick(self):
+        if not self.boss.alive:
+            return
+        if not self.collides:
+            return
+        for en in self.colliding(lambda other: other.allied_with_player is not self.allied_with_player):
+            en.hit(self.damage, self)
 
     def hit(self, damage: int, source):
         self.boss.hit(damage, source)
