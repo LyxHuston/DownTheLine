@@ -124,13 +124,23 @@ class Serpent(Boss):
         position: tuple[int, int]
         bodypart: BodyPart
 
-    def __init__(self, length: int):
+    fields = (
+        FieldOptions.Area.value()
+        ,
+    )
+
+    def __init__(self, area):
         super().__init__(images.EMPTY, 0, (0, 0))
         self.path: deque[Serpent.PathItem] = deque()
         self.health = 50
-        self.area_length: int = length
+        self.area_length: int = area.length
         self.area_start = 0
         self.area_end = 0
+
+
+    @classmethod
+    def make(cls, area) -> Self:
+        return cls(area)
 
     def next_path_item(self, head: BodyPart):
         return Serpent.PathItem(
