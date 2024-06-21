@@ -55,6 +55,7 @@ class BodyPart(entities.Entity):
 
     def damage_player(self):
         game_structures.begin_shake(120, (200, 200), (21, 59))
+        self.boss.damage_player()
 
     def __init__(self, img: pygame.Surface, rotation: int, pos: tuple[int, int], boss, damage: int = 5,
                  collides: bool = True):
