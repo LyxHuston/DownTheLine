@@ -205,11 +205,11 @@ class Serpent(Boss):
         self.y += self.area_length * 2
         self.parts = (
             Serpent.PathTracker(
-                BodyPart(images.SERPENT_HEAD.img, 0, (0, 0), self),
+                BodyPart(images.SERPENT_HEAD.img, 0, self.pos, self),
                 deque()
             ),
             *(Serpent.PathTracker(
-                BodyPart(self.get_image_from_index(i), 0, (0, 0), self),
+                BodyPart(self.get_image_from_index(i), 0, self.pos, self),
                 deque()
             ) for i in range(self.body_length))
         )
