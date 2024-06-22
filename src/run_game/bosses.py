@@ -66,6 +66,9 @@ class BodyPart(entities.Entity):
     a body part of a boss
     """
 
+    collide_priority: int = 3
+    immune_collide_below: int = 4
+
     def damage_player(self):
         game_structures.begin_shake(120, (200, 200), (21, 59))
         self.boss.damage_player()
@@ -202,15 +205,15 @@ class Serpent(Boss):
         super().final_load()
         self.area_start = self.y
         self.area_end = self.area_start + self.area_length
-        self.y += self.area_length
+        self.y += self.area_length + 90
         self.parts = (
             Serpent.PathTracker(
                 BodyPart(images.SERPENT_HEAD.img, 0, self.pos, self),
                 deque()
             ),
             *(Serpent.PathTracker(
-                BodyPart(self.get_image_from_index(i), 0, self.pos, self),
-                deque()
+                BodyPart(self.get_image_from_index(i), 0, (self.x, self.y + i * 100), self),
+                deque(Serpent.PathItem(0, (self.x, self.y + i * 100)) for _ in range(self.body_part_sep))
             ) for i in range(self.body_length))
         )
         parts: tuple[BodyPart] = tuple(part.body_part for part in self.parts)
