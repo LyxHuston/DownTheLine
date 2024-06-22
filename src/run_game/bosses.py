@@ -187,7 +187,7 @@ class Serpent(Boss):
         nfl = 1/4  # neck flattening constant
 
         f_1 = math.sin(1 / (bfl * (i - c * m) ** 2 + d)) / math.sin(1/d)  # calculate main body hump
-        f_1 *= i * (m - 1) / ((m / 2) ** 2)  # make sure it's 0 at the edges
+        f_1 *= i * (m - i) / ((m / 2) ** 2)  # make sure it's 0 at the edges
 
         f_2 = 1 / (1 + i / (nfl * m)) - i / m * 1 / (1 + 1 / nfl)  # calculate neck width
 
