@@ -40,6 +40,7 @@ class Boss(entities.Entity):
         super().__init__(img, rotation, pos)
         self.hit_track = []  # used to check if multiple body parts are being hit by the same thing in the same tick
         self.state = 0  # 0 if not crossed middle, 1 if crossed middle
+        self.target: entities.Entity | None = None
 
     def player_entered(self):
         pass
@@ -57,6 +58,7 @@ class Boss(entities.Entity):
     def cross_boundary(self):
         """called when the player has crossed the halfway point into a boss area"""
         self.state = 1
+        self.target = self.closest_enemy()
 
 
 class BodyPart(entities.Entity):

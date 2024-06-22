@@ -398,6 +398,17 @@ class Entity(game_structures.Body):
     def pick_up(self):
         raise TypeError("Non-item entity picked up")
 
+    def is_enemy(self, other: Self):
+        return self.allied_with_player is not other.allied_with_player
+
+    def closest_enemy(self, limit: int = None) -> Self | None:
+        self.recenter_order()
+        return min(
+            self.next_entity_inorder(limit, lambda en: en.allied_with_player is not self.allied_with_player),
+            self.prev_entity_inorder(limit, lambda en: en.allied_with_player is not self.allied_with_player),
+            key=lambda en: math.inf if en is None else abs(self.y - en.y)
+        )
+
 
 from screens.custom_runs import FieldOptions
 
