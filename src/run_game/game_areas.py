@@ -817,7 +817,7 @@ class BossArea(GameArea):
     def tick(self):
         ret = super().tick()
         if self.state == 0:
-            if game_states.DISTANCE > self.start_coordinate + self.length // 2:
+            if game_states.DISTANCE > self.start_coordinate + self.length // 8:
                 self.state = 1
                 gameboard.NEW_ENTITIES.append(entities.InvulnerableObstacle(pos=(0, self.start_coordinate), health=1))
                 self.boss.cross_boundary()
