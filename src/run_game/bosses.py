@@ -202,7 +202,7 @@ class Serpent(Boss):
         super().final_load()
         self.area_start = self.y
         self.area_end = self.area_start + self.area_length
-        self.y += self.area_length * 2
+        self.y += self.area_length
         self.parts = (
             Serpent.PathTracker(
                 BodyPart(images.SERPENT_HEAD.img, 0, self.pos, self),
