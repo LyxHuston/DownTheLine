@@ -165,6 +165,8 @@ class Serpent(Boss):
     def tick(self):
         if not self.state:
             return
+        if not self.target.alive:
+            self.target = self.closest_enemy(self.area_length)
         last: Serpent.PathItem = self.next_path_item()
         part: Serpent.PathTracker
         for part in self.parts:
