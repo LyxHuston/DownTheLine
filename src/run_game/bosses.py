@@ -39,6 +39,7 @@ class Boss(entities.Entity):
     def __init__(self, img: pygame.Surface, rotation: int, pos: tuple[int, int]):
         super().__init__(img, rotation, pos)
         self.hit_track = []  # used to check if multiple body parts are being hit by the same thing in the same tick
+        self.state = 0  # 0 if not crossed middle, 1 if crossed middle
 
     def player_entered(self):
         pass
@@ -52,6 +53,10 @@ class Boss(entities.Entity):
 
     def tick(self):
         self.hit_track.clear()
+
+    def cross_boundary(self):
+        """called when the player has crossed the halfway point into a boss area"""
+        self.state = 1
 
 
 class BodyPart(entities.Entity):
@@ -156,6 +161,8 @@ class Serpent(Boss):
         )
 
     def tick(self):
+        if not self.state:
+            return
         last: Serpent.PathItem = self.next_path_item()
         part: Serpent.PathTracker
         for part in self.parts:

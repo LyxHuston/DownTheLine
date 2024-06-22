@@ -820,6 +820,7 @@ class BossArea(GameArea):
             if game_states.DISTANCE > self.start_coordinate + self.length // 2:
                 self.state = 1
                 gameboard.NEW_ENTITIES.append(entities.InvulnerableObstacle(pos=(0, self.start_coordinate), health=1))
+                self.boss.cross_boundary()
         elif self.state == 1:
             if not self.boss.alive:
                 self.end_wall.alive = False
