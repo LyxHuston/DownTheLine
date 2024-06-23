@@ -273,9 +273,9 @@ class Serpent(Boss):
         part: Serpent.PathTracker
         for part in self.parts:
             part.path_parts.append(last)
-            last = part.path_parts.popleft()
             part.body_part.pos = last.position
             part.body_part.rotation = last.rotation + 180
+            last = part.path_parts.popleft()
 
     def get_image_from_index(self, i: int) -> pygame.Surface:
         # equation: https://www.desmos.com/calculator/j0qun80i6c idk how long that will be valid
@@ -308,7 +308,7 @@ class Serpent(Boss):
         self.parts = (
             Serpent.PathTracker(
                 BodyPart(pygame.transform.scale_by(images.SERPENT_HEAD.img, self.size), 0, self.pos, self),
-                deque()
+                deque(Serpent.PathItem(0, self.pos) for _ in range(self.size * 2 + self.body_part_sep))
             ),
             *(Serpent.PathTracker(
                 BodyPart(self.get_image_from_index(i), 0, (self.x, self.y + i * 100), self),
