@@ -164,8 +164,8 @@ class Serpent(Boss):
         self.movement: Serpent.MovementOption = Serpent.MovementOption(lambda: None, lambda: True)
         self.random = random.Random(area.get_next_seed())
         self.size = size
-        self.speed = 12 + 5 * self.size
-        self.body_part_sep = self.size + 1
+        self.speed = 10 + 4 * self.size
+        self.body_part_sep = self.size + 2
         self.body_length = 30 + 5 * self.size
         self.imgs = tuple(pygame.transform.scale_by(img.img, self.size) for img in images.SERPENT_BODY)
 
@@ -349,8 +349,6 @@ class Serpent(Boss):
             while select > 0:
                 i += 1
                 select -= options[i].weight
-
-            print(options[i].make)
 
             turn, finish_check = options[i].make()
 
