@@ -188,6 +188,10 @@ class Serpent(Boss):
                 Serpent.MovementMakerEntry(
                     self.make_dive_movement,
                     5
+                ),
+                Serpent.MovementMakerEntry(
+                    self.make_wave_movement,
+                    1
                 )
             )
         }
@@ -274,6 +278,39 @@ class Serpent(Boss):
 
         return turn, lambda: self.target is None or (diving and left is not self.x < 0)  # check it's dived to the other side or target dead
 
+    def make_wave_movement(self):
+        stage = 0  # 0: retreating, 1: diving, 2: wave
+        tightness = 5  # how quickly the snake turns.  Higher number, the tighter the wave.
+        direction = 0  # up/down
+
+        def turn():
+            nonlocal stage, direction
+
+            left = self.x < 0
+            if stage == 0:  # go away from track
+                to_angle = 270 if left else 90
+                # angle towards player, more so if further from track.  Asymptotic to 90 degrees
+                adjust = math.degrees(math.atan(self.x / 100))
+                # modify so it angles correctly based on position
+                adjust *= 1 if left else -1
+                adjust *= -1 if self.y < self.target.y else 1
+                to_angle += adjust
+                self.turn_towards(to_angle)
+                if abs(self.x) > game_states.WIDTH // 4:
+                    stage = 1
+            elif stage == 1:  # return to track, intercepting at a (hopefully) 90 degree angle
+                to_angle = 90 if left else 270
+                self.turn_towards(to_angle)
+                if abs(self.x) < self.speed:
+                    self.rotation = to_angle  # take no chances about intercept angle
+                    direction = -1 if self.y < self.target.y else 1
+                    stage = 2
+            elif stage == 2:
+                adjust = tightness * direction * (1 if self.x < 0 else -1)
+                self.rotation += adjust
+
+        return turn, lambda: self.target is None or stage == 2 and abs(self.x) < self.speed and (-1 if self.y < self.target.y else 1) != direction
+
     def get_next_movement(self) -> MovementOption:
         out_y = not self.area_start < self.y < self.area_end  # keep it in the area
         out_x = abs(self.x) > game_states.WIDTH // 2  # keep it on the screen
@@ -312,6 +349,8 @@ class Serpent(Boss):
             while select > 0:
                 i += 1
                 select -= options[i].weight
+
+            print(options[i].make)
 
             turn, finish_check = options[i].make()
 
@@ -373,7 +412,7 @@ class Serpent(Boss):
         self.parts = (
             Serpent.PathTracker(
                 BodyPart(pygame.transform.scale_by(images.SERPENT_HEAD.img, self.size), 0, self.pos, self),
-                deque(Serpent.PathItem(0, self.pos) for _ in range(self.size * 2 + self.body_part_sep))
+                deque(Serpent.PathItem(0, self.pos) for _ in range(4 + self.body_part_sep))
             ),
             *(Serpent.PathTracker(
                 BodyPart(self.get_image_from_index(i), 0, (self.x, self.y + i * 100), self),
