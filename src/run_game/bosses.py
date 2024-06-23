@@ -159,9 +159,9 @@ class Serpent(Boss):
         self.parts: tuple[Serpent.PathTracker] | None = None
         self.health = 50
         self.area_length: int = area.length
-        self.area_start = 0
+        self.area_start = area.start_coordinate
+        self.area_end = area.end_coordinate
         self.movement: Serpent.MovementOption = Serpent.MovementOption(lambda: None, lambda: True)
-        self.area_end = 0
         self.random = random.Random(area.get_next_seed())
         self.size = size
         self.speed = 12 + 5 * self.size
@@ -169,7 +169,7 @@ class Serpent(Boss):
         self.body_length = 30 + 5 * self.size
         self.imgs = tuple(pygame.transform.scale_by(img.img, self.size) for img in images.SERPENT_BODY)
 
-        self.movement_options: dict[bool, tuple[Serpent.MovementMakerEntry]] = {
+        self.movement_options: dict[bool, tuple[Serpent.MovementMakerEntry, ...]] = {
             True: (
                 Serpent.MovementMakerEntry(
                     self.make_spiral_movement,
@@ -185,6 +185,10 @@ class Serpent(Boss):
                     self.make_spiral_movement,
                     2
                 ),
+                Serpent.MovementMakerEntry(
+                    self.make_dive_movement,
+                    5
+                )
             )
         }
 
@@ -238,6 +242,36 @@ class Serpent(Boss):
                 self.rotation += diff // 2
 
         return turn, lambda: (self.x - destination[0]) ** 2 + (self.y - destination[1]) < 4 * self.speed ** 2
+
+    def make_dive_movement(self):
+        diving = False
+        left = None
+
+        def turn():
+            nonlocal diving, left
+
+            if diving:  # has already entered the correct cone, assume it's close enough still, keep diving
+                to_angle = math.degrees(math.atan2(self.target.x - self.x, self.y - self.target.y)) % 360
+                # limit to 45 degree incident angle (https://www.desmos.com/calculator/pt0opyurc0)
+                to_angle = 90 - min(abs(abs(to_angle - 180) - 90), 45) * (-1 if to_angle < 180 else 1) * (
+                    1 if 90 < to_angle < 270 else -1) + (0 if to_angle < 180 else 180)
+            else:  # go away from line
+                left = self.x < 0
+                to_angle = 270 if left else 90
+                # angle towards player, more so if further from track.  Asymptotic to 90 degrees
+                adjust = math.degrees(math.atan(self.x / 100))
+                # modify so it angles correctly based on position
+                adjust *= 1 if left else -1
+                adjust *= -1 if self.y < self.target.y else 1
+                to_angle += adjust
+                if (
+                        abs(self.x - self.target.x) > game_states.WIDTH // 6
+                        and (self.y - self.target.y) < abs(self.x - self.target.x)
+                ):  # check if has entered into about 30 degree cone
+                    diving = True
+            self.turn_towards(to_angle)
+
+        return turn, lambda: self.target is None or (diving and left is not self.x < 0)  # check it's dived to the other side or target dead
 
     def get_next_movement(self) -> MovementOption:
         out_y = not self.area_start < self.y < self.area_end  # keep it in the area
