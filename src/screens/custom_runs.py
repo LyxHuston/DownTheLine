@@ -1082,7 +1082,7 @@ def first_enter():
 		e_t for e_t in entity_types if e_t.fields is not None
 	)
 	boss_types.extend(game_structures.recursive_subclasses(bosses.Boss))
-	item_types.extend(items.ItemTypes)
+	item_types.extend(item_type for item_type in items.ItemTypes if item_type.value.first != -1)
 	enslaught_event_type.extend(game_areas.EnslaughtAreaEventType)
 	minigame_type.extend(minigames.Minigame.minigames)
 
