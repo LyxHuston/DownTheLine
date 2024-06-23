@@ -72,10 +72,14 @@ class BodyPart(entities.Entity):
     immune_collide_below: int = 4
 
     def damage_player(self):
-        game_structures.begin_shake(120, (200, 200), (21, 59))
+        game_structures.begin_shake(
+            self.damage * 30,
+            (self.damage * 40, self.damage * 40),
+            (self.damage * 16 + 1, self.damage * 24 - 1)
+        )
         self.boss.damage_player()
 
-    def __init__(self, img: pygame.Surface, rotation: int, pos: tuple[int, int], boss, damage: int = 5,
+    def __init__(self, img: pygame.Surface, rotation: int, pos: tuple[int, int], boss, damage,
                  collides: bool = True):
         super().__init__(img, rotation, pos)
         self.boss: Boss = boss
@@ -409,11 +413,11 @@ class Serpent(Boss):
         self.y += self.area_length + 90
         self.parts = (
             Serpent.PathTracker(
-                BodyPart(pygame.transform.scale_by(images.SERPENT_HEAD.img, self.size), 0, self.pos, self),
+                BodyPart(pygame.transform.scale_by(images.SERPENT_HEAD.img, self.size), 0, self.pos, self, 3),
                 deque(Serpent.PathItem(0, self.pos) for _ in range(4 + self.body_part_sep))
             ),
             *(Serpent.PathTracker(
-                BodyPart(self.get_image_from_index(i), 0, (self.x, self.y + i * 100), self),
+                BodyPart(self.get_image_from_index(i), 0, (self.x, self.y + i * 100), self, 3),
                 deque(Serpent.PathItem(0, (self.x, self.y + i * 100)) for _ in range(self.body_part_sep))
             ) for i in range(self.body_length))
         )
