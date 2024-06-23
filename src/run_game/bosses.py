@@ -19,6 +19,7 @@ entities file, but only for bosses
 """
 import dataclasses
 import math
+import random
 
 from run_game import entities, gameboard
 from data import images
@@ -127,10 +128,6 @@ class Serpent(Boss):
     a serpent that coils around the track
     """
 
-    body_length = 20
-    body_part_sep = 5
-    speed = 5
-
     @dataclasses.dataclass
     class PathItem:
         rotation: int
@@ -140,6 +137,11 @@ class Serpent(Boss):
     class PathTracker:
         body_part: BodyPart
         path_parts: deque
+
+    @dataclasses.dataclass
+    class MovementOption:
+        turn: Callable[[], None]
+        finish_check: Callable[[], bool]
 
     fields = (
         FieldOptions.Area.value()
@@ -153,11 +155,16 @@ class Serpent(Boss):
         self.area_length: int = area.length
         self.area_start = 0
         self.area_end = 0
-
+        self.random = random.Random(area.get_next_seed())
+        self.size = size
+        self.speed = 10 + 5 * self.size
+        self.body_part_sep = self.size + 1
+        self.body_length = 30 + 5 * self.size
+        self.imgs = tuple(pygame.transform.scale_by(img.img, self.size) for img in images.SERPENT_BODY)
 
     @classmethod
     def make(cls, area) -> Self:
-        return cls(area)
+        return cls(area, area.random.randint(2, 3))
 
     def next_path_item(self) -> PathItem:
         return Serpent.PathItem(
@@ -176,7 +183,7 @@ class Serpent(Boss):
             part.path_parts.append(last)
             last = part.path_parts.popleft()
             part.body_part.pos = last.position
-            part.body_part.rotation = last.rotation
+            part.body_part.rotation = last.rotation + 180
 
     def get_image_from_index(self, i: int) -> pygame.Surface:
         # equation: https://www.desmos.com/calculator/j0qun80i6c idk how long that will be valid
@@ -199,7 +206,7 @@ class Serpent(Boss):
 
         index = round((l - 1) * final)
 
-        return images.SERPENT_BODY[index].img
+        return self.imgs[index]
 
     def final_load(self) -> None:
         super().final_load()
@@ -208,7 +215,7 @@ class Serpent(Boss):
         self.y += self.area_length + 90
         self.parts = (
             Serpent.PathTracker(
-                BodyPart(images.SERPENT_HEAD.img, 0, self.pos, self),
+                BodyPart(pygame.transform.scale_by(images.SERPENT_HEAD.img, self.size), 0, self.pos, self),
                 deque()
             ),
             *(Serpent.PathTracker(
