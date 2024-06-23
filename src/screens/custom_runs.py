@@ -601,7 +601,7 @@ class FieldOptions(Enum):
 			) + [sub_ifo.get_buttons(width) for sub_ifo in ifo.val[1]],
 			outline_width=5
 		),
-		finalize=lambda val, area: val[0](*(sub_ifo.make() for sub_ifo in val[1]))
+		finalize=lambda val, area: val[0].constructor(*(sub_ifo.make() for sub_ifo in val[1]))
 	)
 
 	del itemmaker_acceptor

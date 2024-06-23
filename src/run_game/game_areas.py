@@ -451,15 +451,23 @@ class GiftArea(GameArea):
         FieldOptions.ItemType.value(),
     )
 
-    def make(self, gift1: items.Item, gift2: items.Item):
+    def make(self, gift1: items.Item | items.ItemTypes, gift2: items.Item | items.ItemTypes):
         spawn = entities.Spawner.make(self)
         spawn.y += self.experiment_area_length
         self.length += self.experiment_area_length
         self.entity_list.append(spawn)
         self.entity_list.append(entities.Obstacle(pos=(0, self.experiment_area_length), health=1))
         self.entity_list.append(entities.Obstacle(pos=(0, self.length), health=10))
-        self.entity_list.append(entities.ItemEntity(gift1))
-        self.entity_list.append(entities.ItemEntity(gift2))
+        self.entity_list.append(entities.ItemEntity(
+            gift1
+            if isinstance(gift1, items.Item) else
+            gift1.value.construct(self.index, self.random, (0, 1 * self.experiment_area_length // 3))
+        ))
+        self.entity_list.append(entities.ItemEntity(
+            gift2
+            if isinstance(gift2, items.Item) else
+            gift2.value.construct(self.index, self.random, (0, 2 * self.experiment_area_length // 3))
+        ))
 
     def cross_boundary(self):
         if not GiftArea.tutorial_given:
