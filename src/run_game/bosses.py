@@ -202,7 +202,11 @@ class Serpent(Boss):
 
     @classmethod
     def make(cls, area) -> Self:
-        return cls(area, area.random.randint(2, 3))
+        min_size = max(min(2, area.difficulty // 15), 1)
+
+        max_size = max(2, (math.isqrt(area.difficulty) + 2) // 3)
+
+        return cls(area, min(area.random.randint(min_size, max_size) for _ in range(2)))
 
     def turn_towards(self, angle):
         diff: int = angle - self.rotation
