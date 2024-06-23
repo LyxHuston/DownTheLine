@@ -18,6 +18,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 entities file, but only for bosses
 """
 import dataclasses
+import functools
 import math
 import random
 
@@ -143,6 +144,11 @@ class Serpent(Boss):
         turn: Callable[[], None]
         finish_check: Callable[[], bool]
 
+    @dataclasses.dataclass
+    class MovementMakerEntry:
+        make: Callable[[], tuple[Callable[[], None], Callable[[], bool]]]
+        weight: int
+
     fields = (
         FieldOptions.Area.value()
         ,
@@ -158,14 +164,77 @@ class Serpent(Boss):
         self.area_end = 0
         self.random = random.Random(area.get_next_seed())
         self.size = size
-        self.speed = 10 + 5 * self.size
+        self.speed = 12 + 5 * self.size
         self.body_part_sep = self.size + 1
         self.body_length = 30 + 5 * self.size
         self.imgs = tuple(pygame.transform.scale_by(img.img, self.size) for img in images.SERPENT_BODY)
 
+        self.movement_options: dict[bool, tuple[Serpent.MovementMakerEntry]] = {
+            True: (
+                Serpent.MovementMakerEntry(
+                    self.make_spiral_movement,
+                    5
+                ),
+                Serpent.MovementMakerEntry(
+                    self.make_goto_movement,
+                    1
+                )
+            ),
+            False: (
+                Serpent.MovementMakerEntry(
+                    self.make_spiral_movement,
+                    2
+                ),
+            )
+        }
+
     @classmethod
     def make(cls, area) -> Self:
         return cls(area, area.random.randint(2, 3))
+
+    def turn_towards(self, angle):
+        diff: int = angle - self.rotation
+        if abs(diff) > 180:
+            diff = 360 - diff
+        if abs(diff) > 5:
+            self.rotation += math.copysign(3, diff)
+        elif abs(diff) > 1:
+            self.rotation += diff // 2
+
+    def make_spiral_movement(self) -> tuple[Callable[[], None], Callable[[], bool]]:
+        direction = self.random.choice((-1, 1))
+        tightness = self.random.randint(2, 5)
+        change = self.random.randint(-2, 2) / 20
+        duration = 60 * self.random.randint(1, 5)
+        if change > 0:
+            duration = min(duration, int((8 - tightness) / change))
+
+        def turn():
+            nonlocal change, duration, tightness
+            duration -= 1
+            if duration % self.size == 0:
+                self.rotation += direction * int(tightness)
+                tightness += change
+
+        return turn, lambda: duration <= 0
+
+    def make_goto_movement(self) -> tuple[Callable[[], None], Callable[[], bool]]:
+        destination = (
+            self.random.choice((-1, 1)) * self.random.randint(game_states.WIDTH // 4, game_states.WIDTH // 2),
+            self.random.randint(self.area_start + self.area_length // 4, self.area_end - self.area_length // 4)
+        )
+
+        def turn():
+            to_angle = math.degrees(math.atan2(destination[0] - self.x, self.y - destination[1])) % 360
+            diff: int = to_angle - self.rotation
+            if abs(diff) > 180:
+                diff = 360 - diff
+            if abs(diff) > 3:
+                self.rotation += math.copysign(2, diff)
+            elif abs(diff) > 1:
+                self.rotation += diff // 2
+
+        return turn, lambda: (self.x - destination[0]) ** 2 + (self.y - destination[1]) < 4 * self.speed ** 2
 
     def get_next_movement(self) -> MovementOption:
         out_y = not self.area_start < self.y < self.area_end  # keep it in the area
@@ -191,64 +260,22 @@ class Serpent(Boss):
                 def finish_check():
                     return abs(self.x) < game_states.WIDTH // 3
 
-            def turn():
-                diff: int = ideal_angle - self.rotation
-                if abs(diff) > 180:
-                    diff = 360 - diff
-                if abs(diff) > 5:
-                    self.rotation += math.copysign(3, diff)
-                elif abs(diff) > 1:
-                    self.rotation += diff // 2
+            turn = functools.partial(self.turn_towards, ideal_angle)
 
-        elif self.target is None or True:  # no target, so idle
-            match self.random.randint(0, 1):
-                case 0:  # spiral/coil
-                    direction = self.random.choice((-1, 1))
-                    tightness = self.random.randint(2, 5)
-                    change = self.random.randint(-2, 2) / 20
-                    duration = 60 * self.random.randint(1, 5)
-                    if change > 0:
-                        duration = min(duration, int((8 - tightness) / change))
+        else:
 
-                    def turn():
-                        nonlocal change, duration, tightness
-                        duration -= 1
-                        if duration % self.size == 0:
-                            self.rotation += direction * int(tightness)
-                            tightness += change
+            options: tuple[Serpent.MovementMakerEntry] = self.movement_options[self.target is None]
 
-                    def finish_check():
-                        return duration <= 0
+            tot = sum(op.weight for op in options)
 
-                case 1:  # goto somewhere
+            select = self.random.randint(1, tot)
 
-                    destination = (
-                        self.random.choice((-1, 1)) * self.random.randint(game_states.WIDTH // 4, game_states.WIDTH // 2),
-                        self.random.randint(self.area_start + self.area_length // 4, self.area_end - self.area_length // 4)
-                    )
+            i = -1
+            while select > 0:
+                i += 1
+                select -= options[i].weight
 
-                    def turn():
-                        to_angle = math.degrees(math.atan2(destination[0] - self.x, self.y - destination[1])) % 360
-                        diff: int = to_angle - self.rotation
-                        if abs(diff) > 180:
-                            diff = 360 - diff
-                        if abs(diff) > 3:
-                            self.rotation += math.copysign(2, diff)
-                        elif abs(diff) > 1:
-                            self.rotation += diff // 2
-
-                    def finish_check():
-                        return (self.x - destination[0]) ** 2 + (self.y - destination[1]) < 4 * self.speed ** 2
-                case _:
-                    raise ValueError("invalid match case in no target serpent next movement")
-
-        else:  # has a target, so idle or attack
-
-            def turn():
-                pass
-
-            def finish_check():
-                pass
+            turn, finish_check = options[i].make()
 
         return Serpent.MovementOption(turn, finish_check)
 
