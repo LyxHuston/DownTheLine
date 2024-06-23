@@ -221,7 +221,10 @@ class Serpent(Boss):
     def make_goto_movement(self) -> tuple[Callable[[], None], Callable[[], bool]]:
         destination = (
             self.random.choice((-1, 1)) * self.random.randint(game_states.WIDTH // 4, game_states.WIDTH // 2),
-            self.random.randint(self.area_start + self.area_length // 4, self.area_end - self.area_length // 4)
+            self.random.randint(
+                max(self.area_start + self.area_length // 4, self.y - self.area_length // 8),
+                min(self.area_end - self.area_length // 4, self.y + self.area_length // 8)
+            )
         )
 
         def turn():
