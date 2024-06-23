@@ -940,7 +940,7 @@ class ButtonHolder(BaseButton):
         for button in self.list:
             if button is None:
                 continue
-            if button.do_key():
+            if button.do_key(click_type):
                 return True
         return True
 
