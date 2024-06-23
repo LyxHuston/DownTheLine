@@ -259,11 +259,12 @@ class Serpent(Boss):
                 left = self.x < 0
                 to_angle = 270 if left else 90
                 # angle towards player, more so if further from track.  Asymptotic to 90 degrees
-                adjust = math.degrees(math.atan(self.x / 100))
-                # modify so it angles correctly based on position
-                adjust *= 1 if left else -1
-                adjust *= -1 if self.y < self.target.y else 1
-                to_angle += adjust
+                if abs(self.x) > 0:
+                    adjust = math.degrees(math.atan(self.x / 100))
+                    # modify so it angles correctly based on position
+                    # adjust *= 1 if left else -1  already done in atan
+                    adjust *= 1 if self.y < self.target.y else -1
+                    to_angle += adjust
                 if (
                         abs(self.x - self.target.x) > game_states.WIDTH // 6
                         and (self.y - self.target.y) < abs(self.x - self.target.x)
