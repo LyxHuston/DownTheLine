@@ -154,8 +154,11 @@ class Serpent(Boss):
         weight: int
 
     fields = (
-        FieldOptions.Area.value()
-        ,
+        FieldOptions.Area.value(),
+        FieldOptions.Label.value(
+            "Size",
+            FieldOptions.Positive.value()
+        )
     )
 
     def __init__(self, area, size: int):
