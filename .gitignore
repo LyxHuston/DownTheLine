@@ -1,3 +1,5 @@
 /src/errors.log
 /src/run_log.txt
 /src/build/
+/src/custom_run_errored_dump.txt
+/src/custom_run_save.txt

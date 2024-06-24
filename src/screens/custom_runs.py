@@ -53,9 +53,11 @@ class AtomChoices[T]:
 	to_str: Callable[[T], str]
 	prev: Callable[[T], T]
 	next: Callable[[T], T]
+	to_save_str: Callable[[T], str]
+	from_save_str: Callable[[Any, str], T]
 
 
-bool_choices = AtomChoices(True, str, lambda b: not b, lambda b: not b)
+bool_choices = AtomChoices(True, str, lambda b: not b, lambda b: not b, str, lambda _, string: bool(string))
 
 
 def tuple_choices(tup: tuple[Any, ...] | Any, *args, to_str: Callable[[Any], str] = str):
@@ -65,7 +67,9 @@ def tuple_choices(tup: tuple[Any, ...] | Any, *args, to_str: Callable[[Any], str
 		tup[0] if tup else lambda: tup[0],
 		to_str,
 		lambda t: tup[tup.index(t) - 1],
-		lambda t: tup[(tup.index(t) + 1) % len(tup)]
+		lambda t: tup[(tup.index(t) + 1) % len(tup)],
+		to_str,
+		lambda _, string: tuple(t for t in tup if to_str(t) == string)[0]
 	)
 
 
@@ -82,7 +86,9 @@ def range_choices(low: int | float = None, high: int | float = None, step: int |
 		(0 if high is None else high) if low is None else low,
 		to_str,
 		(lambda i: i - step) if low is None else (lambda i: max(i - step, low)),
-		(lambda i: i + step) if high is None else (lambda i: min(i - step, high))
+		(lambda i: i + step) if high is None else (lambda i: min(i - step, high)),
+		str,
+		(lambda call: lambda _, string: call(string))(float if isinstance(step, float) or isinstance(low, float) else int),
 	)
 
 
@@ -163,6 +169,8 @@ class FieldDatatype:
 	call: Callable
 	default_default_factory: Callable
 	default_buttons: Callable[[Self, int], game_structures.BaseButton]
+	default_to_str: Callable
+	default_from_str: Callable
 
 
 class FieldOption:
@@ -173,12 +181,16 @@ class FieldOption:
 		Atom = FieldDatatype(
 			lambda acc, options: acc is FieldOption._no_params and options is not None,
 			lambda fo: fo.options.default() if isinstance(fo.options.default, Callable) else fo.options.default,
-			make_basic_atom_changer
+			make_basic_atom_changer,
+			lambda fo: fo.options.to_save_str,
+			lambda fo: fo.options.from_save_str
 		)
 		Constructed = FieldDatatype(
 			lambda acc, options: acc is not FieldOption._no_params and options is None,
 			lambda fo: raise_exc(RuntimeError("Constructed FieldOption not given a default or default factory")),
-			lambda fo, width: raise_exc(RuntimeError("Constructed FieldOption not given a button constructor"))
+			lambda fo, width: raise_exc(RuntimeError("Constructed FieldOption not given a button constructor")),
+			lambda fo: raise_exc(RuntimeError("Constructed FieldOption not given a save function")),
+			lambda fo: raise_exc(RuntimeError("Constructed FieldOption not given a from save function"))
 		)
 
 	class ConstructedFieldOption:
@@ -191,7 +203,9 @@ class FieldOption:
 				default: Any,
 				default_factory,
 				args: tuple[Self, ...],
-				buttons: Callable
+				buttons: Callable,
+				to_string: Callable[[Any], str],
+				from_string: Callable[[Self, str], Any]
 		):
 			self.typ = typ
 			self.options = options
@@ -200,6 +214,8 @@ class FieldOption:
 			self.default_factory = default_factory
 			self.args = args
 			self.buttons = buttons
+			self.to_string = to_string
+			self.deserialize = from_string
 
 		def initialize(self):
 			if self.default_factory is not FieldOption._unspecified:
@@ -211,8 +227,28 @@ class FieldOption:
 				self.options,
 				self.finalize,
 				default,
-				self.buttons
+				self.buttons,
+				self.to_string
 			)
+
+		def from_string(self, string: str):
+			try:
+				assert string[0] == "[", "String form of IFO must start with a bracket."
+				assert string[-1] == "]", "String form of IFO must end with a bracket."
+
+				val = self.deserialize(self, string[1:-1])
+
+				return FieldOption.InitializedFieldOption(
+					self.typ,
+					self.options,
+					self.finalize,
+					val,
+					self.buttons,
+					self.to_string
+				)
+			except Exception as e:
+				e.add_note(string)
+				raise e
 
 	class InitializedFieldOption:
 
@@ -222,19 +258,24 @@ class FieldOption:
 				options: AtomChoices[Any],
 				finalize: Callable,
 				default: Any,
-				buttons: Callable[[Self, int], game_structures.BaseButton]
+				buttons: Callable[[Self, int], game_structures.BaseButton],
+				to_string: Callable[[Any], str]
 		):
 			self.typ = typ
 			self.options = options
 			self.finalize = finalize
 			self.val = default
 			self.buttons = buttons
+			self.serialize = to_string
 
 		def make(self, area):
 			return self.finalize(self.val, area)
 
 		def get_buttons(self, width: int) -> game_structures.BaseButton:
 			return self.buttons(self, width)
+
+		def to_string(self):
+			return f"[{self.serialize(self.val)}]"
 
 	_unspecified = object()
 
@@ -246,7 +287,9 @@ class FieldOption:
 			finalize: Callable = lambda x, _: x,
 			default: Any = _unspecified,
 			default_factory: Callable[[ConstructedFieldOption], Any] = _unspecified,
-			buttons: Callable[[InitializedFieldOption, int], game_structures.BaseButton | None] = _unspecified
+			buttons: Callable[[InitializedFieldOption, int], game_structures.BaseButton | None] = _unspecified,
+			to_save_str: Callable[[Any], str] = _unspecified,
+			from_save_str: Callable[[ConstructedFieldOption, str], Any] = _unspecified
 	):
 		if not typ.value.call(acceptor, options):
 			raise ValueError(f"Incorrect acceptor or options for field option of type {typ.name}")
@@ -265,6 +308,14 @@ class FieldOption:
 			self.buttons = self.typ.value.default_buttons
 		else:
 			self.buttons = buttons
+		if to_save_str is FieldOption._unspecified:
+			self.to_save_str = self.typ.value.default_to_str(self)
+		else:
+			self.to_save_str = to_save_str
+		if from_save_str is FieldOption._unspecified:
+			self.from_save_str = self.typ.value.default_from_str(self)
+		else:
+			self.from_save_str = from_save_str
 
 	def __call__(self, *args):
 		if not self.acceptor(args):
@@ -276,7 +327,9 @@ class FieldOption:
 			self.default,
 			self.default_factory,
 			tuple(args),
-			self.buttons
+			self.buttons,
+			self.to_save_str,
+			self.from_save_str
 		)
 
 
@@ -306,6 +359,24 @@ def make_atom_with_tuple_choice(tuple_choice: AtomChoices):
 	return FieldOption(FieldOption.FieldType.Atom, options=tuple_choice)
 
 
+def split_ifo_save(string: str) -> list[str]:
+	splits: list[str] = []
+	depth: int = 0
+	last: int = 0
+	for i, char in enumerate(string):
+		if char == "," and depth == 0:
+			splits.append(string[last:i])
+			last = i + 1
+		elif char == "[":
+			depth += 1
+		elif char == "]":
+			assert depth > 0, "unmatched closed bracket in ifo save"
+			depth -= 1
+	assert depth == 0, "unmatched open bracket in ifo save"
+	splits.append(string[last:])
+	return splits
+
+
 class FieldOptions(Enum):
 	Bool = FieldOption(FieldOption.FieldType.Atom, options=bool_choices, buttons=make_boolean_atom_changer)
 	EntityType = FieldOption(FieldOption.FieldType.Atom, options=tuple_choices(
@@ -330,7 +401,7 @@ class FieldOptions(Enum):
 	))
 	ItemType = FieldOption(FieldOption.FieldType.Atom, options=tuple_choices(
 		item_types,
-		to_str=enum_name_getter
+		to_str=enum_name_getter,
 	))
 
 	EnslaughtEventType = FieldOption(FieldOption.FieldType.Atom, options=tuple_choices(
@@ -351,16 +422,22 @@ class FieldOptions(Enum):
 
 	Seed = FieldOption(
 		FieldOption.FieldType.Atom, options=integers, buttons=lambda _, __: None,
-		finalize=lambda _, area: area.get_next_seed()
+		finalize=lambda _, area: area.get_next_seed(),
+		to_save_str=lambda _: "<seed>",
+		from_save_str=lambda _, __: 0
 	)
 	Area = FieldOption(
 		FieldOption.FieldType.Atom, options=integers, buttons=lambda _, __: None,
-		finalize=lambda _, area: area
+		finalize=lambda _, area: area,
+		to_save_str=lambda _: "<area>",
+		from_save_str=lambda _, __: 0
 	)
 
 	NONE = FieldOption(
 		FieldOption.FieldType.Atom, options=integers, buttons=lambda _, __: None,
-		finalize=lambda _, __: None
+		finalize=lambda _, __: None,
+		to_save_str=lambda _: "<none>",
+		from_save_str=lambda _, __: 0
 	)
 
 	@staticmethod
@@ -391,14 +468,23 @@ class FieldOptions(Enum):
 		)
 		return buttons
 
+	@staticmethod
+	def or_none_fromstring(cfo: FieldOption.ConstructedFieldOption, string: str):
+		parts = split_ifo_save(string)
+		on = bool(parts[0])
+		sub_ifo = cfo.args[1].from_string(parts[1])
+		return [on, sub_ifo]
+
 	OrNone = FieldOption(
 		FieldOption.FieldType.Constructed, buttons=or_none_buttons,
 		acceptor=lambda args: len(args) == 1 and isinstance(args[0], FieldOption.ConstructedFieldOption),
 		default_factory=lambda cfo: [False, cfo.args[0].initialize],
-		finalize=lambda val, area: val[1].make(area) if val[0] else None
+		finalize=lambda val, area: val[1].make(area) if val[0] else None,
+		to_save_str=lambda val: f"{val[0]},{val[1].to_string()}",
+		from_save_str=lambda cfo, string: cfo.args[1].from_string(string)
 	)
 
-	del or_none_buttons
+	del or_none_buttons, or_none_fromstring
 
 	Difficulty = Positive
 	DifficultyChange = Integer
@@ -422,7 +508,9 @@ class FieldOptions(Enum):
 				),
 				ifo.val[1].get_buttons(width)
 			]
-		), finalize=lambda val, area: val[1].make(area)
+		), finalize=lambda val, area: val[1].make(area),
+		to_save_str=lambda val: f"<label>,{val[1].to_string()}",
+		from_save_str=lambda cfo, string: cfo.args[1].from_string(string.split(",", maxsplit=1)[1])
 	)
 
 	@staticmethod
@@ -473,7 +561,9 @@ class FieldOptions(Enum):
 		acceptor=lambda args: len(args) == 1,
 		default_factory=lambda fo: ([], fo.args[0]),
 		buttons=list_init_buttons,
-		finalize=lambda val, area: [sub_ifo.make(area) for sub_ifo in val[0]]
+		finalize=lambda val, area: [sub_ifo.make(area) for sub_ifo in val[0]],
+		to_save_str=lambda val: ",".join(sub_ifo.to_string() for sub_ifo in val[0]),
+		from_save_str=lambda cfo, string: ([cfo.args[0].from_string(part) for part in split_ifo_save(string)], cfo.args[0])
 	)
 
 	del list_init_buttons
@@ -490,7 +580,9 @@ class FieldOptions(Enum):
 			math.inf,
 			init_list=[sub_ifo.get_buttons(width) for sub_ifo in ifo.val],
 			outline_width=5
-		), finalize=lambda val, area: tuple(sub_ifo.make(area) for sub_ifo in val)
+		), finalize=lambda val, area: tuple(sub_ifo.make(area) for sub_ifo in val),
+		to_save_str=lambda val: ",".join(sub_ifo.to_string() for sub_ifo in val),
+		from_save_str=lambda cfo, string: (cfo.args[i].from_string(part) for i, part in split_ifo_save(string))
 	)
 
 	@staticmethod
@@ -507,7 +599,9 @@ class FieldOptions(Enum):
 			0,
 			lambda i: ifo.val[1][i][0],
 			make_step(-1),
-			make_step(1)
+			make_step(1),
+			str,
+			lambda _, string: int(string)
 		)
 		top_buttons = FieldOption(FieldOption.FieldType.Atom, options=keys)().initialize().get_buttons(width - 20)
 		switcher = game_structures.PassThroughSwitchHolder(
@@ -526,6 +620,24 @@ class FieldOptions(Enum):
 			]
 		)
 
+	@staticmethod
+	def mapping_fromstring(cfo: FieldOption.ConstructedFieldOption, string: str):
+		args: dict[str, FieldOption.ConstructedFieldOption] = cfo.args
+		names = tuple(sorted(name for name in args))
+		parts = split_ifo_save(string)
+		return [
+			names.index(parts[0]),
+			tuple(sorted(
+				(
+					(
+						name,
+						val.from_string(parts[1]) if name == parts[0] else val.initialize()
+					) for name, val in args.items()
+				),
+				key=lambda item: item[0]
+			))
+		]
+
 	Mapping = FieldOption(
 		FieldOption.FieldType.Constructed,
 		acceptor=lambda args:
@@ -539,10 +651,12 @@ class FieldOptions(Enum):
 				0, tuple(sorted(((name, val.initialize()) for name, val in fo.args.items()), key=lambda item: item[0]))
 			],
 		buttons=mapping_init_buttons,
-		finalize=lambda val, _: val[1][val[0]][1].finalize()
+		finalize=lambda val, _: val[1][val[0]][1].finalize(),
+		to_save_str=lambda val: f"{val[1][val[0]][0]},{val[1][val[0]][1].to_string()}",
+		from_save_str=mapping_fromstring,
 	)
 
-	del mapping_init_buttons
+	del mapping_init_buttons, mapping_fromstring
 
 	InstanceMaker = FieldOption(
 		FieldOption.FieldType.Constructed,
@@ -568,7 +682,9 @@ class FieldOptions(Enum):
 			) + [sub_ifo.get_buttons(width) for sub_ifo in ifo.val[1]],
 			outline_width=5
 		),
-		finalize=lambda val, area: val[0](*(sub_ifo.make() for sub_ifo in val[1]))
+		finalize=lambda val, area: val[0](*(sub_ifo.make() for sub_ifo in val[1])),
+		to_save_str=lambda val: ",".join(sub_ifo.to_string() for sub_ifo in val[1]),
+		from_save_str=lambda cfo, string: (cfo.args[1][i].from_string(part) for i, part in split_ifo_save(string))
 	)
 
 	@staticmethod
@@ -601,7 +717,9 @@ class FieldOptions(Enum):
 			) + [sub_ifo.get_buttons(width) for sub_ifo in ifo.val[1]],
 			outline_width=5
 		),
-		finalize=lambda val, area: val[0].constructor(*(sub_ifo.make() for sub_ifo in val[1]))
+		finalize=lambda val, area: val[0].constructor(*(sub_ifo.make() for sub_ifo in val[1])),
+		to_save_str=lambda val: ",".join(sub_ifo.to_string() for sub_ifo in val[1]),
+		from_save_str=lambda cfo, string: (cfo.args[1][i].from_string(part) for i, part in split_ifo_save(string))
 	)
 
 	del itemmaker_acceptor
@@ -623,6 +741,68 @@ class CustomRun:
 		tuple[Type[Any], FieldOption.InitializedFieldOption] | Type[Any]
 	] = dataclasses.field(default_factory=list)
 	guaranteed_type: Type[Any] = None
+
+
+def custom_run_from_string(string: str) -> CustomRun:
+
+	def get_area_type_from_name(nm: str) -> Type[game_areas.GameArea]:
+		return [area_type for area_type in area_types if nm == class_name_getter(area_type)][0]
+
+	parts = split_ifo_save(string)
+	name = parts[0][1:-1]
+	seed = parts[1]
+	if seed == "None":
+		seed = None
+	else:
+		try:
+			seed = int(seed)
+		except ValueError:
+			pass
+	tutorial = [i == "1" for i in parts[2]]  # record it as a string of 1 or 0
+	start = int(parts[3])
+
+	custom_run_areas = []
+
+	for part in split_ifo_save(parts[4][1:-1]):
+		if not part:
+			continue
+		start_end = (part[0] == "[") + (part[-1] == "]")
+		if start_end == 0:  # just area type
+			custom_run_areas.append(get_area_type_from_name(part))
+		elif start_end == 1:  # malformed
+			raise ValueError("Malformed custom run area list")
+		elif start_end == 2:
+			print(part)
+			area_parts = split_ifo_save(part)
+			print(area_parts)
+			area_type = get_area_type_from_name(area_parts[0])
+			custom_run_areas.append((area_type, area_type.fields.from_string(area_parts[1])))
+		else:
+			raise ValueError("Uh?!?!?!")
+
+	guaranteed_type = parts[5]
+	if guaranteed_type == "None":
+		guaranteed_type = None
+	else:
+		guaranteed_type = get_area_type_from_name(guaranteed_type)
+
+	return CustomRun(name, seed, tutorial, start, custom_run_areas, guaranteed_type)
+
+
+def custom_run_to_string(custom_run: CustomRun):
+	return ",".join([
+		f"[{custom_run.name}]",
+		str(custom_run.seed),
+		"".join("1" if tut else "0" for tut in custom_run.tutorial),
+		str(custom_run.start),
+		f"[{','.join([
+			f'[{class_name_getter(area[0])},{area[1].to_string()}]'
+			if isinstance(area, tuple) else
+			class_name_getter(area)
+			for area in custom_run.custom_run
+		])}]",
+		"None" if custom_run.guaranteed_type is None else class_name_getter(custom_run.guaranteed_type)
+	])
 
 
 def start_custom(custom: CustomRun):
@@ -664,7 +844,7 @@ def start_custom(custom: CustomRun):
 LIST: game_structures.ListHolder | None = None
 custom_run_list: list[CustomRun] = []
 
-area_types = None
+area_types = ()
 
 
 def remove_from_list[T](
@@ -1091,6 +1271,25 @@ def first_enter():
 		key=lambda cls: cls.first_allowed_spawn
 	))
 
+	previous_custom_runs = []
+
+	try:
+		with open("custom_run_save.txt", "r") as custom_run_save:
+			for line in custom_run_save.readlines():
+				line = line.strip()
+				if not line:
+					continue
+				try:
+					previous_custom_runs.append(custom_run_from_string(line))
+				except Exception as e:
+					game_structures.ALERTS.add_alert("Reading of custom run failed!  Writing to dump and logging!")
+					with open("custom_run_errored_dump.txt", "a") as dump:
+						dump.write(line + "\n")
+					e.add_note(f"Occurred during processing of custom run save: {line}")
+					utility.log_error(e)
+	except OSError:
+		pass
+
 	get_button_font()
 
 	LIST = game_structures.ListHolder(
@@ -1100,6 +1299,9 @@ def first_enter():
 		game_states.HEIGHT,
 		game_states.HEIGHT
 	)
+
+	for custom_run in previous_custom_runs:
+		add_from_custom_run(custom_run, False)
 
 	add_button = game_structures.Button.make_img_button(
 		add_new_custom_run,
@@ -1129,7 +1331,26 @@ def setup_custom_run_screen():
 	)
 
 
+def save_custom_runs(*_):
+	try:
+		with open("custom_run_save.txt", "w") as custom_run_save:
+			for custom_run in custom_run_list:
+				try:
+					text = custom_run_to_string(custom_run)
+				except Exception as e:
+					game_structures.ALERTS.add_alert("Custom run could not be encoded!  Check log for more details.")
+					utility.log_error(e)
+					continue
+				custom_run_save.write(text + "\n")
+	except OSError as e:
+		game_structures.ALERTS.add_alert("Custom runs could not be saved!  Check log for more details.")
+		utility.log_error(e)
+
+
 custom_runs_screen = game_structures.Place(
 	tick=utility.passing,
 	enter=setup_custom_run_screen,
+	end=save_custom_runs,
+	exit_on=save_custom_runs,
+	crash_on=save_custom_runs
 )
