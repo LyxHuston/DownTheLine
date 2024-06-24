@@ -327,6 +327,7 @@ def start(with_seed: int = None, full: bool = True, was_customized: bool = False
     entities.Slime.seen = True
     if was_customized:
         return
+    game_states.CUSTOM_RUN = None
     setup(with_seed, full)
     if full:
         game_areas.add_game_area().join()

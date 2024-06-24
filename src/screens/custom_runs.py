@@ -814,6 +814,8 @@ def start_custom(custom: CustomRun):
 	from run_game import ingame
 	run_start_end.setup()
 
+	game_states.CUSTOM_RUN = custom
+
 	if custom.seed is not None:
 		game_states.SEED = custom.seed
 

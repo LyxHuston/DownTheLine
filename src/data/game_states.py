@@ -69,3 +69,5 @@ CUSTOM_SEED: bool = False
 PRINT_SEED: bool = False
 # times
 RUN_START = None
+# current run customized?
+CUSTOM_RUN = None
