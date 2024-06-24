@@ -584,7 +584,7 @@ class FieldOptions(Enum):
 			outline_width=5
 		), finalize=lambda val, area: tuple(sub_ifo.make(area) for sub_ifo in val),
 		to_save_str=lambda val: ",".join(sub_ifo.to_string() for sub_ifo in val),
-		from_save_str=lambda cfo, string: (cfo.args[i].from_string(part) for i, part in split_ifo_save(string))
+		from_save_str=lambda cfo, string: tuple(cfo.args[i].from_string(part) for i, part in enumerate(split_ifo_save(string)))
 	)
 
 	@staticmethod
