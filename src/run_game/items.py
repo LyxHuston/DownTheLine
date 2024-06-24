@@ -135,7 +135,7 @@ def random_simple_shield(strength, random):
 
 def boomerang(strength, random):
     throw_strength = random.choice((5, 10, 15))
-    return throw_strength
+    return (throw_strength,)
 
 
 def boomerang_from_parts(throw_strength, pos):
@@ -156,7 +156,7 @@ def boomerang_from_parts(throw_strength, pos):
 def random_simple_throwable(strength, random):
     # current only reusable throwable is hatchet
     throw_strength = random.choice((25, 35))
-    return throw_strength
+    return (throw_strength,)
 
 
 def simple_throwable_from_parts(throw_strength, pos):
