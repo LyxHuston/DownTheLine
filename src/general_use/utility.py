@@ -17,6 +17,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 import enum
 import math
+import os
 import threading
 from typing import Callable, Any, Union, Hashable
 import traceback
@@ -279,10 +280,8 @@ from general_use import game_structures
 import pygame
 from data import game_states
 
-if len(argv) >= 2 and argv[1] == "admin":
-    admin = True
-else:
-    admin = False
+
+admin = game_states.ADMIN
 
 
 def add_error_checking(
@@ -338,17 +337,15 @@ def log_error(exc: Exception) -> None:
     :return:
     """
     global logger_on
+
     if not logger_on:
+        logger_on = True
         logging.basicConfig(filename="./errors.log", format='%(asctime)s\n%(message)s', filemode='a')
-    stack: traceback.StackSummary = traceback.extract_tb(exc.__traceback__)
+    message = "".join(traceback.format_exception(exc))
     if not admin:
-        root = argv[0][:len(argv[0]) - 6].replace("/", "\\")
-        for frame in stack:
-            if frame.filename.startswith(root):
-                frame.filename = frame.filename[len(root):]
-            else:
-                frame.filename = "<filename outside of program, obscured for privacy>"
-    logging.error("".join(traceback.format_exception(exc)))
+        root = os.getcwd()
+        message = message.replace(root, "DownTheLine:")
+    logging.error(message)
 
 
 def make_reserved_audio_channel() -> pygame.mixer.Channel:
