@@ -207,7 +207,7 @@ class ThreadWithResult(threading.Thread):
         threading.Thread.__init__(self, group, target, name, args, kwargs, daemon=daemon)
         self.__result = None
         self.__finished = False
-        self.log = True
+        self.log = log_errors
 
     def run(self):
         if self._target is None:
