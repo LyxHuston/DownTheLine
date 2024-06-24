@@ -512,7 +512,7 @@ class FieldOptions(Enum):
 			]
 		), finalize=lambda val, area: val[1].make(area),
 		to_save_str=lambda val: f"<label>,{val[1].to_string()}",
-		from_save_str=lambda cfo, string: cfo.args[1].from_string(string.split(",", maxsplit=1)[1])
+		from_save_str=lambda cfo, string: (cfo.args[0], cfo.args[1].from_string(string.split(",", maxsplit=1)[1]))
 	)
 
 	@staticmethod
