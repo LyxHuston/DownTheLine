@@ -1335,7 +1335,7 @@ def setup_custom_run_screen():
 	)
 
 
-def save_custom_runs(*_):
+def save_custom_runs(*_, **__):
 	try:
 		with open("custom_run_save.txt", "w") as custom_run_save:
 			for custom_run in custom_run_list:
