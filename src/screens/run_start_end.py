@@ -28,6 +28,7 @@ import pygame
 from general_use import game_structures
 from data import game_states
 from run_game import game_areas, gameboard, ingame, tutorials, abilities, entities
+from screens import custom_runs
 import random
 import sys
 from typing import Type
@@ -382,7 +383,8 @@ def log_run(reason: RunEndReasons):
         "seed": game_states.SEED,
         "furthest": visual_distance(),
         "progress": game_states.AREAS_PASSED,
-        "room_record": GameAreaLog.get_result_string()
+        "room_record": GameAreaLog.get_result_string(),
+        "custom_run": None if game_states.CUSTOM_RUN is None else custom_runs.custom_run_to_string(game_states.CUSTOM_RUN)
     })
     with open("./run_log.txt", "a") as file:
         file.write(log_string + "\n")

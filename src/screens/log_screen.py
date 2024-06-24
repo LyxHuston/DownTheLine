@@ -22,7 +22,8 @@ import ast
 
 from data import game_states
 from general_use import game_structures, utility
-from screens import main_screen
+from screens import main_screen, custom_runs
+from run_game import ingame
 import pygame
 
 
@@ -53,7 +54,7 @@ def clear_log():
 class RunRecord(game_structures.Place, game_structures.Button):
 
     def __init__(self, reason: str, furthest: int | str, progress: int | str, date: str, duration: str, start_time: str,
-                 end_time: str, seed: str | str, room_record: str):
+                 end_time: str, seed: str | str, room_record: str, custom_run: None | str):
 
         game_structures.Place.__init__(self, tick=utility.passing, enter=self.enter, end=self.end)
         text = f"{reason}: {furthest}"
@@ -74,6 +75,7 @@ class RunRecord(game_structures.Place, game_structures.Button):
         self.end_time = end_time
         self.seed = seed
         self.room_record = room_record
+        self.custom_run = custom_run
         self.buttons = None
 
     def set_seed(self):
@@ -93,6 +95,39 @@ class RunRecord(game_structures.Place, game_structures.Button):
                                                     outline_color=(255, 255, 255), x_align=0, y_align=0)
         )
 
+        if self.custom_run is None:
+            self.buttons.add_button(
+                game_structures.Button.make_text_button("Play", 50,
+                                                        (game_states.WIDTH // 4, 610),
+                                                        lambda: ingame.screen.start(with_seed=self.seed),
+                                                        background_color=(0, 0, 0),
+                                                        outline_color=(255, 255, 255), x_align=0, y_align=0)
+            )
+        else:
+            try:
+                if custom_runs.LIST is None:
+                    custom_runs.first_enter()  # without this, decoding will fail.
+
+                custom_run = custom_runs.custom_run_from_string(self.custom_run)
+
+                self.buttons.add_button(
+                    game_structures.Button.make_text_button(f"Play \"{custom_run.name}\"", 50,
+                                                            (game_states.WIDTH // 4, 610),
+                                                            lambda: ingame.screen.start(custom=custom_run),
+                                                            background_color=(0, 0, 0),
+                                                            outline_color=(255, 255, 255), x_align=0, y_align=0)
+                )
+
+            except Exception as e:
+                self.buttons.add_button(
+                    game_structures.Button.make_text_button("Custom run cannot be decoded: cannot replay", 50,
+                                                            (game_states.WIDTH // 4, 610),
+                                                            background_color=(0, 0, 0),
+                                                            outline_color=(255, 255, 255), x_align=0, y_align=0)
+                )
+                e.add_note("This may be caused by the custom run format being out of date.")
+                utility.log_error(e)
+
         self.buttons.add_button(
             game_structures.Button.make_text_button("\n".join(
                 [
@@ -108,7 +143,7 @@ class RunRecord(game_structures.Place, game_structures.Button):
                     }: {item[1]}""" for item in sorted(
                         list(ast.literal_eval(self.room_record).items()), key=lambda tup: tup[1]
                     )
-                ]), 80, (game_states.WIDTH // 4, 650), None, background_color=(0, 0, 0),
+                ]), 80, (game_states.WIDTH // 4, 740), None, background_color=(0, 0, 0),
                 outline_color=(255, 255, 255), x_align=0, y_align=0)
         )
 
@@ -136,6 +171,7 @@ def make_record(line: dict):
         line.get("end_time", "N/A"),
         line.get("seed", "N/A"),
         line.get("room_record", "N/A"),
+        line.get("custom_run", None)
     ))
 
 
