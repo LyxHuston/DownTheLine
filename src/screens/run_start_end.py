@@ -322,16 +322,24 @@ def populate_area_queue():
         game_areas.add_game_area()
 
 
-def start(with_seed: int = None, full: bool = True, was_customized: bool = False):
+def start(with_seed: int = None, full: bool = True, custom=None):
     entities.Slime.first_occurs = 1
     entities.Slime.seen = True
-    if was_customized:
-        return
-    game_states.CUSTOM_RUN = None
-    setup(with_seed, full)
-    if full:
-        game_areas.add_game_area().join()
+    if custom is not None:
+        from screens import custom_runs
+
+        game_states.CUSTOM_RUN = custom
+        setup()
+
+        custom_runs.start_custom(custom)
+
         populate_area_queue()
+    else:
+        game_states.CUSTOM_RUN = None
+        setup(with_seed, full)
+        if full:
+            game_areas.add_game_area().join()
+            populate_area_queue()
 
 
 class GameAreaLog:

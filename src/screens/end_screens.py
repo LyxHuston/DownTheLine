@@ -22,7 +22,7 @@ import pygame
 from general_use import game_structures, utility
 from data import game_states
 from run_game import ingame
-from screens import run_start_end
+from screens import run_start_end, custom_runs
 
 fade_counter = 0
 tick_counter = 0
@@ -35,6 +35,10 @@ black = (0, 0, 0)
 gray = (64, 64, 64)
 white = (255, 255, 255)
 gold = (204, 175, 38)
+
+
+def play_again():
+    game_structures.PLACES.in_game.value.start(custom=game_states.CUSTOM_RUN)
 
 
 def end_maker(reason: run_start_end.RunEndReasons, background: tuple[int, int, int], text: tuple[int, int, int]):
@@ -100,7 +104,7 @@ def after_tick(fade_color: tuple[int, int, int], title_text: str, text_backgroun
                                                         background_color=text_background, outline_color=text_color,
                                                         text_align=0, x_align=0))
             game_structures.BUTTONS.add_button(game_structures.Button.make_text_button("Play Again", 100, (
-                game_states.WIDTH // 2 - 800, game_states.HEIGHT - 200), game_structures.PLACES.in_game.value.start,
+                game_states.WIDTH // 2 - 800, game_states.HEIGHT - 200), play_again,
                                                                                        background_color=(0, 0, 0),
                                                                                        outline_color=text_color,
                                                                                        border_width=5, text_align=0.5,
@@ -134,7 +138,7 @@ def exit_game():
     game_states.RUNNING = False
 
 
-def cleanup_game():
+def cleanup_game(**__):
     game_structures.BUTTONS.clear()
     for area in game_structures.AREA_QUEUE:
         area.cleanup()

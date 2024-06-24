@@ -30,7 +30,7 @@ import pygame
 from data import game_states
 from general_use import game_structures, utility
 
-from run_game import game_areas
+from run_game import game_areas, ingame
 
 from screens import main_screen, run_start_end
 
@@ -810,11 +810,6 @@ def custom_run_to_string(custom_run: CustomRun):
 
 
 def start_custom(custom: CustomRun):
-	from screens import run_start_end
-	from run_game import ingame
-	run_start_end.setup()
-
-	game_states.CUSTOM_RUN = custom
 
 	if custom.seed is not None:
 		game_states.SEED = custom.seed
@@ -843,8 +838,6 @@ def start_custom(custom: CustomRun):
 		game_structures.NEW_AREAS.append(area)
 
 	game_areas.guaranteed_type = custom.guaranteed_type
-	run_start_end.populate_area_queue()
-	ingame.screen.start(was_customized=True)
 
 
 LIST: game_structures.ListHolder | None = None
@@ -1017,7 +1010,7 @@ def add_from_custom_run(custom_run: CustomRun, _expanded: bool = False):
 				"play",
 				button_font,
 				(0, 0),
-				down_click=functools.partial(start_custom, custom_run)
+				down_click=lambda: ingame.screen.start(custom=custom_run)
 			)
 		]
 	)
