@@ -768,19 +768,21 @@ def custom_run_from_string(string: str) -> CustomRun:
 	for part in split_ifo_save(parts[4][1:-1]):
 		if not part:
 			continue
-		start_end = (part[0] == "[") + (part[-1] == "]")
-		if start_end == 0:  # just area type
-			custom_run_areas.append(get_area_type_from_name(part))
-		elif start_end == 1:  # malformed
-			raise ValueError("Malformed custom run area list")
-		elif start_end == 2:
-			print(part)
-			area_parts = split_ifo_save(part)
-			print(area_parts)
-			area_type = get_area_type_from_name(area_parts[0])
-			custom_run_areas.append((area_type, area_type.fields.from_string(area_parts[1])))
-		else:
-			raise ValueError("Uh?!?!?!")
+		try:
+			start_end = (part[0] == "[") + (part[-1] == "]")
+			if start_end == 0:  # just area type
+				custom_run_areas.append(get_area_type_from_name(part))
+			elif start_end == 1:  # malformed
+				raise ValueError("Malformed custom run area list")
+			elif start_end == 2:
+				area_parts = split_ifo_save(part[1:-1])
+				area_type = get_area_type_from_name(area_parts[0])
+				custom_run_areas.append((area_type, area_type.fields.from_string(area_parts[1])))
+			else:
+				raise ValueError("Uh?!?!?!")
+		except Exception as e:
+			e.add_note(part)
+			raise e
 
 	guaranteed_type = parts[5]
 	if guaranteed_type == "None":
