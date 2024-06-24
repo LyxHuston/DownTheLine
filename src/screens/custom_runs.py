@@ -360,6 +360,8 @@ def make_atom_with_tuple_choice(tuple_choice: AtomChoices):
 
 
 def split_ifo_save(string: str) -> list[str]:
+	if not string:
+		return []
 	splits: list[str] = []
 	depth: int = 0
 	last: int = 0
