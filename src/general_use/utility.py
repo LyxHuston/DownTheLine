@@ -329,7 +329,7 @@ def add_error_checking(
     return error_wrap
 
 
-logging.basicConfig(filename="./errors.log", format='%(asctime)s\n%(message)s', filemode='a')
+logger_on = False
 
 
 def log_error(exc: Exception) -> None:
@@ -337,6 +337,9 @@ def log_error(exc: Exception) -> None:
     logs an error.  Requires there to be an error.
     :return:
     """
+    global logger_on
+    if not logger_on:
+        logging.basicConfig(filename="./errors.log", format='%(asctime)s\n%(message)s', filemode='a')
     stack: traceback.StackSummary = traceback.extract_tb(exc.__traceback__)
     if not admin:
         root = argv[0][:len(argv[0]) - 6].replace("/", "\\")
