@@ -943,9 +943,6 @@ def add_game_area():
         area = GameArea(1, 450, determinator, customized=True)
         area.entity_list.append(entities.Obstacle(pos=(0, area.length), health=5))
         area.entity_list.append(entities.Slime((0, area.length // 2), area.random.randint(0, 2 ** 32 - 1)))
-
-        entities.Slime.first_occurs = 1
-        entities.Slime.seen = True
     elif game_states.LAST_AREA == 2:
 
         def last_tutorial_area():

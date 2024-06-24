@@ -27,7 +27,7 @@ import pygame
 
 from general_use import game_structures
 from data import game_states
-from run_game import game_areas, gameboard, ingame, tutorials, abilities
+from run_game import game_areas, gameboard, ingame, tutorials, abilities, entities
 import random
 import sys
 from typing import Type
@@ -323,6 +323,8 @@ def populate_area_queue():
 
 
 def start(with_seed: int = None, full: bool = True, was_customized: bool = False):
+    entities.Slime.first_occurs = 1
+    entities.Slime.seen = True
     if was_customized:
         return
     setup(with_seed, full)
