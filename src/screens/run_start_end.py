@@ -316,6 +316,9 @@ def setup(with_seed: int = None, full: bool = True):
             )
         ])
 
+    entities.Slime.first_occurs = 1
+    entities.Slime.seen = True
+
 
 def populate_area_queue():
     for i in range(game_states.AREA_QUEUE_MAX_LENGTH - len(game_structures.AREA_QUEUE) - len(game_structures.NEW_AREAS)):
@@ -323,8 +326,6 @@ def populate_area_queue():
 
 
 def start(with_seed: int = None, full: bool = True, custom=None):
-    entities.Slime.first_occurs = 1
-    entities.Slime.seen = True
     if custom is not None:
         from screens import custom_runs
 
