@@ -1299,9 +1299,6 @@ def first_enter():
 		game_states.HEIGHT
 	)
 
-	for custom_run in previous_custom_runs:
-		add_from_custom_run(custom_run, False)
-
 	add_button = game_structures.Button.make_img_button(
 		add_new_custom_run,
 		button_font.render("  +  ", False, (255, 255, 255), (0, 0, 0)),
@@ -1312,6 +1309,9 @@ def first_enter():
 	add_button.outline_color = (255, 255, 255)
 
 	LIST.add_button(add_button)
+
+	for custom_run in previous_custom_runs:
+		add_from_custom_run(custom_run, False)
 
 
 def setup_custom_run_screen():
