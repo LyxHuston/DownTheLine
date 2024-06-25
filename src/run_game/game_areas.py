@@ -871,7 +871,12 @@ class EndRun(GameArea):
     """
 
     def __init__(self, _, count):
-        super().__init__(count, length=0, seed=0)
+        super().__init__(count, length=game_states.HEIGHT * 20, seed=0)
+
+    def tick(self):
+        if not self.boundary_crossed and game_structures.PLAYER_ENTITY.y > self.start_coordinate:
+            self.cross_boundary()
+            self.boundary_crossed = True
 
     fields = ()
 
