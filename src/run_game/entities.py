@@ -2718,6 +2718,23 @@ class PlayerEntity(Glides, CarriesItems):
     def rotation(self, val):
         pass
 
+    @property
+    def corners(self) -> tuple[tuple[int, int], tuple[int, int], tuple[int, int], tuple[int, int]]:
+        # player looks like a circle, causing some issues where off-line enemies deal damage on the corners,
+        # which doesn't seem like it should hit.  Change to a rhombus.
+        theta = math.radians(-self.rotation)
+        # affecting _
+        radius = self.width // 2  # guaranteed that player is a square, and resultant shape should be a rhombus
+        x_offset = int(math.sin(theta) * radius)
+        y_offset = int(math.cos(theta) * radius)
+        # noinspection PyTypeChecker
+        return (
+            (self.x + x_offset, self.y + y_offset),
+            (self.x - y_offset, self.y + x_offset),
+            (self.x - x_offset, self.y - y_offset),
+            (self.x + y_offset, self.y - x_offset)
+        )
+
     def hit(self, damage: int, source):
         if game_states.INVULNERABLE:
             return False
