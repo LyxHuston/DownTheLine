@@ -324,7 +324,7 @@ class Serpent(Boss):
 
             left = self.x < 0
             if stage == 0:  # go away from track
-                to_angle = 270 if left else 90
+                to_angle = 270 if self.rotation > 180 else 90
                 # angle towards player, more so if further from track.  Asymptotic to 90 degrees
                 adjust = math.degrees(math.atan(self.x / 100))
                 # modify so it angles correctly based on position
