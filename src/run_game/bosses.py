@@ -27,7 +27,7 @@ from data import images, game_states
 import pygame
 from general_use import game_structures
 from collections import deque
-from typing import Self, Callable
+from typing import Self, Callable, Any
 from screens.custom_runs import FieldOptions
 
 
@@ -35,6 +35,11 @@ class Boss(entities.Entity):
     """
     a boss superclass.  Just has a 'player entered' and alive property
     """
+
+    @dataclasses.dataclass
+    class HitTrack:
+        source: Any
+        time: int
 
     def __init__(self, img: pygame.Surface, rotation: int, pos: tuple[int, int]):
         super().__init__(img, rotation, pos)
@@ -46,14 +51,16 @@ class Boss(entities.Entity):
         pass
 
     def hit(self, damage: int, source) -> bool:
-        if source not in self.hit_track:
+        if source not in (hit.source for hit in self.hit_track):
             self.health -= damage
-            self.hit_track.append(source)
+            self.hit_track.append(Boss.HitTrack(source, 60))
             return True
         return False
 
     def tick(self):
-        self.hit_track.clear()
+        self.hit_track = list(hit for hit in self.hit_track if hit.time > 0)
+        for hit in self.hit_track:
+            hit.time -= 1
 
     def cross_boundary(self):
         """called when the player has crossed the halfway point into a boss area"""
@@ -171,10 +178,10 @@ class Serpent(Boss):
         )
 
     def hit(self, damage: int, source) -> bool:
-        if damage > 0 and self.health > self.max_health // 2 >= self.health - damage:
-            self.spawn_babies()
-        self.health -= damage
-
+        if super().hit(damage, source):
+            if damage > 0 and self.health + damage > self.max_health // 2 >= self.health:
+                self.spawn_babies()
+            return False
         return True
 
     def __init__(self, area, size: int, rot=0, pos=(0, 0), baby: bool = False):
@@ -398,6 +405,7 @@ class Serpent(Boss):
     def tick(self):
         if not self.state:
             return
+        super().tick()
         if self.target is None or not self.target.alive:
             self.target = self.closest_enemy(self.area_length)
         last: Serpent.PathItem = self.next_path_item()
