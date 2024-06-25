@@ -36,8 +36,6 @@ class Boss(entities.Entity):
     a boss superclass.  Just has a 'player entered' and alive property
     """
 
-    alive = True
-
     def __init__(self, img: pygame.Surface, rotation: int, pos: tuple[int, int]):
         super().__init__(img, rotation, pos)
         self.hit_track = []  # used to check if multiple body parts are being hit by the same thing in the same tick
@@ -102,8 +100,8 @@ class BodyPart(entities.Entity):
         for en in self.colliding(lambda other: other.allied_with_player is not self.allied_with_player):
             en.hit(self.damage, self)
 
-    def hit(self, damage: int, source):
-        self.boss.hit(damage, source)
+    def hit(self, damage: int, source) -> bool:
+        return self.boss.hit(damage, source)
 
     def draw(self):
         """
@@ -161,10 +159,30 @@ class Serpent(Boss):
         )
     )
 
-    def __init__(self, area, size: int):
-        super().__init__(images.EMPTY, 0, (0, 0))
-        self.parts: tuple[Serpent.PathTracker] | None = None
-        self.health = 50
+    def spawn_babies(self):
+        if self.size < 2:
+            return
+        num = min(math.isqrt(self.size), 3)
+        spawn_points: list[Serpent.PathTracker] = self.random.choices(self.parts[3:-4], k=num)
+        area = tuple(a for a in game_structures.AREA_QUEUE if a.start_coordinate == self.area_start)[0]
+        gameboard.NEW_ENTITIES.extend(
+            Serpent(area, 1, point.path_parts[1].rotation, point.body_part.pos, True)
+            for point in spawn_points
+        )
+
+    def hit(self, damage: int, source) -> bool:
+        if damage > 0 and self.health > self.max_health // 2 >= self.health - damage:
+            self.spawn_babies()
+        self.health -= damage
+
+        return True
+
+    def __init__(self, area, size: int, rot=0, pos=(0, 0), baby: bool = False):
+        super().__init__(images.EMPTY, rot, pos)
+        self.baby = baby  # if it's a baby, don't adjust area params
+        self.parts: tuple[Serpent.PathTracker, ...] | None = None
+        self.max_health = size * 10 + 20
+        self.health = self.max_health
         self.area_length: int = area.length
         self.area_start = area.start_coordinate
         self.area_end = area.end_coordinate
@@ -207,7 +225,7 @@ class Serpent(Boss):
     def make(cls, area) -> Self:
         min_size = max(min(2, area.difficulty // 15), 1)
 
-        max_size = max(2, (math.isqrt(area.difficulty) + 2) // 3)
+        max_size = min(max(2, (math.isqrt(area.difficulty) + 2) // 3), 5)
 
         return cls(area, min(area.random.randint(min_size, max_size) for _ in range(2)))
 
@@ -415,16 +433,17 @@ class Serpent(Boss):
 
     def final_load(self) -> None:
         super().final_load()
-        self.area_start = self.y
-        self.area_end = self.area_start + self.area_length
-        self.y += self.area_length + 90
+        if not self.baby:
+            self.area_start = self.y
+            self.area_end = self.area_start + self.area_length
+            self.y += self.area_length + 90
         self.parts = (
             Serpent.PathTracker(
-                BodyPart(pygame.transform.scale_by(images.SERPENT_HEAD.img, self.size), 0, self.pos, self, self.size + 1),
+                BodyPart(pygame.transform.scale_by(images.SERPENT_HEAD.img, self.size), 0, (game_states.WIDTH, self.y), self, self.size + 1),
                 deque(Serpent.PathItem(0, self.pos) for _ in range(4 + self.body_part_sep))
             ),
             *(Serpent.PathTracker(
-                BodyPart(self.get_image_from_index(i), 0, (self.x, self.y + i * 100), self, self.size),
+                BodyPart(self.get_image_from_index(i), 0, (game_states.WIDTH, self.y + i * 100), self, self.size),
                 deque(Serpent.PathItem(0, (self.x, self.y + i * 100)) for _ in range(self.body_part_sep))
             ) for i in range(self.body_length))
         )
