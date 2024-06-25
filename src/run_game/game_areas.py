@@ -806,6 +806,7 @@ class BossArea(GameArea):
         self.boss: bosses.Boss | None = None
         self.state = 0
         self.end_wall = entities.InvulnerableObstacle(pos=(0, self.length), health=1)
+        self.cooldown_ticks = 0
 
     def determine_parts(self):
         self.make(random.choice(bosses.boss_types))
@@ -837,8 +838,9 @@ class BossArea(GameArea):
         elif self.state == 2:
             if self.cooldown_ticks <= 0:
                 self.cooldown_ticks = 30
-                for entity in self.entity_list:
-                    entity.health -= 1
+                for entity in self.get_entity_snapshot():
+                    if not entity.allied_with_player:
+                        entity.health -= 1
             self.cooldown_ticks -= 1
         return ret
 
