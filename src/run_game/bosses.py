@@ -293,7 +293,7 @@ class Serpent(Boss):
             if diving:  # has already entered the correct cone, assume it's close enough still, keep diving
                 to_angle = math.degrees(math.atan2(self.target.x - self.x, self.y - self.target.y)) % 360
                 # limit to 45 degree incident angle (https://www.desmos.com/calculator/pt0opyurc0)
-                to_angle = 90 - min(abs(abs(to_angle - 180) - 90), 30) * (-1 if to_angle < 180 else 1) * (
+                to_angle = 90 - min(abs(abs(to_angle - 180) - 90), 40) * (-1 if to_angle < 180 else 1) * (
                     1 if 90 < to_angle < 270 else -1) + (0 if to_angle < 180 else 180)
             else:  # go away from line
                 left = self.x < 0
