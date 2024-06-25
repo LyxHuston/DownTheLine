@@ -878,9 +878,12 @@ class EndRun(GameArea):
     def make(self):
         pass
 
+    def determine_parts(self):
+        return ()
+
     def cross_boundary(self):
         from screens import end_screens
-        end_screens.win.start()
+        end_screens.won_screen.start()
 
 
 guaranteed_type: Type[GameArea] | None = None
