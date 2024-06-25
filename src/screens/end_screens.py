@@ -89,6 +89,7 @@ def after_tick(fade_color: tuple[int, int, int], title_text: str, text_backgroun
                 tick_counter = 0
                 next_tick_max += 0.5
         elif fade_counter == 255:
+            game_structures.SCREEN.fill(fade_color)
             game_structures.BUTTONS.clear()
             game_structures.BUTTONS.add_button(
                 game_structures.Button.make_text_button(title_text, 400, (game_states.WIDTH // 2, 400), None,
@@ -105,7 +106,7 @@ def after_tick(fade_color: tuple[int, int, int], title_text: str, text_backgroun
                                                         text_align=0, x_align=0))
             game_structures.BUTTONS.add_button(game_structures.Button.make_text_button("Play Again", 100, (
                 game_states.WIDTH // 2 - 800, game_states.HEIGHT - 200), play_again,
-                                                                                       background_color=(0, 0, 0),
+                                                                                       background_color=text_background,
                                                                                        outline_color=text_color,
                                                                                        border_width=5, text_align=0.5,
                                                                                        enforce_width=600))
@@ -121,7 +122,7 @@ def after_tick(fade_color: tuple[int, int, int], title_text: str, text_backgroun
                                                                                        enforce_width=600))
             fade_counter = 256
         else:
-            pass
+            game_structures.SCREEN.fill(fade_color)
     return inner
 
 
