@@ -79,8 +79,8 @@ class BodyPart(entities.Entity):
     def damage_player(self):
         game_structures.begin_shake(
             self.damage * 30,
-            (self.damage * 40, self.damage * 40),
-            (self.damage * 16 + 1, self.damage * 24 - 1)
+            (self.damage * 5, self.damage * 5),
+            (self.damage * 2 + 1, self.damage * 3 - 1)
         )
         self.boss.damage_player()
 
