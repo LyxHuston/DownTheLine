@@ -157,6 +157,7 @@ class Serpent(Boss):
     class MovementMakerEntry:
         make: Callable[[], tuple[Callable[[], None], Callable[[], bool]]]
         weight: int
+        available: Callable[[], bool] = lambda: True
 
     fields = (
         FieldOptions.Area.value(),
@@ -200,6 +201,7 @@ class Serpent(Boss):
         self.body_part_sep = self.size + 2
         self.body_length = 30 + 5 * self.size
         self.imgs = tuple(pygame.transform.scale_by(img.img, self.size) for img in images.SERPENT_BODY)
+        self.spiral_in_a_row = 0
 
         self.movement_options: dict[bool, tuple[Serpent.MovementMakerEntry, ...]] = {
             True: (
@@ -215,7 +217,8 @@ class Serpent(Boss):
             False: (
                 Serpent.MovementMakerEntry(
                     self.make_spiral_movement,
-                    2
+                    2,
+                    lambda: self.spiral_in_a_row < 600 - 60
                 ),
                 Serpent.MovementMakerEntry(
                     self.make_dive_movement,
@@ -252,6 +255,9 @@ class Serpent(Boss):
         duration = 60 * self.random.randint(1, 5)
         if change > 0:
             duration = min(duration, int((8 - tightness) / change))
+        duration = min(600 - 60 - self.spiral_in_a_row, duration)
+
+        self.spiral_in_a_row += duration
 
         def turn():
             nonlocal change, duration, tightness
@@ -271,6 +277,8 @@ class Serpent(Boss):
             )
         )
 
+        self.spiral_in_a_row = 0
+
         def turn():
             to_angle = math.degrees(math.atan2(destination[0] - self.x, self.y - destination[1])) % 360
             diff: int = to_angle - self.rotation
@@ -286,6 +294,8 @@ class Serpent(Boss):
     def make_dive_movement(self):
         diving = False
         left = None
+
+        self.spiral_in_a_row = 0
 
         def turn():
             nonlocal diving, left
@@ -318,6 +328,8 @@ class Serpent(Boss):
         stage = 0  # 0: retreating, 1: diving, 2: wave
         tightness = 5  # how quickly the snake turns.  Higher number, the tighter the wave.
         direction = 0  # up/down
+
+        self.spiral_in_a_row = 0
 
         def turn():
             nonlocal stage, direction
@@ -375,7 +387,10 @@ class Serpent(Boss):
 
         else:
 
-            options: tuple[Serpent.MovementMakerEntry] = self.movement_options[self.target is None]
+            options: tuple[Serpent.MovementMakerEntry] = tuple(filter(
+                lambda movement_option:movement_option.available(),
+                self.movement_options[self.target is None]
+            ))
 
             tot = sum(op.weight for op in options)
 
