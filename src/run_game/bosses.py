@@ -219,7 +219,7 @@ class Serpent(Boss):
                 Serpent.MovementMakerEntry(
                     self.make_spiral_movement,
                     2,
-                    lambda: self.spiral_in_a_row < 600 - 60
+                    lambda: self.spiral_in_a_row < 300
                 ),
                 Serpent.MovementMakerEntry(
                     self.make_dive_movement,
@@ -266,7 +266,7 @@ class Serpent(Boss):
         duration = 60 * self.random.randint(1, 5)
         if change > 0:
             duration = min(duration, int((8 - tightness) / change))
-        duration = min(600 - 60 - self.spiral_in_a_row, duration)
+        duration = min(300 - self.spiral_in_a_row, duration)
 
         self.spiral_in_a_row += duration
 
@@ -403,7 +403,7 @@ class Serpent(Boss):
         else:
 
             options: tuple[Serpent.MovementMakerEntry] = tuple(filter(
-                lambda movement_option:movement_option.available(),
+                lambda movement_option: movement_option.available(),
                 self.movement_options[self.target is None]
             ))
 
