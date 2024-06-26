@@ -179,8 +179,10 @@ class Serpent(Boss):
         if super().hit(damage, source):
             if damage > 0 and self.health + damage > self.max_health // 2 >= self.health:
                 self.spawn_babies()
-            return False
-        return True
+            if damage > 0 and self.health + damage > 0 >= self.health:
+                gameboard.NEW_ENTITIES.append(SerpentDeathHandler(self))
+            return True
+        return False
 
     def __init__(self, area, size: int, rot=0, pos=(0, 0), baby: bool = False):
         super().__init__(images.EMPTY, rot, pos)
@@ -472,6 +474,109 @@ class Serpent(Boss):
         for part in parts:
             part.final_load()
         gameboard.NEW_ENTITIES.extend(parts)
+
+
+class SerpentDeathHandler(entities.InvulnerableEntity):
+
+    @property
+    def alive(self) -> bool:
+        return len(self.serpent.parts) > 0
+
+    def __init__(self, serpent: Serpent):
+        super().__init__(images.EMPTY, 0, serpent.pos)
+        self.serpent = serpent
+        self.explosion_tick = self.serpent.body_part_sep
+        self.move_queue = deque()
+        self.slow = 0.75  # tick delays between a tick
+        self.slow_progress = 0
+        self.slow_increase_delay = 1  # proper ticks between a slow increase
+        self.slow_increase_progress = 0
+
+    def tick(self):
+        if self.slow_progress >= self.slow:
+            self.slow_progress = 0
+            self.slow_increase_progress += 0.25
+            if self.slow_increase_progress >= self.slow_increase_delay:
+                self.slow += 1
+                self.slow_increase_progress = 0
+                self.slow_increase_delay += 2
+        else:
+            self.slow_progress += 1
+            return
+        self.explosion_tick += 1
+        if self.explosion_tick > self.serpent.body_part_sep // 2:
+            self.explosion_tick = 0
+
+            if len(self.serpent.parts) >= 2:
+                part_0 = self.serpent.parts[0].body_part
+                part_1 = self.serpent.parts[1].body_part
+                part_0_dist = part_0.height
+                part_1_dist = part_1.height
+                part_0_rot = math.radians(part_0.rotation)  # check behind
+                part_1_rot = math.radians((part_1.rotation + 180) % 180)  # check in front
+                part_0_pos = (
+                    part_0.x + round(part_0_dist * math.sin(part_0_rot)),
+                    part_0.y - round(part_0_dist * math.cos(part_0_rot))
+                )
+                part_1_pos = (
+                    part_1.x + round(part_1_dist * math.sin(part_1_rot)),
+                    part_1.y - round(part_1_dist * math.cos(part_1_rot))
+                )
+                gameboard.PARTICLE_BOARD.add(
+                    entities.EXPLOSION_PARTICLES(
+                        (
+                            (part_0_pos[0] + part_1_pos[0]) // 2,
+                            (part_0_pos[1] + part_1_pos[1]) // 2
+                        ),
+                        rotation=self.serpent.random.randint(0, 359)
+                    )
+                )
+
+            body_part = self.serpent.parts[0].body_part
+            self.move_queue = self.serpent.parts[0].path_parts
+
+            self.serpent.parts = self.serpent.parts[1:]
+
+            rads = math.radians((body_part.rotation + 180) % 360)
+            momentum = (round(self.serpent.speed * math.sin(rads) / self.slow), -round(self.serpent.speed * math.cos(rads) / self.slow))
+            # if I want to add break-apart stuff to the particles, need to get the original image, somehow
+            gameboard.PARTICLE_BOARD.add(entities.Particle(
+                imgs=[body_part.img],
+                tick_rate=1000,
+                lifespan=30,
+                radius=body_part.radius(),
+                pos=body_part.pos,
+                momentum=momentum
+            ))
+
+        last: Serpent.PathItem = self.move_queue.popleft()
+        part: Serpent.PathTracker
+        i = 0
+        for part in self.serpent.parts:
+            shakiness = 52 // (i + 2)
+            part.path_parts.append(last)
+            part.body_part.pos = last.position
+            part.body_part.x += round(shakiness * bounce_1(
+                i * self.slow + self.slow_increase_progress + self.slow_increase_delay
+            ))
+            part.body_part.y += round(shakiness * bounce_1(
+                i * (self.slow_increase_progress + self.slow_increase_delay) + self.slow
+            ))
+            part.body_part.rotation = last.rotation + 180
+            last = part.path_parts.popleft()
+            i += 1
+
+    def draw(self):
+        for part in self.serpent.parts:
+            part.body_part.draw()
+
+
+def bounce_1(num: float) -> float:
+    """
+    get a number between 1 and 0, with a slope of absolute value 1, going up on evens and down on odds.
+    On the interval of [0,1], bounce_1(x) = x
+    """
+    return 1 - abs(num % 2 - 1)
 
 
 boss_types = game_structures.recursive_subclasses(Boss)
