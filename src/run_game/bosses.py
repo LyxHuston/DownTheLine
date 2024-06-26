@@ -361,7 +361,7 @@ class Serpent(Boss):
 
     def get_next_movement(self) -> MovementOption:
         out_y = not self.area_start < self.y < self.area_end  # keep it in the area
-        out_x = abs(self.x) > game_states.WIDTH // 2  # keep it on the screen
+        out_x = abs(self.x) > game_states.WIDTH // 3  # keep it on the screen
         if out_y or out_x:  # return
 
             if out_y:
@@ -381,7 +381,7 @@ class Serpent(Boss):
                 ideal_angle = 90 if self.x < 0 else 270
 
                 def finish_check():
-                    return abs(self.x) < game_states.WIDTH // 3
+                    return abs(self.x) < game_states.WIDTH // 4
 
             turn = functools.partial(self.turn_towards, ideal_angle)
 
