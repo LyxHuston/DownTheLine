@@ -67,6 +67,9 @@ class Boss(entities.Entity):
         self.state = 1
         self.target = self.closest_enemy()
 
+    def despawn(self):
+        gameboard.NEW_ENTITIES.append(self)
+
 
 class BodyPart(entities.Entity):
     """
@@ -128,6 +131,9 @@ class BodyPart(entities.Entity):
             )
         )
         return self.pos
+
+    def despawn(self):
+        gameboard.NEW_ENTITIES.append(self)
 
 
 class Serpent(Boss):
