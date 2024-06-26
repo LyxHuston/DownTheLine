@@ -117,10 +117,7 @@ class BodyPart(entities.Entity):
         if self.img is None:
             return
         if self.boss.flashing > 0:
-            img = pygame.Surface(self.img.get_rect().size, flags=pygame.SRCALPHA)
-            img.blit(self.img, (0, 0))
-            img.fill((255, 255, 255), special_flags=pygame.BLEND_ADD)
-            img.blit(self.img, (0, 0), None, pygame.BLEND_RGB_SUB)
+            img = self.flashing_img
         else:
             img = self.img
         game_structures.SCREEN.blit(

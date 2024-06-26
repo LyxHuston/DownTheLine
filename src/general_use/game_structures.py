@@ -598,6 +598,7 @@ class Body:
         if val != self.__rotation:
             self.__rotation = val % 360
             self._rotated_img = None
+            self.__flashing_img = None
 
     @property
     def img(self):
@@ -612,6 +613,17 @@ class Body:
         self.__radius = Body.__calc_radius(val.get_width(), val.get_height())
         self.__original_img = val
         self._rotated_img = None
+        self.__flashing_img = None
+
+    @property
+    def flashing_img(self):
+        if self.__flashing_img is None:
+            img = pygame.Surface(self.img.get_rect().size, flags=pygame.SRCALPHA)
+            img.blit(self.img, (0, 0))
+            img.fill((255, 255, 255), special_flags=pygame.BLEND_ADD)
+            img.blit(self.img, (0, 0), None, pygame.BLEND_RGB_SUB)
+            self.__flashing_img = img
+        return self.__flashing_img
 
     @utility.memoize(guarantee_natural=True)
     @staticmethod
@@ -672,6 +684,7 @@ class Body:
 
     def __init__(self, img: pygame.Surface, rotation: int, pos: tuple[int, int] | None):
         self.__original_img = img
+        self.__flashing_img = None
         self.__radius = Body.__calc_radius(img.get_width(), img.get_height())
         self._rotated_img = None
         self.__rotation = 0

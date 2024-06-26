@@ -213,10 +213,7 @@ class Entity(game_structures.Body):
                 if abs(self.__y_shake) > self.__shake_limit:
                     self.__y_shake += 2 * (abs(self.__y_shake) - self.__shake_limit) * ((self.__y_shake < 0) * 2 - 1)
                     self.__y_shake_momentum *= -1
-            img = pygame.Surface(self.img.get_rect().size, flags=pygame.SRCALPHA)
-            img.blit(self.img, (0, 0))
-            img.fill((255, 255, 255), special_flags=pygame.BLEND_ADD)
-            img.blit(self.img, (0, 0), None, pygame.BLEND_RGB_SUB)
+            img = self.flashing_img
         else:
             self.__x_shake = self.__y_shake = self.__x_shake_momentum = self.__y_shake_momentum = 0
             img = self.img
@@ -2562,7 +2559,7 @@ class MassDelayedDeploy(InvulnerableEntity):
 
 class Particle:
     """
-    a basic particle.  Inherits Entity for on-screen detection assistance
+    a basic particle.  Just an image onscreen.
     """
 
     __id = 0
@@ -2609,10 +2606,6 @@ class Particle:
     def reset_id_check(self):
         if self.__id == 10000:
             Particle.__id = 0
-
-    def __eq__(self, other):
-        if self is other:
-            return True
 
     def __hash__(self):
         return self.__id
