@@ -196,9 +196,11 @@ class Serpent(Boss):
         self.movement: Serpent.MovementOption = Serpent.MovementOption(lambda: None, lambda: True)
         self.random = random.Random(area.get_next_seed())
         self.size = size
+        self.min_speed = 8 + 4 * self.size
         self.speed = 10 + 4 * self.size
+        self.max_speed = 12 + 5 * self.size
         self.body_part_sep = self.size + 2
-        self.body_length = 30 + 5 * self.size
+        self.body_length = 30 + 7 * self.size
         self.imgs = tuple(pygame.transform.scale_by(img.img, self.size) for img in images.SERPENT_BODY)
         self.spiral_in_a_row = 0
 
@@ -242,10 +244,20 @@ class Serpent(Boss):
         diff: int = angle - self.rotation
         if abs(diff) > 180:
             diff = 360 - diff
+        if abs(diff) > 10:
+            self.slow_down()
         if abs(diff) > 5:
             self.rotation += math.copysign(3, diff)
         elif abs(diff) > 1:
             self.rotation += diff // 2
+        else:
+            self.speed_up()
+
+    def speed_up(self):
+        self.speed = min(self.speed + 0.125, self.max_speed)
+
+    def slow_down(self):
+        self.speed = max(self.speed - 0.25, self.min_speed)
 
     def make_spiral_movement(self) -> tuple[Callable[[], None], Callable[[], bool]]:
         direction = self.random.choice((-1, 1))
@@ -331,15 +343,15 @@ class Serpent(Boss):
         self.spiral_in_a_row = 0
 
         def turn():
-            nonlocal stage, direction
+            nonlocal stage, direction, tightness
 
             left = self.x < 0
             if stage == 0:  # go away from track
-                to_angle = 270 if self.rotation > 180 else 90
-                # angle towards player, more so if further from track.  Asymptotic to 90 degrees
+                to_angle = 270 if left else 90
+                # angle away from player, more so if further from track.  Asymptotic to 90 degrees
                 adjust = math.degrees(math.atan(self.x / 100))
                 # modify so it angles correctly based on position
-                adjust *= 1 if left else -1
+                adjust *= -1 if left else 1
                 adjust *= -1 if self.y < self.target.y else 1
                 to_angle += adjust
                 self.turn_towards(to_angle)
@@ -349,12 +361,16 @@ class Serpent(Boss):
                 to_angle = 90 if left else 270
                 self.turn_towards(to_angle)
                 if abs(self.x) < self.speed:
-                    self.rotation = to_angle  # take no chances about intercept angle
+                    self.rotation = 270 if self.rotation > 180 else 90  # take no chances about intercept angle
                     direction = -1 if self.y < self.target.y else 1
                     stage = 2
             elif stage == 2:
-                adjust = tightness * direction * (1 if self.x < 0 else -1)
+                adjust = round(tightness) * direction * (1 if self.x < 0 else -1)
                 self.rotation += adjust
+                if abs(self.x) < self.speed:
+                    self.speed_up()
+                    self.speed_up()
+                    tightness += 0.25
 
         return turn, lambda: self.target is None or stage == 2 and abs(self.x) < self.speed and (-1 if self.y < self.target.y else 1) != direction
 
