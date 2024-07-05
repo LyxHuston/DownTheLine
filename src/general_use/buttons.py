@@ -140,29 +140,46 @@ class BaseButton(ABC):
         :param enforce_width: enforce a width for the display
         :return: drawn text
         """
-        lines = [""]
+        lines: list[tuple[str, int]] = [("", 0)]
         word = ""
+        current_word_length = 0
         words = 0
 
+        def clear_word():
+            nonlocal word, current_word_length
+            word = ""
+            current_word_length = 0
+
         def add_new_line(start: str = ""):
-            nonlocal words
+            nonlocal words, word, current_word_length
+            if start:
+                words = 1
+                clear_word()
+            else:
+                words = 0
             words = int(bool(start))  # start with 0 if empty string, start with 1 if non-empty
             if len(lines) == max_lines:
                 return True
-            lines.append(start)
+            lines.append((start, current_word_length))  # guaranteed for start == word
 
         def add_word_to_last_line(check_newline: bool = True):
-            nonlocal word, words
-            _new_line = (lines[-1] + " " + word).lstrip(" ")
-            _length = draw_font.size(_new_line)[0]
-            if _length > max_line_pixels > 0:
-                if add_new_line(word):
-                    return True
+            nonlocal word, words, current_word_length
+            if lines[-1][0]:  # if there is something in line, add a space and the word
+                _new_line = lines[-1][0] + " " + word
+                _length = lines[-1][1] + space_size + current_word_length
+                if word and _length > max_line_pixels > 0:  # only check if it goes over if word is not empty
+                    return add_new_line(word)  # nothing to do after adding
+            elif word:  # if there was not something in line, the new line is the word
+                _new_line = word
+                _length = current_word_length
             else:
-                lines[-1] = _new_line
+                return False
+
+            lines[-1] = (_new_line, _length)
+
             if word:  # only increment words counter if word actually had something
                 words += 1
-                word = ""
+                clear_word()
                 if check_newline and words == max_line_words:
                     return add_new_line()
             return False
@@ -171,6 +188,13 @@ class BaseButton(ABC):
             draw_font = ButtonHolder.fonts[font]
         else:
             draw_font = font
+        space_size = draw_font.size(" ")[0]
+
+        def get_increase_size(add_char: str) -> int:
+            if word:
+                return draw_font.size(add_char)[0]
+            else:
+                return draw_font.size(word[-1] + add_char)[0] - draw_font.size(add_char)[0]
 
         i: int = 0
         while i < len(text):
@@ -178,7 +202,7 @@ class BaseButton(ABC):
             i += 1
 
             if char == "\n":
-                if add_word_to_last_line(False):  # add word, don't check if it goes over the line
+                if add_word_to_last_line(False):  # add word, don't check if it reaches max word count
                     break
                 if add_new_line():
                     break
@@ -197,6 +221,7 @@ class BaseButton(ABC):
                     if add_new_line():
                         break
             word += char
+            current_word_length += get_increase_size(char)
 
         add_word_to_last_line()  # make sure to get the last word out
 
@@ -213,7 +238,7 @@ class BaseButton(ABC):
         elif not lines:
             max_length = 0
         else:
-            max_length = max(draw_font.size(line)[0] for line in lines)
+            max_length = max(_length for line, _length in lines)
         if max_length > max_width > 0:
             draw_font = ButtonHolder.fonts[int(font * max_width / max_length)]
         linesize = draw_font.get_linesize()
@@ -221,7 +246,7 @@ class BaseButton(ABC):
         if background_color is not None:
             text_surface.fill(background_color)
         for i in range(len(lines)):
-            drawn = draw_font.render(lines[i], True, outline_color, None)
+            drawn = draw_font.render(lines[i][0], True, outline_color, None)
             text_surface.blit(
                 drawn,
                 (text_align * (max_length - drawn.get_width()), i * linesize)
