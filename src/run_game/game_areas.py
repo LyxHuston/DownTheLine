@@ -518,7 +518,8 @@ class EnslaughtAreaEvent:
                     (
                         (entities.TrackingLazer.TOP, entities.TrackingLazer.BOTTOM)[i % 2],
                         60,
-                        60
+                        60,
+                        area.get_next_seed()
                     )
                 ))
         elif typ is EnslaughtAreaEventType.Fish:

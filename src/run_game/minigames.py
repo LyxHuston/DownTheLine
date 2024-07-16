@@ -115,7 +115,7 @@ def fish_init(area):
 		for i2 in range(i + 7):
 			wave.append((entities.Fish, [area]))
 			count += 1
-		wave = [(entities.MassDelayedDeploy, (60 * 10, wave, register))]
+		wave = [(entities.MassDelayedDeploy, (60 * 10, area.seed(), wave, register))]
 	e = entities.MassDelayedDeploy(0, wave[0][1][1], wave[0][1][2], register)
 	register(e)
 	pre_compute_outlines_until(count + waves)
@@ -210,7 +210,7 @@ def lazer_init(area):
 			wave_make()
 			separation = 64
 			pre_safe_creation = [
-				(entities.Lazer, (y, delay, charge_bonus, area))
+				(entities.Lazer, (y, delay, charge_bonus, area.get_next_seed()))
 				for y in range(separation, area.length, separation)
 			]
 			del_at: int = area.random.randint(0, len(pre_safe_creation) - 2)
@@ -231,7 +231,7 @@ def lazer_init(area):
 							area.length * (tracker_count % 2),
 							3 * tracker_delay,
 							15,
-							area
+							area.get_next_seed()
 						),
 						register
 					)
@@ -249,7 +249,7 @@ def lazer_init(area):
 						entities.TrackingLazer,
 						(
 							area.length * (tracker_count % 2),
-							3 * tracker_delay, 15, area, repeats
+							3 * tracker_delay, 15, area.get_next_seed(), repeats
 						),
 						register
 					)
@@ -267,7 +267,7 @@ def lazer_init(area):
 					(
 						charge_time * rep,
 						[
-							(entities.Lazer, (y, charge_time, fire_duration, area))
+							(entities.Lazer, (y, charge_time, fire_duration, area.get_next_seed()))
 							for y in
 							range(separation * (1 + rep % 2), area.length, separation * 2)
 						],
@@ -297,7 +297,7 @@ def lazer_init(area):
 							path,
 							charge_time,
 							fire_duration,
-							area.random.randint(0, 2 ** 32 - 1)
+							area.get_next_seed()
 						),
 						register
 					)
