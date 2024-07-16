@@ -249,13 +249,16 @@ class Serpent(Boss):
     def turn_towards(self, angle):
         diff: int = angle - self.rotation
         if abs(diff) > 180:
-            diff = 360 - diff
-        if abs(diff) > 10:
+            diff = (360 - diff) % 360
+        if abs(diff) > 20:
             self.slow_down()
-        if abs(diff) > 5:
-            self.rotation += math.copysign(3, diff)
-        elif abs(diff) > 1:
-            self.rotation += diff // 2
+        self.turn(diff)
+
+    def turn(self, angle):
+        if abs(angle) > 9:
+            self.rotation += math.copysign(5, angle)
+        elif abs(angle) > 1:
+            self.rotation += angle // 2
         else:
             self.speed_up()
 
@@ -280,7 +283,7 @@ class Serpent(Boss):
             nonlocal change, duration, tightness
             duration -= 1
             if duration % self.size == 0:
-                self.rotation += direction * int(tightness)
+                self.turn(direction * int(tightness))
                 tightness += change
 
         return turn, lambda: duration <= 0
@@ -491,7 +494,7 @@ class Serpent(Boss):
                 deque(Serpent.PathItem(0, (self.x, self.y + i * 100)) for _ in range(self.body_part_sep))
             ) for i in range(self.body_length))
         )
-        parts: tuple[BodyPart] = tuple(part.body_part for part in self.parts)
+        parts: tuple[BodyPart, ...] = tuple(part.body_part for part in self.parts)
         part: BodyPart
         for part in parts:
             part.final_load()
