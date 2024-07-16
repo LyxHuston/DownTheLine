@@ -27,7 +27,7 @@ from data import game_states, images
 from general_use import game_structures, utility
 import random
 import math
-from typing import Type, Iterable, Self, Callable, Literal
+from typing import Type, Iterable, Self, Callable, Literal, Generator, Any
 
 
 def glide_player(speed: int, duration: int, taper: int, direction: int):
@@ -326,30 +326,21 @@ class Entity(game_structures.Body):
             self,
             _range: int,
             accept_func: Callable[[Self], bool] = utility.make_simple_always(True)
-    ) -> list[Self]:
-        collect: list[Entity] = list()
-        store_offset = self.__offset
-        self.recenter_order()
-        while True:
-            check: Entity | None = self.prev_entity_inorder(limit=_range, accept_func=accept_func)
-            if check is None:
-                break
-            collect.append(check)
-        collect.reverse()
-        self.recenter_order()
-        while True:
-            check = self.next_entity_inorder(limit=_range, accept_func=accept_func)
-            if check is None:
-                break
-            collect.append(check)
-        self.__offset = store_offset
-        return collect
+    ) -> Generator[Self, Any, None]:
+        low = self.index
+        while low >= 0 and self.y - gameboard.ENTITY_BOARD[low].y < _range:
+            low -= 1
+        low += 1
+        high = self.index
+        while high < len(gameboard.ENTITY_BOARD) and gameboard.ENTITY_BOARD[high].y - self.y < _range:
+            high += 1
+        return (gameboard.ENTITY_BOARD[i] for i in range(low, high) if gameboard.ENTITY_BOARD[i] is not self and accept_func(gameboard.ENTITY_BOARD[i]))
 
-    def colliding(self, additional_predicate: Callable[[Self], bool] = None) -> list[Self]:
+    def colliding(self, additional_predicate: Callable[[Self], bool] = None) -> Generator[Self, Any, None]:
         predicate = (
             lambda e: self.collide(e) and self.collide_priority >= e.immune_collide_below
         ) if additional_predicate is None else (
-            lambda e: self.collide(e) and self.collide_priority >= e.immune_collide_below and additional_predicate(e)
+            lambda e: additional_predicate(e) and self.collide(e) and self.collide_priority >= e.immune_collide_below
         )
         return self.all_in_range(
             self.height // 2 + Entity.biggest_radius,
@@ -361,9 +352,9 @@ class Entity(game_structures.Body):
             additional_predicate: Callable = utility.passing,
             displace_predicate: Callable = utility.passing,
             run_on_hit: Callable = utility.passing
-    ) -> list[Self]:
-        collide_list: list[Self] = self.colliding(additional_predicate=additional_predicate)
-        displace_list: list[Self] = list(filter(displace_predicate, collide_list))
+    ) -> tuple[Self, ...]:
+        collide_list: tuple[Self, ...] = tuple(self.colliding(additional_predicate=additional_predicate))
+        displace_list: tuple[Self, ...] = tuple(filter(displace_predicate, collide_list))
         if displace_list:
             push_factor: float = math.inf
             new_push_factor: float
@@ -1065,9 +1056,9 @@ class Fencer(Glides):
                 gameboard.PARTICLE_BOARD.add(DASH_RIPPLE_PARTICLES(
                     self.pos
                 ))
-            collision_list = self.colliding(
+            collision_list = tuple(self.colliding(
                 additional_predicate=lambda en: en.allied_with_player is not self.allied_with_player
-            )
+            ))
             if collision_list:
                 for e in collision_list:
                     e.hit(2, self)
@@ -1162,9 +1153,9 @@ class Projectile(Entity):
             return
         if self.expiration_date is not None:
             self.expiration_date -= 1
-        collision_list = self.colliding(
+        collision_list = tuple(self.colliding(
             additional_predicate=lambda en: en.allied_with_player is not self.allied_with_player and not en.is_item_entity
-        )
+        ))
         if collision_list:
             for e in collision_list:
                 if e in self.hit_chache:
@@ -2169,9 +2160,9 @@ class KnockbackHolder(InvulnerableGlides, InvulnerableHolder):
         self.glide_tick()
         if self.glide_duration % 3 == 0:
             gameboard.PARTICLE_BOARD.add(DASH_RIPPLE_PARTICLES(self.pos))
-        collide_list = self.holding.colliding(
+        collide_list = tuple(self.holding.colliding(
             additional_predicate=lambda en: self.allied_with_player is not en.allied_with_player
-        )
+        ))
         for e in filter(lambda en: en not in self.hit_cache, collide_list):
             e.hit(self.damage, self)
         self.hit_cache = collide_list
@@ -2319,10 +2310,10 @@ class Bomb(InvulnerableGlides):
                 self.x - self.size // 2, self.y - self.size // 2,
                 self.size, self.size
             )
-            damaging = self.all_in_range(
+            damaging = tuple(self.all_in_range(
                     Entity.biggest_radius + self.size,
                     accept_func=lambda e: colliding.colliderect(e.rect)
-            )
+            ))
             if damaging and self.allied_with_player:
                 game_states.TIME_SINCE_LAST_INTERACTION = 0
             for entity in damaging:
@@ -2413,7 +2404,7 @@ class Hatchet(InvulnerableGlides):
                 self.img_index = (self.img_index + 1) % len(self.imgs)
                 self.img = self.imgs[self.img_index]
             self.glide_tick()
-            hit_list = self.colliding(additional_predicate=lambda en: en.allied_with_player is not self.allied_with_player and en not in self.already_hit)
+            hit_list = tuple(self.colliding(additional_predicate=lambda en: en.allied_with_player is not self.allied_with_player and en not in self.already_hit))
             for e in hit_list:
                 e.hit(self.damage, self)
             self.already_hit.extend(hit_list)
@@ -2473,9 +2464,9 @@ class Boomerang(InvulnerableEntity):
             self.velocity *= 0.9
         self.y += round(self.velocity)
 
-        collide_list = self.colliding(
+        collide_list = tuple(self.colliding(
             additional_predicate=lambda en: en.allied_with_player is not self.allied_with_player
-        )
+        ))
         for e in collide_list:
             if e not in self.hit_cache:
                 e.hit(1, self)

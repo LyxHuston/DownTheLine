@@ -911,9 +911,9 @@ def simple_stab_tick(item: Item):
         ))
         rad = user.radius() + get_range(item) + entities.Entity.biggest_radius + 5
         damage = item.data_pack[4]
-        hit = user.all_in_range(
+        hit = tuple(user.all_in_range(
                 rad, lambda e: e is not user and e not in item.data_pack[-1] and rect.colliderect(e.rect)
-        )
+        ))
         if hit and from_player(item):
             game_states.TIME_SINCE_LAST_INTERACTION = 0
         for entity in hit:
@@ -964,10 +964,10 @@ def simple_shield_tick(item: Item):
     rot = (user.rotation // 180 * 2) - 1
     radius = user.height // 2 + rect.height
 
-    collide_list = user.all_in_range(
+    collide_list = tuple(user.all_in_range(
         entities.Entity.biggest_radius + radius,
         lambda ent: (ent.y - user.y) * rot > 0 and ent.colliderect(rect)
-    )
+    ))
 
     if collide_list and from_player(item):
         game_states.TIME_SINCE_LAST_INTERACTION = 0
@@ -1181,10 +1181,10 @@ def hammer_tick(item: Item):
                 user.rotation
             )
             rect = img.get_rect(center=new_center)
-            collided = user.all_in_range(
+            collided = tuple(user.all_in_range(
                 radius + entities.Entity.biggest_radius,
                 lambda en: user.allied_with_player is not en.allied_with_player and not en.is_item_entity and en.colliderect(rect)
-            )
+            ))
             if collided:
                 if from_player(item):
                     game_states.TIME_SINCE_LAST_INTERACTION = 0
