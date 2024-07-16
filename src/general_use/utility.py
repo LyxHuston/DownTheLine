@@ -185,6 +185,16 @@ def outline_img(img: pygame.Surface, outline: int, outline_type: OutlineTypes | 
     return outlining
 
 
+def make_flashing_img(img: pygame.Surface):
+    if img is None:
+        return None
+    _img = pygame.Surface(img.get_rect().size, flags=pygame.SRCALPHA)
+    _img.blit(img, (0, 0))
+    _img.fill((255, 255, 255), special_flags=pygame.BLEND_ADD)
+    _img.blit(img, (0, 0), None, pygame.BLEND_RGB_SUB)
+    return _img
+
+
 """
 simple to put for anything, does nothing.  Use for objects without a tick effect
 also now used for just anything that needs to provide a useless function

@@ -25,7 +25,7 @@ import random
 from run_game import entities, gameboard
 from data import images, game_states
 import pygame
-from general_use import game_structures
+from general_use import game_structures, utility
 from collections import deque
 from typing import Self, Callable, Any
 from screens.custom_runs import FieldOptions
@@ -87,12 +87,25 @@ class BodyPart(entities.Entity):
         )
         self.boss.damage_player()
 
-    def __init__(self, img: pygame.Surface, rotation: int, pos: tuple[int, int], boss, damage,
-                 collides: bool = True):
-        super().__init__(img, rotation, pos)
+    @property
+    def img(self):
+        return self.img_getter(self.rotation, False)
+
+    @property
+    def flashing_img(self):
+        return self.img_getter(self.rotation, True)
+
+    @img.setter
+    def img(self, _):
+        pass
+
+    def __init__(self, img_getter: Callable[[int, bool], pygame.Surface], rotation: int, pos: tuple[int, int],
+                 boss: Boss, damage: int, collides: bool = True):
+        super().__init__(img_getter(rotation, False), rotation, pos)
         self.boss: Boss = boss
         self.collides: bool = collides
         self.damage: int = damage
+        self.img_getter = img_getter
 
     @property
     def alive(self) -> bool:
@@ -117,12 +130,9 @@ class BodyPart(entities.Entity):
         """
         draws boss body part, flashing based on if the boss is damaged.  Doesn't shake
         """
-        if self.img is None:
+        img = self.img_getter(self.rotation, self.boss.flashing > 0)
+        if img is None:
             return
-        if self.boss.flashing > 0:
-            img = self.flashing_img
-        else:
-            img = self.img
         game_structures.SCREEN.blit(
             img,
             (
@@ -244,7 +254,7 @@ class Serpent(Boss):
 
         max_size = min(max(2, (math.isqrt(area.difficulty) + 2) // 3), 5)
 
-        return cls(area, min(area.random.randint(min_size, max_size) for _ in range(2)))
+        return cls(area, 2 + min(area.random.randint(min_size, max_size) for _ in range(2)))
 
     def turn_towards(self, angle):
         diff: int = angle - self.rotation
@@ -455,18 +465,18 @@ class Serpent(Boss):
             part.body_part.rotation = last.rotation + 180
             last = part.path_parts.popleft()
 
-    def get_image_from_index(self, i: int) -> pygame.Surface:
+    def get_image_index_from_part_index(self, i: int) -> int:
         # equation: https://www.desmos.com/calculator/j0qun80i6c idk how long that will be valid
         # constants that let it expand if necessary
         l = len(images.SERPENT_BODY)  # length of the images options.  Range of graph.
         m = self.body_length  # number of body parts.  Domain of graph.
         # constants that affect the shape of the graph
-        c = 1/3  # center of main body hump
+        c = 1 / 3  # center of main body hump
         d = 3  # dampener for the hump
-        bfl = 1/4  # body flattening constant
-        nfl = 1/4  # neck flattening constant
+        bfl = 1 / 4  # body flattening constant
+        nfl = 1 / 4  # neck flattening constant
 
-        f_1 = math.sin(1 / (bfl * (i - c * m) ** 2 + d)) / math.sin(1/d)  # calculate main body hump
+        f_1 = math.sin(1 / (bfl * (i - c * m) ** 2 + d)) / math.sin(1 / d)  # calculate main body hump
         f_1 *= i * (m - i) / ((m / 2) ** 2)  # make sure it's 0 at the edges
 
         f_2 = 1 / (1 + i / (nfl * m)) - i / m * 1 / (1 + 1 / nfl)  # calculate neck width
@@ -476,7 +486,10 @@ class Serpent(Boss):
 
         index = round((l - 1) * final)
 
-        return self.imgs[index]
+        return index
+
+    def get_image_from_index(self, i: int) -> pygame.Surface:
+        return self.imgs[self.get_image_index_from_part_index(i)]
 
     def final_load(self) -> None:
         super().final_load()
@@ -484,13 +497,28 @@ class Serpent(Boss):
             self.area_start = self.y
             self.area_end = self.area_start + self.area_length
             self.y += self.area_length + 90
+
+        img_parts = (
+            pygame.transform.scale_by(images.SERPENT_HEAD.img, self.size),
+            *self.imgs
+        )
+
+        @utility.memoize
+        def get_img(index: int, rot: int, flashing: bool):
+            if flashing:
+                return utility.make_flashing_img(get_img(index, rot, False))
+            else:
+                return pygame.transform.rotate(img_parts[index], rot)
+
+        make_img_getter = lambda i: lambda rot, flashing: get_img(i, rot, flashing)
+
         self.parts = (
             Serpent.PathTracker(
-                BodyPart(pygame.transform.scale_by(images.SERPENT_HEAD.img, self.size), 0, (game_states.WIDTH, self.y), self, self.size + 2),
+                BodyPart(make_img_getter(0), 0, (game_states.WIDTH, self.y), self, self.size + 2),
                 deque(Serpent.PathItem(0, self.pos) for _ in range(4 + self.body_part_sep))
             ),
             *(Serpent.PathTracker(
-                BodyPart(self.get_image_from_index(i), 0, (game_states.WIDTH, self.y + i * 100), self, self.size + 1),
+                BodyPart(make_img_getter(1 + self.get_image_index_from_part_index(i)), 0, (game_states.WIDTH, self.y + i * 100), self, self.size + 1),
                 deque(Serpent.PathItem(0, (self.x, self.y + i * 100)) for _ in range(self.body_part_sep))
             ) for i in range(self.body_length))
         )

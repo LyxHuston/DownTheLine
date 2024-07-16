@@ -618,11 +618,7 @@ class Body:
     @property
     def flashing_img(self):
         if self.__flashing_img is None:
-            img = pygame.Surface(self.img.get_rect().size, flags=pygame.SRCALPHA)
-            img.blit(self.img, (0, 0))
-            img.fill((255, 255, 255), special_flags=pygame.BLEND_ADD)
-            img.blit(self.img, (0, 0), None, pygame.BLEND_RGB_SUB)
-            self.__flashing_img = img
+            self.__flashing_img = utility.make_flashing_img(self.img)
         return self.__flashing_img
 
     @utility.memoize(guarantee_natural=True)
