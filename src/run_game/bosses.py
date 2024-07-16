@@ -337,7 +337,7 @@ class Serpent(Boss):
                     to_angle += adjust
                 if (
                         abs(self.x - self.target.x) > game_states.WIDTH // 6
-                        and 2 * (self.y - self.target.y) < abs(self.x - self.target.x)
+                        and abs(self.y - self.target.y) < abs(self.x - self.target.x)
                 ):  # check if has entered into about 30 degree cone
                     diving = True
             self.turn_towards(to_angle)
