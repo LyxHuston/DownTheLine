@@ -115,7 +115,7 @@ def fish_init(area):
 		for i2 in range(i + 7):
 			wave.append((entities.Fish, [area]))
 			count += 1
-		wave = [(entities.MassDelayedDeploy, (60 * 10, area, wave, register))]
+		wave = [(entities.MassDelayedDeploy, (60 * 10, wave, register))]
 	e = entities.MassDelayedDeploy(0, wave[0][1][1], wave[0][1][2], register)
 	register(e)
 	pre_compute_outlines_until(count + waves)
