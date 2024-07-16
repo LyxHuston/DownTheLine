@@ -483,11 +483,11 @@ class Serpent(Boss):
             self.y += self.area_length + 90
         self.parts = (
             Serpent.PathTracker(
-                BodyPart(pygame.transform.scale_by(images.SERPENT_HEAD.img, self.size), 0, (game_states.WIDTH, self.y), self, self.size + 1),
+                BodyPart(pygame.transform.scale_by(images.SERPENT_HEAD.img, self.size), 0, (game_states.WIDTH, self.y), self, self.size + 2),
                 deque(Serpent.PathItem(0, self.pos) for _ in range(4 + self.body_part_sep))
             ),
             *(Serpent.PathTracker(
-                BodyPart(self.get_image_from_index(i), 0, (game_states.WIDTH, self.y + i * 100), self, self.size),
+                BodyPart(self.get_image_from_index(i), 0, (game_states.WIDTH, self.y + i * 100), self, self.size + 1),
                 deque(Serpent.PathItem(0, (self.x, self.y + i * 100)) for _ in range(self.body_part_sep))
             ) for i in range(self.body_length))
         )
