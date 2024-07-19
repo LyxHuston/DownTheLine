@@ -338,9 +338,9 @@ class Entity(game_structures.Body):
 
     def colliding(self, additional_predicate: Callable[[Self], bool] = None) -> Generator[Self, Any, None]:
         predicate = (
-            lambda e: self.collide(e) and self.collide_priority >= e.immune_collide_below
+            lambda e: self.collide_priority >= e.immune_collide_below and self.collide(e)
         ) if additional_predicate is None else (
-            lambda e: additional_predicate(e) and self.collide(e) and self.collide_priority >= e.immune_collide_below
+            lambda e: self.collide_priority >= e.immune_collide_below and additional_predicate(e) and self.collide(e)
         )
         return self.all_in_range(
             self.height // 2 + Entity.biggest_radius,
@@ -2529,7 +2529,6 @@ class MassDelayedDeploy(InvulnerableEntity):
         self.entities = entities
         self.tracker = tracker
         self.deploy_call = deployed
-
 
     def final_load(self) -> None:
         super().final_load()
