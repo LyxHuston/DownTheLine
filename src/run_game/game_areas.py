@@ -810,7 +810,7 @@ class BossArea(GameArea):
         self.cooldown_ticks = 0
 
     def determine_parts(self):
-        self.make(random.choice(bosses.boss_types))
+        self.make(self.random.choice(bosses.boss_types))
 
     fields = (
         FieldOptions.Label.value(
@@ -999,7 +999,7 @@ def add_game_area():
 area_thresholds = (
     (BasicArea, 0),  # GOD room (40+) TODO
     (BasicArea, 1),  # player room (20+) TODO
-    (BasicArea, 3),  # boss room (20+) TODO
+    (BossArea, 3),  # boss room (20+)
     (MinigameArea, 6),  # minigame area (10+)
     (EnslaughtArea, 12),  # enslaught area (10+)
     (GiftArea, 18),  # gift area (4+)
