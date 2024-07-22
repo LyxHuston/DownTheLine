@@ -67,6 +67,8 @@ class Entity(game_structures.Body):
     collide_priority: int = 0
     immune_collide_below: int = 0
 
+    draw_priority = 0
+
     @property
     def alive(self) -> bool:
         return self.health > 0
@@ -519,6 +521,8 @@ class ItemEntity(InvulnerableEntity):
 
     collide_priority = 1
 
+    draw_priority = -1
+
     is_item_entity = True
 
     has_camera_mass = False
@@ -734,6 +738,8 @@ class Obstacle(Entity, track_instances=True):
     """
 
     collide_priority = 1
+
+    draw_priority = 1
 
     cost = 0
     has_camera_mass = False
@@ -1114,6 +1120,8 @@ class Fencer(Glides):
 class Projectile(Entity):
 
     collide_priority = 2
+
+    draw_priority = 2
 
     def __init__(self, img: pygame.Surface, rotation: int, pos: tuple[int, int], health: int = 1, speed: int = 1,
                  num_hit: int = 1, damage: int = 1, expiry: int = None, alliance: bool = False):
@@ -2024,6 +2032,7 @@ class Holder(Entity):
 
     def __init__(self, holding: Entity):
         self.holding: Entity = holding
+        self.draw_priority = self.holding
         super().__init__(holding.img, holding.rotation, holding.pos)
 
     def hit(self, damage: int, source):
@@ -2674,6 +2683,8 @@ class AreaStarter(AreaEdge):
 
 class PlayerEntity(Glides, CarriesItems):
 
+    draw_priority = 3
+
     allied_with_player = True
     has_camera_mass = False
 
@@ -2753,8 +2764,7 @@ class PlayerEntity(Glides, CarriesItems):
         Glides.__init__(self, pygame.image.load("./resources/player/player.png"), 0, (0, game_states.DISTANCE))
 
     def draw(self):
-        # player drawing is handled in gameboard still, to keep drawing precedence
-        pass
+        CarriesItems.draw(self)
 
     def tick(self):
         # ticks are also still handled in gameboard, to keep computation precedence

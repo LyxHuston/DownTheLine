@@ -142,6 +142,7 @@ def end():
 def clean_gameboard():
     tutorials.clear_tutorial_text()
     gameboard.heart_data.clear()
+    gameboard.DRAW_ENTITY_BOARD.clear()
     gameboard.ENTITY_BOARD.clear()
     gameboard.NEW_ENTITIES.clear()
     gameboard.PARTICLE_BOARD.clear()
@@ -293,6 +294,7 @@ def setup(with_seed: int = None, full: bool = True):
 
     clean_gameboard()
     gameboard.ENTITY_BOARD.append(game_structures.PLAYER_ENTITY)
+    gameboard.DRAW_ENTITY_BOARD.append(game_structures.PLAYER_ENTITY)
 
     if full:
         game_areas.guaranteed_type = None

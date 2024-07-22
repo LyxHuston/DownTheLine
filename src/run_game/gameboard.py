@@ -159,9 +159,14 @@ liminal_mass_factor: float = 1 / (2 * (1 / (math.exp(steepness * -0.5) + 1) - 0.
 max_tolerance: int = 2
 
 ENTITY_BOARD: list[entities.Entity] = []
+DRAW_ENTITY_BOARD: list[entities.Entity] = []
 NEW_ENTITIES: list[entities.Entity] = []
 
 PARTICLE_BOARD: set[entities.Particle] = set()
+
+
+def remove_from_hierarchy_boards(entity: entities.Entity):
+    DRAW_ENTITY_BOARD.remove(entity)
 
 
 def particle_set_tick(particle_set: set[entities.Particle]):
@@ -188,6 +193,7 @@ def filter_entities(lst: list[entities.Entity]) -> None:
             l += 1
         else:
             lst[u].die()
+            remove_from_hierarchy_boards(lst[u])
     del lst[l:]
 
 
@@ -213,6 +219,7 @@ def tick(do_tick: bool = True, draw_gui: bool = True):
             i = 0
             for entity in ENTITY_BOARD:
                 entity.despawn()
+                remove_from_hierarchy_boards(entity)
                 i += 1
                 if isinstance(entity, entities.AreaStopper):
                     break
@@ -251,6 +258,8 @@ def tick(do_tick: bool = True, draw_gui: bool = True):
         if NEW_ENTITIES:
             [entity.final_load() for entity in NEW_ENTITIES]
             ENTITY_BOARD.extend(NEW_ENTITIES)
+            DRAW_ENTITY_BOARD.extend(NEW_ENTITIES)
+            DRAW_ENTITY_BOARD.sort(key=lambda e: e.draw_priority)
             NEW_ENTITIES.clear()
         ENTITY_BOARD.sort(key=lambda e: e.y)
         filter_entities(ENTITY_BOARD)
@@ -299,14 +308,11 @@ def tick(do_tick: bool = True, draw_gui: bool = True):
     if do_tick:
         particle_set_tick(PARTICLE_BOARD)
     # entities over particles
-    for e in ENTITY_BOARD:
+    for e in DRAW_ENTITY_BOARD:
         e.draw()
     # whatever special effects an area needs
     for area in game_structures.AREA_QUEUE:
         area.draw()
-    # draw hands
-    if draw_gui:
-        entities.CarriesItems.draw(game_structures.PLAYER_ENTITY)
     if draw_gui:
         # draw distance record
         game_structures.SCREEN.blit(
