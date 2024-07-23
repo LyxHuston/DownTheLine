@@ -25,6 +25,7 @@ import logging
 import functools
 from sys import argv
 import pygame
+import collections
 
 
 def from_camel(string: str):
@@ -39,7 +40,14 @@ import pstats
 __output_lock = threading.Lock()
 
 
+__profiling_func = False
+
+
 def profile_func(func: Callable):
+    global __profiling_func
+    if __profiling_func or __debug_low_fps:
+        raise ValueError("Cannot have two profilers on at the same time!")
+    __profiling_func = True
     profile = cProfile.Profile()
     profile.disable()
 
@@ -47,6 +55,7 @@ def profile_func(func: Callable):
         with profile:
             return func(*args, **kwargs)
 
+    @atexit.register
     def output():
         profile.create_stats()
         stats = pstats.Stats(profile)
@@ -54,8 +63,6 @@ def profile_func(func: Callable):
         with __output_lock:
             print(f"{func.__name__} profile:")
             stats.print_stats()
-
-    atexit.register(output)
 
     return inner
 
@@ -377,7 +384,92 @@ keyed_down = False
 mouse_down = False
 
 
+def set_fps(fps: int | None):
+    global __fps, __millisecond_target
+    __fps = fps
+    if fps is None:
+        __millisecond_target = None
+    else:
+        __millisecond_target = math.ceil(1000 / (fps - 1)) + 1
+
+
+__fps = None
+__millisecond_target = None
+
+
+def set_game_tick(game_tick: Callable[[], None]):
+    global __game_tick
+    __game_tick = game_tick
+
+
+__game_tick: Callable[[], None] = make_simple_always(None)
+
+
+def set_debug_low_fps(debug: bool):
+    global __debug_low_fps, __debugging
+    __debug_low_fps = debug
+    if debug:
+        if __profiling_func:
+            raise ValueError("Cannot have two profilers on at the same time!")
+    else:
+        __debugging = False
+
+
+__debug_start_time: int = 0
+__debugged_fps: int = 0
+__debug_low_fps: bool = False
+__debugging: bool = False
+__debug_profile = cProfile.Profile(builtins=False)
+__debug_profile.disable()
+__past_debugged_ticks = collections.deque(False for _ in range(64))
+
+
+def dump_times():
+    with open("debug.txt", "a") as out:
+        __debug_profile.create_stats()
+        stats = pstats.Stats(__debug_profile, stream=out)
+        stats.sort_stats("cumulative")
+        out.write(f"Profiled for {__debugged_fps} ticks over {pygame.time.get_ticks() - __debug_start_time} ms\n")
+        stats.print_stats()
+
+
 def tick() -> None:
+    global __debugging, __debugged_fps, __debug_start_time, __past_debugged_ticks
+    if __debugging:
+        __debugged_fps += 1
+        with __debug_profile:
+            __game_tick()
+            __tick()
+    else:
+        __game_tick()
+        __tick()
+    milliseconds = game_structures.CLOCK.tick(__fps)
+    if __debug_low_fps:
+        over_target = milliseconds > __millisecond_target
+        __past_debugged_ticks.rotate(1)
+        __past_debugged_ticks[0] = over_target
+        if __debugging is not over_target:
+            if __debugging:
+                if __past_debugged_ticks.count(True) > 16:
+                    dump_times()
+                    print("Debug over!  Check file!")
+                else:
+                    print("Too few frames recently were debugged, not logging.")
+                __debugged_fps = 0
+            else:
+                __debug_start_time = pygame.time.get_ticks()
+                print("FPS below target!  Starting timing!")
+            __debugging = not __debugging
+
+
+@atexit.register
+def end_print_debug():
+    if __debugging:
+        print("Game ended during debug session!  Check file!")
+        dump_times()
+
+
+def __tick() -> None:
     global button_hover_keyed, keyed_down, mouse_down
     """
     function that handles game clock and frame rate
@@ -463,4 +555,3 @@ def tick() -> None:
                     break
 
     game_structures.display_screen()
-    game_structures.CLOCK.tick(60)

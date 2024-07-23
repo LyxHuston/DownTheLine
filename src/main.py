@@ -28,6 +28,14 @@ from general_use import game_structures, utility
 from run_game import gameboard
 
 
+def main_tick() -> None:
+    game_states.PLACE.tick()
+
+
+utility.set_game_tick(main_tick)
+utility.set_fps(60)
+
+
 def run():
     game_structures.switch_to_place(game_structures.PLACES.main)
 
@@ -138,7 +146,7 @@ if __name__ == "__main__":
         if args.backdrop is not None:
             backdrop = args.backdrop
 
-        game_structures.SCREEN = pygame.display.set_mode(dimens, pygame.FULLSCREEN if dimens == (0, 0) else 0)
+        game_structures.SCREEN = pygame.display.set_mode(dimens, pygame.FULLSCREEN if dimens == (0, 0) else 0, vsync=1)
 
         pygame.display.set_caption("Down the Line")
         pygame.display.set_icon(pygame.image.load("./resources/down_the_line.ico"))
@@ -158,6 +166,8 @@ if __name__ == "__main__":
 
         gameboard.heart_img.convert()
         gameboard.player_img.convert()
+
+    utility.set_debug_low_fps(args.admin and not args.profile)
 
     # prompt is never user defined
     if not prompt.endswith("()"):
