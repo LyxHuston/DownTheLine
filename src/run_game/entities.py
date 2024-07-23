@@ -2032,7 +2032,7 @@ class Holder(Entity):
 
     def __init__(self, holding: Entity):
         self.holding: Entity = holding
-        self.draw_priority = self.holding
+        self.draw_priority = self.holding.draw_priority
         super().__init__(holding.img, holding.rotation, holding.pos)
 
     def hit(self, damage: int, source):
