@@ -419,8 +419,7 @@ __debug_start_time: int = 0
 __debugged_fps: int = 0
 __debug_low_fps: bool = False
 __debugging: bool = False
-__debug_profile = cProfile.Profile(builtins=False)
-__debug_profile.disable()
+__debug_profile: cProfile.Profile | None = None
 __past_debugged_ticks = collections.deque(False for _ in range(64))
 
 
@@ -434,7 +433,7 @@ def dump_times():
 
 
 def tick() -> None:
-    global __debugging, __debugged_fps, __debug_start_time, __past_debugged_ticks
+    global __debugging, __debugged_fps, __debug_start_time, __past_debugged_ticks, __debug_profile
     if __debugging:
         __debugged_fps += 1
         with __debug_profile:
@@ -457,6 +456,8 @@ def tick() -> None:
                     print("Too few frames recently were debugged, not logging.")
                 __debugged_fps = 0
             else:
+                __debug_profile = cProfile.Profile(builtins=False)
+                __debug_profile.disable()
                 __debug_start_time = pygame.time.get_ticks()
                 print("FPS below target!  Starting timing!")
             __debugging = not __debugging
