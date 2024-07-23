@@ -524,8 +524,10 @@ class Serpent(Boss):
         )
         parts: tuple[BodyPart, ...] = tuple(part.body_part for part in self.parts)
         part: BodyPart
-        for part in parts:
+        num = len(parts)
+        for i, part in enumerate(parts):
             part.final_load()
+            part.draw_priority = 1 - i / num
         gameboard.NEW_ENTITIES.extend(parts)
 
 
