@@ -43,7 +43,6 @@ def run():
         try:  # try catch to see if the area knows how to handle the error
             while game_states.RUNNING:  # main loop
                 game_structures.SCREEN.fill(backdrop)
-                game_states.PLACE.tick()
                 utility.tick()
             game_states.PLACE.exit()
         except Exception as E:
