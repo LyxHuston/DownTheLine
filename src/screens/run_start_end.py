@@ -258,27 +258,26 @@ def setup(with_seed: int = None, full: bool = True):
 
     game_states.DISTANCE = 100
     game_states.BOTTOM = 0
-    if full:
-        game_states.RECORD_DISTANCE = 0
-        game_states.LAST_AREA_END = 0
-        # player state management
-        game_states.HEALTH = 5
-        game_states.LAST_HEAL = 20
-        game_states.LAST_DIRECTION = 1
-        game_structures.PLAYER_ENTITY.start_glide(
-            0,
-            0,
-            0,
-            0
-        )
-        # screen shake management
-        game_states.X_DISPLACEMENT = 0
-        game_states.Y_DISPLACEMENT = 0
-        game_states.SHAKE_DURATION = 0
-        game_states.X_LIMIT = 0
-        game_states.Y_LIMIT = 0
-        game_states.X_CHANGE = 0
-        game_states.Y_CHANGE = 0
+    game_states.RECORD_DISTANCE = 0
+    game_states.LAST_AREA_END = 0
+    # player state management
+    game_states.HEALTH = 5
+    game_states.LAST_HEAL = 20
+    game_states.LAST_DIRECTION = 1
+    game_structures.PLAYER_ENTITY.start_glide(
+        0,
+        0,
+        0,
+        0
+    )
+    # screen shake management
+    game_states.X_DISPLACEMENT = 0
+    game_states.Y_DISPLACEMENT = 0
+    game_states.SHAKE_DURATION = 0
+    game_states.X_LIMIT = 0
+    game_states.Y_LIMIT = 0
+    game_states.X_CHANGE = 0
+    game_states.Y_CHANGE = 0
     # screen
     game_states.CAMERA_BOTTOM = game_states.DISTANCE - game_states.CAMERA_THRESHOLDS[0]
     if full:
@@ -290,7 +289,7 @@ def setup(with_seed: int = None, full: bool = True):
 
         abilities.last_dash_time = -1 - abilities.dash_cooldown
 
-        game_structures.HANDS[:] = None, None
+    game_structures.HANDS[:] = None, None
 
     clean_gameboard()
     gameboard.ENTITY_BOARD.append(game_structures.PLAYER_ENTITY)
