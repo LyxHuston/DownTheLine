@@ -932,7 +932,7 @@ def add_game_area():
             35,
             images.SIMPLE_SWORD.img,
             images.SIMPLE_SWORD.outlined_img,
-            (-images.SIMPLE_SWORD.outlined_img.get_width() // 4, 60)
+            (images.SIMPLE_SWORD.outlined_img.get_width() // 4, 60)
         )))
 
         # area.entity_list.append(entities.ItemEntity(items.simple_stab(
@@ -951,7 +951,7 @@ def add_game_area():
     elif guaranteed_type is not None:
         area = guaranteed_type(determinator, game_states.LAST_AREA + guaranteed_type.first_allowed_spawn)
     elif game_states.LAST_AREA == 1:
-        area = GameArea(1, 450, determinator, customized=True)
+        area = GameArea(1, game_states.HEIGHT - 450, determinator, customized=True)
         area.entity_list.append(entities.Obstacle(pos=(0, area.length), health=5))
         area.entity_list.append(entities.Slime((0, area.length // 2), area.random.randint(0, 2 ** 32 - 1)))
     elif game_states.LAST_AREA == 2:
@@ -978,7 +978,7 @@ def add_game_area():
             10,
             images.SIMPLE_SPEAR.img,
             images.SIMPLE_SPEAR.outlined_img,
-            (-images.SIMPLE_SPEAR.outlined_img.get_width() // 4, 180),
+            (-images.SIMPLE_SPEAR.outlined_img.get_width(), 180),
             2
         )))
     else:
