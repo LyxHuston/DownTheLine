@@ -1570,7 +1570,7 @@ class Lazer(InvulnerableEntity):
 
     def final_load(self) -> None:
         [entity.final_load() for entity in self.ends]
-        gameboard.ENTITY_BOARD.extend(self.ends)
+        gameboard.NEW_ENTITIES.extend(self.ends)
         super().final_load()
 
 
