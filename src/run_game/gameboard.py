@@ -252,8 +252,6 @@ def tick(do_tick: bool = True, draw_gui: bool = True):
             PARTICLE_BOARD.add(entities.DASH_RIPPLE_PARTICLES(
                 (0, game_states.DISTANCE)
             ))
-        game_structures.PLAYER_ENTITY.glide_tick()
-        entities.CarriesItems.tick(game_structures.PLAYER_ENTITY)
         enforce_goal: int | None = None
         if NEW_ENTITIES:
             [entity.final_load() for entity in NEW_ENTITIES]
@@ -264,6 +262,8 @@ def tick(do_tick: bool = True, draw_gui: bool = True):
         ENTITY_BOARD.sort(key=lambda e: e.y)
         filter_entities(ENTITY_BOARD)
         entities.Entity.biggest_radius = max(ENTITY_BOARD, key=entities.Entity.radius).radius()
+        game_structures.PLAYER_ENTITY.glide_tick()
+        entities.CarriesItems.tick(game_structures.PLAYER_ENTITY)
         area: game_areas.GameArea
         for area in game_structures.AREA_QUEUE:
             area.tick()
