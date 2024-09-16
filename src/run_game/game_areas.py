@@ -802,12 +802,13 @@ class BossArea(GameArea):
     required_wait_interval = 15
 
     def __init__(self, determiner, count):
-        self.end_wall = entities.InvulnerableObstacle(pos=(0, self.length), health=1)
+        length = game_states.HEIGHT * 4
+        self.end_wall = entities.InvulnerableObstacle(pos=(0, length), health=1)
         self.difficulty = count
         self.boss: bosses.Boss | None = None
         self.state = 0
         self.cooldown_ticks = 0
-        super(BossArea, self).__init__(count, game_states.HEIGHT * 4, seed=determiner)
+        super(BossArea, self).__init__(count, length, seed=determiner)
 
     def determine_parts(self):
         self.make(self.random.choice(bosses.boss_types))
