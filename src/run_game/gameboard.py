@@ -351,6 +351,7 @@ def tick(do_tick: bool = True, draw_gui: bool = True):
             # print(total, mass, goal, game_states.CAMERA_BOTTOM)
         else:
             goal = game_states.DISTANCE + game_states.HEIGHT * game_states.LAST_DIRECTION * 1.5
+            total = 0.125 * (goal - game_states.CAMERA_BOTTOM) / game_states.HEIGHT
 
         # if tutorials.display is not None:
         #     goal -= 2 * tutorials.display.get_height()
