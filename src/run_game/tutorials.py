@@ -54,11 +54,21 @@ up_current = 0
 
 
 display: pygame.Surface | None = None
+
+tutorial_overlay: pygame.Surface | None = None
+
 display_height = 0
 
 WAIT_TIMES: dict[str, int | float] = {".": 12, ",": 8}
 
 switch_ratio: float = 2/3
+
+
+def make_overlay():
+    global tutorial_overlay
+    tutorial_overlay = pygame.Surface(game_structures.SCREEN.get_size(), pygame.SRCALPHA)
+    tutorial_overlay.convert()
+    tutorial_overlay.fill((0, 0, 0, 128))
 
 
 def next_pressed():
@@ -142,6 +152,15 @@ def tick(do_tick):
     :return:
     """
     global display, typing, typing_cooldown, current_text, up_current, on, display_height
+
+    if game_states.TUTORIAL_FADE:
+        print(game_states.TUTORIAL_FADE)
+        tutorial_overlay.fill((255, 255, 255, game_states.TUTORIAL_FADE * 3 ))
+        game_structures.SCREEN.blit(
+            tutorial_overlay,
+            (0, 0)
+        )
+
     if display is not None:
         # if switches.TUTORIAL_TEXT_POSITION:
         #     if game_states.DISTANCE - game_states.CAMERA_BOTTOM < (1 - switch_ratio) * game_states.HEIGHT:
@@ -169,8 +188,25 @@ def tick(do_tick):
             (game_states.WIDTH, line_y),
             10
         )
+
     if not do_tick:
         return
+    if display is not None:
+        if game_states.TUTORIAL_FADE_TRACKER < 4 or game_states.TUTORIAL_FADE_COUNTER == 0:
+            game_states.TUTORIAL_FADE += 1
+            game_states.TUTORIAL_FADE_COUNTER += 1
+            if game_states.TUTORIAL_FADE_COUNTER >= game_states.TUTORIAL_FADE_TRACKER:
+                game_states.TUTORIAL_FADE_COUNTER = 0
+                game_states.TUTORIAL_FADE_TRACKER += 0.5
+    else:
+        if game_states.TUTORIAL_FADE_COUNTER > 0 or game_states.TUTORIAL_FADE_TRACKER > 0:
+            game_states.TUTORIAL_FADE -= 1
+            if game_states.TUTORIAL_FADE_COUNTER <= 0:
+                game_states.TUTORIAL_FADE_TRACKER -= 0.5
+                game_states.TUTORIAL_FADE_COUNTER = round(game_states.TUTORIAL_FADE_TRACKER)
+            game_states.TUTORIAL_FADE_COUNTER = max(game_states.TUTORIAL_FADE_COUNTER - 1, 0)
+        else:
+            game_states.TUTORIAL_FADE = 0
     if typing:
         if typing_cooldown <= 0:
             current_text = on.text[0:len(current_text) + 1]

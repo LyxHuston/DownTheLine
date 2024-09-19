@@ -71,3 +71,7 @@ PRINT_SEED: bool = False
 RUN_START = None
 # current run customized?
 CUSTOM_RUN = None
+# tutorial text
+TUTORIAL_FADE = 0
+TUTORIAL_FADE_TRACKER = 0
+TUTORIAL_FADE_COUNTER = 0

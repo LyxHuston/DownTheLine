@@ -95,11 +95,16 @@ def pause():
             holder.fit_y(100)
 
 
-def tick(do_tick: bool = None):
+def tick(do_tick: bool = True):
+    game_tick(do_tick and game_states.TUTORIAL_FADE_COUNTER == 0)
+    tutorials.tick(do_tick)
+
+
+def game_tick(do_tick: bool = True):
     if paused:
         gameboard.tick(False)
         return
-    if do_tick is None or do_tick:
+    if do_tick:
         if game_states.INVULNERABILITY_LEFT > 0:
             game_states.INVULNERABILITY_LEFT -= 1
         if game_states.HEALTH <= 0 and game_states.PLACE is screen:
@@ -133,7 +138,7 @@ def tick(do_tick: bool = None):
         #             (0, game_states.DISTANCE)
         #         ))
         #     game_states.DISTANCE += game_states.GLIDE_SPEED * game_states.GLIDE_DIRECTION
-        elif do_tick is None:
+        elif game_states.HEALTH > 0:
             pressed = pygame.key.get_pressed()
             direction = pressed[Inputs.up_input] - pressed[Inputs.down_input]
             if abs(direction) == 1:
@@ -144,7 +149,7 @@ def tick(do_tick: bool = None):
             game_states.DISTANCE = game_states.BOTTOM
         if game_states.DISTANCE > game_states.RECORD_DISTANCE:
             game_states.RECORD_DISTANCE = game_states.DISTANCE
-    gameboard.tick(do_tick if isinstance(do_tick, bool) else True)
+    gameboard.tick(do_tick)
 
 
 def item_input_catch(num: int) -> None:

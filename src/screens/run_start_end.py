@@ -280,6 +280,11 @@ def setup(with_seed: int = None, full: bool = True):
     game_states.Y_CHANGE = 0
     # screen
     game_states.CAMERA_BOTTOM = game_states.DISTANCE - game_states.CAMERA_THRESHOLDS[0]
+    # tutorials
+    game_states.TUTORIAL_FADE = 0
+    game_states.TUTORIAL_FADE_COUNTER = 0
+    game_states.TUTORIAL_FADE_TRACKER = 0
+    tutorials.make_overlay()
     if full:
         # area management
         game_states.AREAS_PASSED = 0
