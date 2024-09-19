@@ -154,7 +154,6 @@ def tick(do_tick):
     global display, typing, typing_cooldown, current_text, up_current, on, display_height
 
     if game_states.TUTORIAL_FADE:
-        print(game_states.TUTORIAL_FADE)
         tutorial_overlay.fill((255, 255, 255, game_states.TUTORIAL_FADE * 3 ))
         game_structures.SCREEN.blit(
             tutorial_overlay,
