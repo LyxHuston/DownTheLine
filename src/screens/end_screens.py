@@ -48,7 +48,6 @@ def end_maker(reason: run_start_end.RunEndReasons, background: tuple[int, int, i
         overlay = pygame.Surface(game_structures.SCREEN.get_size(), pygame.SRCALPHA)
         overlay.convert()
 
-        run_start_end.log_run(reason)
 
         game_structures.BUTTONS.add_button(
             game_structures.Button.make_text_button("Press Space or click to skip", 40, (game_states.WIDTH, 0), skip_wait,
@@ -60,6 +59,7 @@ def end_maker(reason: run_start_end.RunEndReasons, background: tuple[int, int, i
             if area.end_coordinate >= game_states.DISTANCE:
                 break
             run_start_end.log_area(area)
+        run_start_end.log_run(reason)
 
         fade_counter = 0
         tick_counter = 0
