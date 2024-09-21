@@ -191,6 +191,9 @@ def event_catcher(event: pygame.event.Event) -> bool:
         return False
     if event.type == pygame.WINDOWFOCUSLOST:
         pause()
+        return True
+    if game_states.TUTORIAL_FADE == 18:
+        return False
     if event.type == pygame.KEYDOWN:
         if event.key == Inputs.dash:
             abilities.dash_input_catch(tick_counter)
