@@ -229,7 +229,8 @@ class Serpent(Boss):
                 ),
                 Serpent.MovementMakerEntry(
                     self.make_wave_movement,
-                    1
+                    1,
+                    lambda: abs(self.y - self.target.y) > game_states.HEIGHT // 4
                 )
             )
         }
