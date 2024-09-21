@@ -193,6 +193,10 @@ def event_catcher(event: pygame.event.Event) -> bool:
         pause()
         return True
     if game_states.TUTORIAL_FADE == 18:
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_RETURN:
+                tutorials.next_pressed()
+                return True
         return False
     if event.type == pygame.KEYDOWN:
         if event.key == Inputs.dash:
