@@ -709,6 +709,8 @@ class CarriesItems:
         if items.swappable(self.hands[hand]):
             if isinstance(item, Entity) and item.is_item_entity:
                 item = item.pick_up()
+                if item is None:
+                    return False
             if self.hands[hand] is not None:
                 self.hands[hand].pos = self.pos
                 gameboard.NEW_ENTITIES.append(ItemEntity(self.hands[hand]))
