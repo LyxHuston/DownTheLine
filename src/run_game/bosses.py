@@ -180,29 +180,15 @@ class Serpent(Boss):
         )
     )
 
-    def spawn_babies(self):
-        if self.size < 2:
-            return
-        num = min(math.isqrt(self.size), 3)
-        spawn_points: list[Serpent.PathTracker] = self.random.choices(self.parts[3:-4], k=num)
-        area = tuple(a for a in game_structures.AREA_QUEUE if a.start_coordinate == self.area_start)[0]
-        gameboard.NEW_ENTITIES.extend(
-            Serpent(area, 1, point.path_parts[1].rotation, point.body_part.pos, True)
-            for point in spawn_points
-        )
-
     def hit(self, damage: int, source) -> bool:
         if super().hit(damage, source):
-            if damage > 0 and self.health + damage > self.max_health // 2 >= self.health:
-                self.spawn_babies()
             if damage > 0 and self.health + damage > 0 >= self.health:
                 gameboard.NEW_ENTITIES.append(SerpentDeathHandler(self))
             return True
         return False
 
-    def __init__(self, area, size: int, rot=0, pos=(0, 0), baby: bool = False):
+    def __init__(self, area, size: int, rot=0, pos=(0, 0)):
         super().__init__(images.EMPTY, rot, pos)
-        self.baby = baby  # if it's a baby, don't adjust area params
         self.parts: tuple[Serpent.PathTracker, ...] | None = None
         self.max_health = size * 10 + 20
         self.health = self.max_health
@@ -493,10 +479,9 @@ class Serpent(Boss):
 
     def final_load(self) -> None:
         super().final_load()
-        if not self.baby:
-            self.area_start = self.y
-            self.area_end = self.area_start + self.area_length
-            self.y += self.area_length + 90
+        self.area_start = self.y
+        self.area_end = self.area_start + self.area_length
+        self.y += self.area_length + 90
 
         img_parts = (
             pygame.transform.scale_by(images.SERPENT_HEAD.img, self.size),
