@@ -153,7 +153,13 @@ def game_tick(do_tick: bool = True):
 
 
 def item_input_catch(num: int) -> None:
-    if game_structures.HANDS[num] is None or pygame.key.get_pressed()[Inputs.prefer_pickup]:
+    if game_structures.HANDS[num] is None:
+        pickup_to_hand(num)
+        return
+    if game_structures.HANDS[1 - num] is None:
+        pickup_to_hand(1 - num)
+        return
+    if pygame.key.get_pressed()[Inputs.prefer_pickup]:
         pickup_to_hand(num)
         return
     if items.prevent_other_use(game_structures.HANDS[1 - num]):
