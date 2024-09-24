@@ -327,15 +327,6 @@ def tick(do_tick: bool = True, draw_gui: bool = True):
         abilities.draw_dash_icon(ingame.tick_counter)
         # draw hearts
         draw_hearts(do_tick)
-    # draw player
-    game_structures.SCREEN.blit(
-        pygame.transform.flip(
-            player_img,
-            False,
-            game_states.LAST_DIRECTION == -1
-        ),
-        (game_structures.to_screen_x(-32), game_structures.to_screen_y(game_states.DISTANCE + 32))
-    )
     # camera movement
     if do_tick:
         camera_move //= 2

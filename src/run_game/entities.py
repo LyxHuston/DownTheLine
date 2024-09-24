@@ -2708,6 +2708,10 @@ class PlayerEntity(Glides, CarriesItems):
         game_states.HEALTH = max(val, 0)
 
     @property
+    def alive(self):
+        return True
+
+    @property
     def rotation(self):
         return (game_states.LAST_DIRECTION == 1) * 180
 
@@ -2768,6 +2772,14 @@ class PlayerEntity(Glides, CarriesItems):
 
     def draw(self):
         CarriesItems.draw(self)
+        game_structures.SCREEN.blit(
+            pygame.transform.flip(
+                self.img,
+                False,
+                game_states.LAST_DIRECTION == -1
+            ),
+            (game_structures.to_screen_x(-32), game_structures.to_screen_y(self.y + 32))
+        )
 
     def tick(self):
         # ticks are also still handled in gameboard, to keep computation precedence
