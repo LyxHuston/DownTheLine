@@ -81,8 +81,8 @@ def pause():
             button = game_structures.Button.make_text_button(
                 description_text,
                 64,
-                max_line_pixels=width,
-                enforce_width=width,
+                max_line_pixels=width - 40,
+                enforce_width=width - 40,
                 background_color=(0, 0, 0, 0),
                 outline_color=(255, 255, 255),
                 center=(20 + (width - 40) * i, 128),
