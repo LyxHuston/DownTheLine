@@ -1466,13 +1466,16 @@ class Lazer(InvulnerableEntity):
         )
     )
 
+    def make_lazer_end(self, rotation, pos):
+        return ComponentEntity(images.LAZER_END.img, self, rotation, pos)
+
     def __init__(self, y: int, charge_time: int, duration: int, seed, repeats: int | None = 1, damage: int = 1):
         # print("new lazer at:", y)
         super().__init__(images.EMPTY, 0, (0, y))
         if not hasattr(self, "ends"):
             self.ends = [
-                ComponentEntity(images.LAZER_END.img, self, 90, (-game_states.WIDTH // 2 + 100, y)),
-                ComponentEntity(images.LAZER_END.img, self, 270, (game_states.WIDTH // 2 - 100, y))
+                self.make_lazer_end(90, (-game_states.WIDTH // 2 + 100, y)),
+                self.make_lazer_end(270, (-game_states.WIDTH // 2 - 100, y))
             ]
         self.random = random.Random(seed)
         self.charge_time = charge_time
@@ -1482,6 +1485,25 @@ class Lazer(InvulnerableEntity):
         self.repeats = repeats
         self.hit = False
         self.damage = damage
+
+    def start_firing(self):
+        if self.firing:
+            return
+        if self.repeats is not None:
+            self.repeats -= 1
+        self.cooldown = 0
+        self.firing = True
+
+    def stop_firing(self):
+        if not self.firing:
+            return
+        if self.repeats is not None and self.repeats <= 0:
+            for kill_end in self.ends:
+                kill_end.alive = False
+            self.alive = False
+        self.cooldown = 0
+        self.hit = False
+        self.firing = False
 
     def tick(self):
         for end in self.ends:  # if an end was killed, kill the whole thing
@@ -1505,14 +1527,7 @@ class Lazer(InvulnerableEntity):
                 if self.hit:
                     game_structures.PLAYER_ENTITY.hit(self.damage, end2)
             if self.cooldown >= self.duration:
-                if self.repeats is not None and self.repeats <= 0:
-                    for kill_end in self.ends:
-                        kill_end.alive = False
-                    self.alive = False
-                    return
-                self.cooldown = 0
-                self.hit = False
-                self.firing = False
+                self.stop_firing()
         else:
             if self.cooldown % 3 == 0:
                 speed = 5 * self.cooldown / self.charge_time
@@ -1525,10 +1540,7 @@ class Lazer(InvulnerableEntity):
                         rot
                     ))
             if self.cooldown >= self.charge_time:
-                if self.repeats is not None:
-                    self.repeats -= 1
-                self.cooldown = 0
-                self.firing = True
+                self.start_firing()
         return True
 
     def draw(self):
