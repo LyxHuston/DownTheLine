@@ -616,4 +616,50 @@ def bounce_1(num: float) -> float:
     return 1 - abs(num % 2 - 1)
 
 
+class Star(Boss):
+
+    def __init__(self, y: int, layers: int):
+        super().__init__(pygame.Surface((60, 60)), 0, (0, y))
+        self.max_health = 25
+        self.health = 25
+        self.layers: list[entities.Lazer] = []
+        radius: float = 128
+        for i in range(layers):
+            n = i + 3
+            new_lazer: entities.RotatingLazer = entities.RotatingLazer(
+                0, radius, n, self.pos, 240, 240, 0
+            )
+            self.layers.append(new_lazer)
+            new_lazer.set_momentum(4.5 / n * (-1 if (n % 4) // 2 == 0 else 1))
+            if i % 2 == 0:
+                new_lazer.start_firing()
+            else:
+                new_lazer.stop_firing()
+            radius /= math.cos(math.pi / n)
+
+    @classmethod
+    def make(cls, area) -> Self:
+        min_size = max(min(2, area.difficulty // 15), 1)
+
+        max_size = min(max(2, (math.isqrt(area.difficulty) + 2) // 3), 5)
+
+        return cls(area.length, 2 + min(area.random.randint(min_size, max_size) for _ in range(2)))
+
+    def final_load(self) -> None:
+        super().final_load()
+        gameboard.NEW_ENTITIES.extend(self.layers)
+
+    def die(self):
+        for layer in self.layers:
+            layer.repeats = 0
+
+    def tick(self) -> None:
+        self.y += 1 if self.y < game_structures.PLAYER_ENTITY.y else -1
+        for layer in self.layers:
+            layer.pos = self.pos
+
+    def draw(self) -> None:
+        pass
+
+
 boss_types = game_structures.recursive_subclasses(Boss)
