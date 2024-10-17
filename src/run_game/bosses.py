@@ -180,12 +180,8 @@ class Serpent(Boss):
         )
     )
 
-    def hit(self, damage: int, source) -> bool:
-        if super().hit(damage, source):
-            if damage > 0 and self.health + damage > 0 >= self.health:
-                gameboard.NEW_ENTITIES.append(SerpentDeathHandler(self))
-            return True
-        return False
+    def die(self):
+        gameboard.NEW_ENTITIES.append(SerpentDeathHandler(self))
 
     def __init__(self, area, size: int, rot=0, pos=(0, 0)):
         super().__init__(images.EMPTY, rot, pos)
