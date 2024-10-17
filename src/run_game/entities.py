@@ -1534,10 +1534,11 @@ class Lazer(InvulnerableEntity):
                 speed = 5 * self.cooldown / self.charge_time
                 spread = round(90 * (1 - (self.cooldown / self.charge_time) ** 3))
                 for end in self.ends:
-                    rot = end.rotation + self.random.randint(-spread, spread)
+                    rot = math.radians(end.rotation + self.random.randint(-spread, spread))
+                    end_rot = math.radians(end.rotation)
                     gameboard.PARTICLE_BOARD.add(STEAM_PARTICLES(
-                        (end.x + round(10 * math.sin(math.radians(end.rotation))), end.y - round(10 * math.cos(math.radians(end.rotation)))),
-                        (round(speed * math.sin(math.radians(rot))), round(speed * -1 * math.cos(math.radians(rot)))),
+                        (end.x + round(10 * math.sin(end_rot)), end.y - round(10 * math.cos(end_rot))),
+                        (round(speed * math.sin(rot)), round(speed * -1 * math.cos(rot))),
                         rot
                     ))
             if self.cooldown >= self.charge_time:
