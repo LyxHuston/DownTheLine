@@ -1668,6 +1668,36 @@ class PathedLazer(Lazer):
         super().tick()
 
 
+class RotatingLazer(Lazer):
+
+    def __init__(
+            self, rotation: float, radius: float, points: int, pos: tuple[int, int], charge_time: int, duration: int, seed
+    ):
+        super().__init__(pos[1], charge_time, duration, seed, repeats=None)
+        self.ends = []
+        self.rotation: float = rotation
+        self.rad: float = radius
+        self.rot_vel: float = 0
+        self.ends.extend(self.make_lazer_end(0, (0, 0)) for _ in range(points))
+        self.reposition_ends()
+
+    def set_momentum(self, rotation_change: float):
+        self.rot_vel = rotation_change
+
+    def reposition_ends(self):
+        turn_amount = 360 / len(self.ends)
+        for i, end in enumerate(self.ends):
+            rot = self.rotation + turn_amount * i
+            theta = math.radians(rot)
+            end.pos = (self.x + round(self.rad * math.sin(theta)), self.y + round(self.rad * math.cos(theta)))
+            end.rotation = round(-rot)
+
+    def tick(self):
+        self.rotation += self.rot_vel
+        self.reposition_ends()
+        super().tick()
+
+
 class ComponentEntity(Entity):
     """
     Any entity that is only a component of another, larger body.  Like lazer ends.
