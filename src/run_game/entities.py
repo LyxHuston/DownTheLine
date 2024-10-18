@@ -1519,7 +1519,7 @@ class Lazer(InvulnerableEntity):
                 for i in range(len(self.ends)):
                     end1 = end2
                     end2 = self.ends[i]
-                    if (end1.x < 0) is (end2.x > 0):
+                    if (end1.x < 0) is not (end2.x < 0):
                         intercept = end2.y - end2.x * (end1.y - end2.y) / (end1.x - end2.x)  # hit left side
                         if abs(intercept - game_states.DISTANCE) < 32:
                             game_structures.begin_shake(12, (8, 8), (-2, 3))
@@ -1551,7 +1551,7 @@ class Lazer(InvulnerableEntity):
             for i in range(len(self.ends)):
                 end1 = end2
                 end2 = self.ends[i]
-                if (end1.x < 0) is (end2.x > 0):
+                if (end1.x < 0) is not (end2.x < 0):
                     intercept = round(end2.y - end2.x * (end1.y - end2.y) / (end1.x - end2.x))  # hit left side
                     pygame.draw.circle(
                         game_structures.SCREEN,
@@ -1577,7 +1577,7 @@ class Lazer(InvulnerableEntity):
             for i in range(len(self.ends)):
                 end1 = end2
                 end2 = self.ends[i]
-                if (end1.x < 0) is (end2.x > 0):
+                if (end1.x < 0) is not (end2.x < 0):
                     intercept = round(end2.y - end2.x * (end1.y - end2.y) / (end1.x - end2.x))  # hit left side
                     pygame.draw.circle(
                         game_structures.SCREEN,
