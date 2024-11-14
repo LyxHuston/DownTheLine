@@ -632,7 +632,7 @@ class Star(Boss):
         for i in range(layers):
             n = i + 3
             new_lazer: entities.RotatingLazer = entities.RotatingLazer(
-                0, radius, n, self.pos, 240, 240, 0, halt_dashes=True
+                0, radius, n, self.pos, 250, 230, 0, halt_dashes=True
             )
             self.layers.append(new_lazer)
             self.layer_radiuses.append(radius)
