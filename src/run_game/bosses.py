@@ -618,19 +618,25 @@ def bounce_1(num: float) -> float:
 
 class Star(Boss):
 
+    pulse_difference = 20
+
     def __init__(self, y: int, layers: int):
         super().__init__(pygame.Surface((60, 60)), 0, (0, y))
-        self.max_health = 25
-        self.health = 25
+        self.max_health: int = 16
+        self.health: int = 16
         self.layers: list[entities.Lazer] = []
+        self.layer_radiuses: list[float] = []
+        self.pulses = [(0, 0) for _ in range(self.pulse_difference * (layers - 1) + 1)]
+        self.pulse = (0, 1)
         radius: float = 128
         for i in range(layers):
             n = i + 3
             new_lazer: entities.RotatingLazer = entities.RotatingLazer(
-                0, radius, n, self.pos, 240, 240, 0
+                0, radius, n, self.pos, 240, 240, 0, halt_dashes=True
             )
             self.layers.append(new_lazer)
-            new_lazer.set_momentum(4.5 / n * (-1 if (n % 4) // 2 == 0 else 1))
+            self.layer_radiuses.append(radius)
+            new_lazer.set_momentum(3 / math.log2(n) ** 1.5 * (-1 if (n % 4) // 2 == 0 else 1))
             if i % 2 == 0:
                 new_lazer.start_firing()
             else:
@@ -655,8 +661,15 @@ class Star(Boss):
 
     def tick(self) -> None:
         self.y += 1 if self.y < game_structures.PLAYER_ENTITY.y else -1
-        for layer in self.layers:
+        pulse = self.pulse
+        for i in range(len(self.pulses)):
+            pulse, self.pulses[i] = self.pulses[i], pulse
+        for i in range(len(self.layers)):
+            pulse, factor = self.pulses[i * self.pulse_difference]
+            radius = (self.layer_radiuses[i] + pulse) * factor
+            layer = self.layers[i]
             layer.pos = self.pos
+            layer.rad = radius
 
     def draw(self) -> None:
         pass
