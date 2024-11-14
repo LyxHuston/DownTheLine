@@ -1469,7 +1469,10 @@ class Lazer(InvulnerableEntity):
     def make_lazer_end(self, rotation, pos):
         return ComponentEntity(images.LAZER_END.img, self, rotation, pos)
 
-    def __init__(self, y: int, charge_time: int, duration: int, seed, repeats: int | None = 1, damage: int = 1):
+    def __init__(
+            self, y: int, charge_time: int, duration: int, seed, repeats: int | None = 1, damage: int = 1,
+            halt_dashes: bool = False
+    ):
         # print("new lazer at:", y)
         super().__init__(images.EMPTY, 0, (0, y))
         if not hasattr(self, "ends"):
@@ -1485,6 +1488,7 @@ class Lazer(InvulnerableEntity):
         self.repeats = repeats
         self.hit = False
         self.damage = damage
+        self.halt_dashes = halt_dashes
 
     def start_firing(self):
         if self.firing:
@@ -1591,12 +1595,17 @@ class Lazer(InvulnerableEntity):
         gameboard.NEW_ENTITIES.extend(self.ends)
         super().final_load()
 
+    def damage_player(self):
+        if self.halt_dashes:
+            print("Halting player")
+            glide_player(0, 0, 0, 0)
+
 
 class TrackingLazer(Lazer, use_parents_fields=True):
 
     def __init__(self, y: int | Literal[Lazer.TOP, Lazer.BOTTOM], charge_time: int, duration: int, seed: int,
-                 repeats: int | None = 1, damage: int = 1):
-        super().__init__(self._to_y(y), charge_time, duration, seed, repeats, damage)
+                 repeats: int | None = 1, damage: int = 1, halt_dashes: bool = False):
+        super().__init__(self._to_y(y), charge_time, duration, seed, repeats, damage, halt_dashes)
         self.velocity = 0
 
     def tick(self):
@@ -1643,9 +1652,10 @@ class PathedLazer(Lazer):
     )
 
     def __init__(
-            self, ys: list[int | Literal[Lazer.TOP, Lazer.BOTTOM]], charge_time: int, duration: int, seed, damage: int = 1
+            self, ys: list[int | Literal[Lazer.TOP, Lazer.BOTTOM]], charge_time: int, duration: int, seed,
+            damage: int = 1, halt_dashes: bool = False
     ):
-        super().__init__(self._to_y(ys[0]), charge_time, duration, seed, None, damage)
+        super().__init__(self._to_y(ys[0]), charge_time, duration, seed, None, damage, halt_dashes)
         self.velocity = 0
         self.dest = ys[1]
         self.on = 1
@@ -1671,14 +1681,14 @@ class PathedLazer(Lazer):
 class RotatingLazer(Lazer):
 
     def __init__(
-            self, rotation: float, radius: float, points: int, pos: tuple[int, int], charge_time: int, duration: int, seed
+            self, rotation: float, radius: float, points: int, pos: tuple[int, int], charge_time: int, duration: int,
+            seed, damage: int = 1, halt_dashes: bool = False
     ):
-        super().__init__(pos[1], charge_time, duration, seed, repeats=None)
-        self.ends = []
+        self.ends = [self.make_lazer_end(0, (0, 0)) for _ in range(points)]
+        super().__init__(pos[1], charge_time, duration, seed, None, damage, halt_dashes)
         self.rotation: float = rotation
         self.rad: float = radius
         self.rot_vel: float = 0
-        self.ends.extend(self.make_lazer_end(0, (0, 0)) for _ in range(points))
         self.reposition_ends()
 
     def set_momentum(self, rotation_change: float):
@@ -1716,6 +1726,9 @@ class ComponentEntity(Entity):
     @alive.setter
     def alive(self, val):
         self.__alive = val
+
+    def damage_player(self):
+        self.parent.damage_player()
 
 
 class Fish(Glides, track_instances=True):
