@@ -620,14 +620,25 @@ class Star(Boss):
 
     pulse_difference = 20
 
-    def __init__(self, y: int, layers: int):
+    def __init__(self, y: int, layers: int, seed: int):
         super().__init__(pygame.Surface((60, 60)), 0, (0, y))
+        self.random = random.Random(seed)
+        self.excitement: int = 0
+        self.retracting: bool = False
+        self.tick_count: int = 0
         self.max_health: int = 16
         self.health: int = 16
         self.layers: list[entities.Lazer] = []
         self.layer_radiuses: list[float] = []
         self.pulses = [(0, 0) for _ in range(self.pulse_difference * (layers - 1) + 1)]
         self.pulse = (0, 1)
+
+        self.points = [
+            [(0, 0) for _ in range(i)]
+            for
+            i in [5, 7, 8]
+        ]
+
         radius: float = 128
         for i in range(layers):
             n = i + 3
@@ -649,7 +660,11 @@ class Star(Boss):
 
         max_size = min(max(2, (math.isqrt(area.difficulty) + 2) // 3), 5)
 
-        return cls(area.length, 2 + min(area.random.randint(min_size, max_size) for _ in range(2)))
+        return cls(
+            area.length,
+            2 + min(area.random.randint(min_size, max_size) for _ in range(2)),
+            area.get_next_seed()
+        )
 
     def final_load(self) -> None:
         super().final_load()
@@ -660,8 +675,24 @@ class Star(Boss):
             layer.repeats = 0
 
     def tick(self) -> None:
+        self.tick_count = (self.tick_count + 1) % 240
         self.y += 1 if self.y < game_structures.PLAYER_ENTITY.y else -1
+        if self.excitement > 0:
+            self.excitement = self.excitement - 1
+
+        self.pulse = (
+            math.sqrt(120 - abs(120 - self.tick_count)) * 3,
+            (15 * self.pulse[1] + (0 if self.retracting else 1)) / 16
+        )
+
+        if self.retracting and self.pulses[-1][1] < 0.25:
+            self.retracting = False
+            self.y = game_structures.PLAYER_ENTITY.y + self.layer_radiuses[-1] * 2 * (
+                -1 if self.y > game_structures.PLAYER_ENTITY.y else 1
+            )
+
         pulse = self.pulse
+
         for i in range(len(self.pulses)):
             pulse, self.pulses[i] = self.pulses[i], pulse
         for i in range(len(self.layers)):
@@ -671,8 +702,31 @@ class Star(Boss):
             layer.pos = self.pos
             layer.rad = radius
 
+        for pointset in self.points:
+            i = self.tick_count % len(pointset)
+            rad, theta = pointset[i]
+            excitement = (self.excitement / 15 + 1)
+            rad += self.random.randint(-10, 11) - (rad - 30 * excitement) / 4
+            theta += (self.random.random() - 0.5) * excitement
+            theta %= 2 * math.pi
+            pointset[i] = (rad, theta)
+
     def draw(self) -> None:
-        pass
+
+        s_x, s_y = game_structures.to_screen_pos(self.pos)
+
+        for pointset in self.points:
+            pygame.draw.lines(
+                game_structures.SCREEN, (255, 255, 255), True,
+                tuple((s_x + rad * math.sin(theta), s_y + rad * math.cos(theta)) for rad, theta in pointset),
+                3
+            )
+
+    def hit(self, damage: int, source) -> bool:
+        self.excitement = 60
+        self.health -= damage
+        self.retracting = True
+        return True
 
 
 boss_types = game_structures.recursive_subclasses(Boss)
