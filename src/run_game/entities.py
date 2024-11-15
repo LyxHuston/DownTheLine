@@ -1597,7 +1597,7 @@ class Lazer(InvulnerableEntity):
 
     def damage_player(self):
         if self.halt_dashes:
-            print("Halting player")
+            # print("Halting player")
             glide_player(0, 0, 0, 0)
 
 
