@@ -1028,11 +1028,7 @@ def add_from_custom_run(custom_run: CustomRun, _expanded: bool = False):
 	seed: list[int] = [0 if custom_run.seed is None else custom_run.seed]
 
 	def set_seed(text: str):
-		try:
-			seed[0] = int(text)
-		except ValueError:
-			seed[0] = hash(text)
-		custom_run.seed = seed[0]
+		custom_run.seed = seed[0] = main_screen.get_seed_from_text(text)
 
 	def swap_custom_seed():
 		custom_run.seed = seed[0] if custom_run.seed is None else None

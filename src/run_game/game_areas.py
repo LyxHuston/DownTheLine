@@ -137,7 +137,7 @@ class GameArea:
         return cls.last_spawned + cls.required_wait_interval * 2 <= index
 
     def get_next_seed(self):
-        return self.random.randint(0, 2 ** 32 - 1)
+        return new_seed(self.random)
 
     def start_tutorial(self):
         pass
@@ -896,8 +896,12 @@ class EndRun(GameArea):
 guaranteed_type: Type[GameArea] | None = None
 
 
+def new_seed(rand: random.Random) -> int:
+    return rand.randint(0, 2 ** 32 - 1)
+
+
 def get_determiner():
-    return hash(str(game_states.SEED + game_states.LAST_AREA))
+    return new_seed(random.Random(game_states.SEED + game_states.LAST_AREA))
 
 
 @make_async(with_lock=True)

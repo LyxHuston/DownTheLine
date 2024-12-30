@@ -20,13 +20,13 @@ main ran file for the game
 import argparse
 import cProfile
 import ast
+import time
 
 import pygame
 
 from data import draw_constants, game_states
 from general_use import game_structures, utility
 from run_game import gameboard
-
 
 def main_tick() -> None:
     game_states.PLACE.tick()
@@ -37,6 +37,8 @@ utility.set_fps(60)
 
 
 def run():
+    game_states.SEED = int(time.time()) % 256 ** 8
+
     game_structures.switch_to_place(game_structures.PLACES.main)
 
     while game_states.RUNNING:  # outer loop only for when the try except successfully handles it

@@ -82,10 +82,7 @@ def setup_main_screen():
     game_structures.BUTTONS.add_button(custom_seed_button)
 
     def set_seed(text: str):
-        try:
-            game_states.SEED = int(text)
-        except:
-            game_states.SEED = hash(text)
+        game_states.SEED = get_seed_from_text(text)
 
     seed_setter_button = game_structures.Button.make_text_button(
         f"seed: {game_states.SEED}", 75, (0, game_states.HEIGHT - custom_seed_button.rect.height),
@@ -95,6 +92,20 @@ def setup_main_screen():
         background_color=(0, 0, 0, 0)
     )
     game_structures.BUTTONS.add_button(seed_setter_button)
+
+
+def get_seed_from_text(text: str):
+    try:
+        return int(text)
+    except:
+        # ok, so hashing is a bit.... nondeterministic between runs oops, so instead pretend everything is base 256
+        # kinda.
+        res = 0
+        pw = 0
+        for char in reversed(text):
+            res = ((res + ord(char) % 256) * 256 ** pw) % (256 ** 8)
+            pw = (pw + 1) % 8
+        return res
 
 
 def end():
